@@ -80,19 +80,7 @@ const Auth = () => {
           <form onSubmit={handleSubmit}>
             {!isLogin && (
               <>
-                <div className="form-field">
-                  <label htmlFor="venueName">Venue/Stadium Name</label>
-                  <input
-                    id="venueName"
-                    name="venueName"
-                    type="text"
-                    value={formData.venueName}
-                    onChange={handleInputChange}
-                    required={!isLogin}
-                    autoFocus={!isLogin}
-                    placeholder="e.g. Emirates Stadium"
-                  />
-                </div>
+             
                 <div className="form-field">
                   <label htmlFor="adminPin">Admin PIN</label>
                   <div style={{ position: 'relative' }}>

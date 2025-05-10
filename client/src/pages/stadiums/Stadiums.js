@@ -21,7 +21,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where, doc, updateDoc, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../config/firebase';
 import { useAuth } from '../../context/AuthContext';
@@ -32,10 +32,20 @@ const Stadiums = () => {
   const [stadiums, setStadiums] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [newStadium, setNewStadium] = useState({ name: '', address: '', capacity: '', description: '', imageUrl: '' });
+  const [newStadium, setNewStadium] = useState({ 
+    name: '', 
+    address: '', 
+    capacity: '', 
+    description: '', 
+    imageUrl: '',
+    admins: [],
+    createdBy: ''
+  });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [selectedStadiumForAdmin, setSelectedStadiumForAdmin] = useState(null);
+  const [newAdminEmail, setNewAdminEmail] = useState('');
 
   const fileInputRef = useRef(null);
   const { user, logout } = useAuth();
@@ -46,11 +56,38 @@ const Stadiums = () => {
 
   const loadStadiums = async () => {
     try {
-      const stadiumsQuery = query(collection(db, 'stadiums'), where('adminId', '==', user.uid));
-      const querySnapshot = await getDocs(stadiumsQuery);
-      const stadiumsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setStadiums(stadiumsList);
+      // Get stadiums where user is in admins array
+      const adminsQuery = query(collection(db, 'stadiums'), where('admins', 'array-contains', user.uid));
+      const adminsSnapshot = await getDocs(adminsQuery);
+      
+      // Get stadiums with old adminId field
+      const adminIdQuery = query(collection(db, 'stadiums'), where('adminId', '==', user.uid));
+      const adminIdSnapshot = await getDocs(adminIdQuery);
+      
+      // Combine and deduplicate results
+      const stadiumsList = [
+        ...adminsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+        ...adminIdSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      ];
+      
+      // Remove duplicates based on id
+      const uniqueStadiums = Array.from(new Map(stadiumsList.map(s => [s.id, s])).values());
+      
+      setStadiums(uniqueStadiums);
+
+      // Update old stadiums to new format
+      for (const stadium of adminIdSnapshot.docs) {
+        const stadiumData = stadium.data();
+        if (!stadiumData.admins) {
+          await updateDoc(doc(db, 'stadiums', stadium.id), {
+            admins: [user.uid],
+            createdBy: user.uid,
+            updatedAt: new Date().toISOString()
+          });
+        }
+      }
     } catch (error) {
+      console.error('Error loading stadiums:', error);
       showSnackbar('Error loading stadiums', 'error');
     }
   };
@@ -80,7 +117,14 @@ const Stadiums = () => {
         await uploadBytes(imageRef, imageFile);
         imageUrl = await getDownloadURL(imageRef);
       }
-      await addDoc(collection(db, 'stadiums'), { ...newStadium, imageUrl, adminId: user.uid, createdAt: new Date().toISOString() });
+      await addDoc(collection(db, 'stadiums'), { 
+        ...newStadium, 
+        imageUrl, 
+        admins: [user.uid], // Initialize with creator as first admin
+        createdBy: user.uid,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
       showSnackbar('Stadium added successfully', 'success');
       setOpenDialog(false);
       resetForm();
@@ -93,7 +137,15 @@ const Stadiums = () => {
   };
 
   const resetForm = () => {
-    setNewStadium({ name: '', address: '', capacity: '', description: '', imageUrl: '' });
+    setNewStadium({ 
+      name: '', 
+      address: '', 
+      capacity: '', 
+      description: '', 
+      imageUrl: '',
+      admins: [],
+      createdBy: ''
+    });
     setImageFile(null);
     setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -101,6 +153,72 @@ const Stadiums = () => {
 
   const showSnackbar = (message, severity) => setSnackbar({ open: true, message, severity });
   const handleCloseSnackbar = () => setSnackbar(prev => ({ ...prev, open: false }));
+
+  const handleManageAdmins = (stadium) => {
+    setSelectedStadiumForAdmin(stadium);
+  };
+
+  const handleAddAdmin = async (stadiumId) => {
+    if (!newAdminEmail) return;
+
+    try {
+      setLoading(true);
+      // First check if admin exists
+      const adminQuery = query(collection(db, 'admins'), where('email', '==', newAdminEmail));
+      const adminSnapshot = await getDocs(adminQuery);
+      
+      if (adminSnapshot.empty) {
+        throw new Error('Admin not found with this email');
+      }
+
+      const adminId = adminSnapshot.docs[0].id;
+      const stadiumRef = doc(db, 'stadiums', stadiumId);
+      
+      await updateDoc(stadiumRef, {
+        admins: arrayUnion(adminId),
+        updatedAt: new Date().toISOString()
+      });
+      
+      showSnackbar('Admin added successfully', 'success');
+      setNewAdminEmail('');
+      loadStadiums();
+    } catch (error) {
+      showSnackbar(error.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveAdmin = async (stadiumId, adminId) => {
+    try {
+      setLoading(true);
+      const stadiumRef = doc(db, 'stadiums', stadiumId);
+      const stadiumDoc = await getDoc(stadiumRef);
+      const stadium = stadiumDoc.data();
+
+      // Don't allow removing the creator
+      if (stadium.createdBy === adminId) {
+        throw new Error('Cannot remove the stadium creator');
+      }
+
+      // Don't allow removing the last admin
+      if (stadium.admins.length <= 1) {
+        throw new Error('Cannot remove the last admin');
+      }
+
+      await updateDoc(stadiumRef, {
+        admins: arrayRemove(adminId),
+        updatedAt: new Date().toISOString()
+      });
+
+      showSnackbar('Admin removed successfully', 'success');
+      loadStadiums();
+    } catch (error) {
+      showSnackbar(error.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -189,11 +307,14 @@ const Stadiums = () => {
                 <Typography variant="body2" color="gray" gutterBottom>
                   👥 Capacity: {stadium.capacity}
                 </Typography>
-                <Typography variant="body2" color="#aaa">
+                <Typography variant="body2" color="#aaa" gutterBottom>
                   {stadium.description?.substring(0, 120)}
                 </Typography>
+                <Typography variant="body2" color="gray" sx={{ mt: 1 }}>
+                  👥 Admins: {stadium.admins?.length || 1}
+                </Typography>
               </Box>
-              <Box sx={{ px: 3, pb: 3 }}>
+              <Box sx={{ px: 3, pb: 3, display: 'grid', gap: 2 }}>
                 <Button
                   fullWidth
                   variant="contained"
@@ -210,6 +331,14 @@ const Stadiums = () => {
                   endIcon={<ArrowForwardIcon />}
                 >
                   Go to Dashboard
+                </Button>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  onClick={() => handleManageAdmins(stadium)}
+                  sx={{ borderRadius: '8px' }}
+                >
+                  Manage Admins
                 </Button>
               </Box>
             </Box>
@@ -301,6 +430,61 @@ const Stadiums = () => {
             startIcon={loading && <CircularProgress size={20} />}
           >
             {loading ? 'Adding...' : 'Add Stadium'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Admin Management Dialog */}
+      <Dialog 
+        open={!!selectedStadiumForAdmin} 
+        onClose={() => setSelectedStadiumForAdmin(null)} 
+        maxWidth="sm" 
+        fullWidth
+      >
+        <DialogTitle>Manage Stadium Admins</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2, display: 'grid', gap: 2 }}>
+            <Typography variant="subtitle1" gutterBottom>
+              Current Admins:
+            </Typography>
+            {selectedStadiumForAdmin?.admins?.map((adminId) => (
+              <Box key={adminId} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography>{adminId}</Typography>
+                {adminId !== selectedStadiumForAdmin.createdBy && (
+                  <Button 
+                    variant="outlined" 
+                    color="error"
+                    size="small"
+                    onClick={() => handleRemoveAdmin(selectedStadiumForAdmin.id, adminId)}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </Box>
+            ))}
+            <TextField
+              label="Add Admin by Email"
+              value={newAdminEmail}
+              onChange={(e) => setNewAdminEmail(e.target.value)}
+              fullWidth
+              type="email"
+            />
+            <Button
+              variant="contained"
+              onClick={() => handleAddAdmin(selectedStadiumForAdmin?.id)}
+              disabled={!newAdminEmail || loading}
+              startIcon={loading && <CircularProgress size={20} />}
+            >
+              {loading ? 'Adding...' : 'Add Admin'}
+            </Button>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setSelectedStadiumForAdmin(null);
+            setNewAdminEmail('');
+          }}>
+            Close
           </Button>
         </DialogActions>
       </Dialog>
