@@ -231,7 +231,7 @@ const Shops = () => {
   }
 
   return (
-    <Container>
+    <Container sx={{ mt: 4 }}>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h4" component="h1">
           {selectedStadium.name} - Shops

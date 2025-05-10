@@ -35,7 +35,7 @@ const Sidebar = () => {
         </NavLink>
 
         <NavLink to="/orders" className="nav-item" activeClassName="active">
-          <Badge badgeContent={25} color="error">
+          <Badge badgeContent={0} color="error">
             <ReceiptIcon />
           </Badge>
           Orders
