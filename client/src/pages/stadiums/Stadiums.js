@@ -111,6 +111,10 @@ const Stadiums = () => {
     }
   };
 
+  const handleInputChange = (e) => {
+    setNewStadium(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#FFFFFFFF', color: '#fff' }}>
       <AppBar position="static" sx={{ backgroundColor: '#15BE77' }}>
@@ -213,6 +217,104 @@ const Stadiums = () => {
         </Box>
       </Container>
 
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Add New Stadium</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2, display: 'grid', gap: 2 }}>
+            <TextField
+              label="Stadium Name"
+              name="name"
+              value={newStadium.name}
+              onChange={handleInputChange}
+              fullWidth
+              required
+            />
+            <TextField
+              label="Address"
+              name="address"
+              value={newStadium.address}
+              onChange={handleInputChange}
+              fullWidth
+              required
+            />
+            <TextField
+              label="Capacity"
+              name="capacity"
+              type="number"
+              value={newStadium.capacity}
+              onChange={handleInputChange}
+              fullWidth
+              required
+            />
+            <TextField
+              label="Description"
+              name="description"
+              value={newStadium.description}
+              onChange={handleInputChange}
+              multiline
+              rows={4}
+              fullWidth
+            />
+            <Box>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                style={{ display: 'none' }}
+                ref={fileInputRef}
+              />
+              <Button
+                variant="outlined"
+                onClick={() => fileInputRef.current?.click()}
+                startIcon={<AddIcon />}
+                sx={{ mb: 2 }}
+              >
+                Add Stadium Image
+              </Button>
+              {imagePreview && (
+                <Box
+                  component="img"
+                  src={imagePreview}
+                  alt="Stadium preview"
+                  sx={{
+                    width: '100%',
+                    height: '200px',
+                    objectFit: 'cover',
+                    borderRadius: 1
+                  }}
+                />
+              )}
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setOpenDialog(false);
+            resetForm();
+          }}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleAddStadium}
+            variant="contained"
+            disabled={loading}
+            startIcon={loading && <CircularProgress size={20} />}
+          >
+            {loading ? 'Adding...' : 'Add Stadium'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
