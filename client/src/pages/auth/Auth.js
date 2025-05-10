@@ -40,9 +40,7 @@ const Auth = () => {
           throw new Error('Invalid admin PIN');
         }
         await signup(formData.email, formData.password, {
-          venueName: formData.venueName,
           role: 'admin',
-          shops: [],
           createdAt: new Date().toISOString()
         });
         navigate('/stadiums');
