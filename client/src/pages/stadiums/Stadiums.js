@@ -27,7 +27,6 @@ import { db, storage } from '../../config/firebase';
 import { useAuth } from '../../context/AuthContext';
 import { useStadium } from '../../context/StadiumContext';
 import { useNavigate } from 'react-router-dom';
-import './Stadiums.css';
 
 const Stadiums = () => {
   const [stadiums, setStadiums] = useState([]);
@@ -146,13 +145,38 @@ const Stadiums = () => {
             >
               <Box
                 sx={{
-                  backgroundImage: `url(${stadium.imageUrl || ''})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
+                  position: 'relative',
                   height: '180px',
-                  filter: 'brightness(0.7)'
+                  overflow: 'hidden',
+                  backgroundColor: '#f5f5f5'
                 }}
-              />
+              >
+                {stadium.imageUrl ? (
+                  <Box
+                    component="img"
+                    src={stadium.imageUrl}
+                    alt={stadium.name}
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      filter: 'brightness(0.9)'
+                    }}
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#999'
+                    }}
+                  >
+                    <Typography>No Image</Typography>
+                  </Box>
+                )}
+              </Box>
               <Box sx={{ p: 3 }}>
                 <Typography variant="h6" color="#2D2D2D" gutterBottom>{stadium.name}</Typography>
                 <Typography variant="body2" color="gray" gutterBottom>
