@@ -3,21 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Header.css';
 import { Avatar, Menu, MenuItem, Badge, IconButton } from '@mui/material';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import LocalMallIcon from '@mui/icons-material/LocalMall';
 import SettingsIcon from '@mui/icons-material/Settings';
-import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 import LogoutIcon from '@mui/icons-material/Logout';
 
-const NotificationBadge = ({ count, icon: Icon }) => (
-  <IconButton>
-    <Badge badgeContent={count} color="error">
-      <Icon sx={{ color: '#666' }} />
-    </Badge>
-  </IconButton>
-);
+
 
 const Header = () => {
   const { user, logout } = useAuth();
@@ -49,6 +39,9 @@ const Header = () => {
   return (
     <header className="header">
       <div className="header-content">
+        <div className="header-left">
+        </div>
+
         <div className="header-center">
           <div className="search-bar">
             <SearchIcon className="search-icon" />
@@ -57,12 +50,6 @@ const Header = () => {
         </div>
         
         <div className="header-right">
-          <div className="notification-section">
-            <NotificationBadge count={2} icon={NotificationsIcon} />
-            <NotificationBadge count={1} icon={ShoppingCartIcon} />
-            <NotificationBadge count={3} icon={LocalMallIcon} />
-            <NotificationBadge count={0} icon={SettingsIcon} />
-          </div>
           <div className="profile-section">
             <div className="profile-info" onClick={handleMenu}>
               <Avatar

@@ -2,8 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../config/firebase';
-import './Profile.css';
+import { db, storage } from '../config/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import {
+  Container,
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  Avatar,
+  Box,
+  IconButton,
+  Snackbar,
+  Alert,
+  CircularProgress
+} from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
+import CancelIcon from '@mui/icons-material/Cancel';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 
 const Profile = () => {
   const { user, logout } = useAuth();
@@ -12,12 +29,15 @@ const Profile = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [profileData, setProfileData] = useState({
-    venueName: '',
+    displayName: '',
     email: '',
     phone: '',
     address: '',
-    description: ''
+    description: '',
+    photoURL: ''
   });
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
@@ -30,12 +50,14 @@ const Profile = () => {
           if (docSnap.exists()) {
             const data = docSnap.data();
             setProfileData({
-              venueName: data.venues[0]?.name || '',
-              email: data.email || '',
+              displayName: user.displayName || '',
+              email: user.email || '',
               phone: data.phone || '',
               address: data.address || '',
-              description: data.description || ''
+              description: data.description || '',
+              photoURL: user.photoURL || ''
             });
+            setPhotoPreview(user.photoURL || '');
           }
         }
       } catch (err) {
@@ -56,6 +78,14 @@ const Profile = () => {
     }));
   };
 
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setPhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -63,24 +93,40 @@ const Profile = () => {
     setLoading(true);
 
     try {
+      let photoURL = profileData.photoURL;
+
+      if (photoFile) {
+        const storageRef = ref(storage, `profile-photos/${user.uid}`);
+        await uploadBytes(storageRef, photoFile);
+        photoURL = await getDownloadURL(storageRef);
+      }
+
       const docRef = doc(db, 'admins', user.uid);
       await updateDoc(docRef, {
-        'venues.0.name': profileData.venueName,
+        displayName: profileData.displayName,
         phone: profileData.phone,
         address: profileData.address,
         description: profileData.description,
+        photoURL,
         updatedAt: new Date().toISOString()
+      });
+
+      // Update user profile
+      await user.updateProfile({
+        displayName: profileData.displayName,
+        photoURL
       });
 
       setSuccess('Profile updated successfully!');
       setIsEditing(false);
+      setPhotoFile(null);
     } catch (err) {
+      console.error('Update error:', err);
       setError('Failed to update profile');
     } finally {
       setLoading(false);
     }
   };
-
   const handleLogout = async () => {
     try {
       await logout();
@@ -95,108 +141,144 @@ const Profile = () => {
   }
 
   return (
-    <div className="profile-container">
-      <div className="profile-card">
-        <div className="profile-header">
-          <h1>Venue Profile</h1>
-          <button onClick={handleLogout} className="logout-button">
-            Logout
-          </button>
-        </div>
-
-        {error && <div className="error-message">{error}</div>}
-        {success && <div className="success-message">{success}</div>}
-
-        <form onSubmit={handleSubmit} className="profile-form">
-          <div className="form-group">
-            <label>Venue Name</label>
-            <input
-              type="text"
-              name="venueName"
-              value={profileData.venueName}
+    <Container maxWidth="md" sx={{ py: 4 }}>
+      <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+          <Box sx={{ position: 'relative', mr: 3 }}>
+            <Avatar
+              src={photoPreview || profileData.photoURL}
+              sx={{ width: 100, height: 100 }}
+            />
+            {isEditing && (
+              <IconButton
+                sx={{
+                  position: 'absolute',
+                  bottom: -10,
+                  right: -10,
+                  backgroundColor: 'white',
+                  boxShadow: 1,
+                  '&:hover': { backgroundColor: '#f5f5f5' }
+                }}
+                component="label"
+              >
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                />
+                <PhotoCameraIcon />
+              </IconButton>
+            )}
+          </Box>
+          <Box>
+            <Typography variant="h4" gutterBottom>
+              Profile Settings
+            </Typography>
+            <Typography variant="body1" color="textSecondary">
+              Manage your account information
+            </Typography>
+          </Box>
+          {!isEditing && (
+            <IconButton
+              onClick={() => setIsEditing(true)}
+              sx={{ ml: 'auto' }}
+              color="primary"
+            >
+              <EditIcon />
+            </IconButton>
+          )}
+        </Box>
+        <form onSubmit={handleSubmit}>
+          <Box sx={{ display: 'grid', gap: 3 }}>
+            <TextField
+              label="Display Name"
+              name="displayName"
+              value={profileData.displayName}
               onChange={handleInputChange}
               disabled={!isEditing}
-              required
+              fullWidth
             />
-          </div>
 
-          <div className="form-group">
-            <label>Email</label>
-            <input
+            <TextField
+              label="Email"
               type="email"
+              name="email"
               value={profileData.email}
               disabled
-              className="disabled-input"
+              fullWidth
             />
-          </div>
 
-          <div className="form-group">
-            <label>Phone Number</label>
-            <input
+            <TextField
+              label="Phone"
               type="tel"
               name="phone"
               value={profileData.phone}
               onChange={handleInputChange}
               disabled={!isEditing}
-              placeholder="Enter phone number"
+              fullWidth
             />
-          </div>
 
-          <div className="form-group">
-            <label>Address</label>
-            <textarea
+            <TextField
+              label="Address"
               name="address"
               value={profileData.address}
               onChange={handleInputChange}
               disabled={!isEditing}
-              placeholder="Enter venue address"
-              rows="3"
+              fullWidth
             />
-          </div>
 
-          <div className="form-group">
-            <label>Description</label>
-            <textarea
+            <TextField
+              label="Description"
               name="description"
               value={profileData.description}
               onChange={handleInputChange}
               disabled={!isEditing}
-              placeholder="Enter venue description"
-              rows="4"
+              multiline
+              rows={4}
+              fullWidth
             />
-          </div>
 
-          <div className="button-group">
-            {!isEditing ? (
-              <button
-                type="button"
-                onClick={() => setIsEditing(true)}
-                className="edit-button"
-              >
-                Edit Profile
-              </button>
-            ) : (
-              <>
-                <button
-                  type="submit"
-                  className="save-button"
-                  disabled={loading}
-                >
-                  {loading ? 'Saving...' : 'Save Changes'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(false)}
-                  className="cancel-button"
+            {isEditing && (
+              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setPhotoFile(null);
+                    setPhotoPreview(profileData.photoURL);
+                  }}
+                  startIcon={<CancelIcon />}
                 >
                   Cancel
-                </button>
-              </>
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  disabled={loading}
+                  startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
+                >
+                  Save Changes
+                </Button>
+              </Box>
             )}
-          </div>
+          </Box>
         </form>
-      </div>
-    </div>
+      </Paper>
+
+      <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError('')}>
+        <Alert onClose={() => setError('')} severity="error">
+          {error}
+        </Alert>
+      </Snackbar>
+
+      <Snackbar open={!!success} autoHideDuration={6000} onClose={() => setSuccess('')}>
+        <Alert onClose={() => setSuccess('')} severity="success">
+          {success}
+        </Alert>
+      </Snackbar>
+    </Container>
   );
 };
 

@@ -213,8 +213,6 @@ const Stadiums = () => {
         </Box>
       </Container>
 
-      {/* The dialog and snackbar remain unchanged */}
-      {/* ... */}
     </Box>
   );
 };
