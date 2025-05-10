@@ -88,12 +88,10 @@ const Menu = () => {
   const loadMenuItems = useCallback(async () => {
     if (!shopId || !selectedStadium) return;
     try {
-      const menuItemsRef = collection(db, 'menuItems');
-      const menuItemsQuery = query(
-        menuItemsRef,
-        where('shopId', '==', shopId),
-        where('stadiumId', '==', selectedStadium.id)
-      );
+      const stadiumRef = doc(db, 'stadiums', selectedStadium.id);
+      const shopRef = doc(collection(stadiumRef, 'shops'), shopId);
+      const menuItemsRef = collection(shopRef, 'menuItems');
+      const menuItemsQuery = query(menuItemsRef);
       const querySnapshot = await getDocs(menuItemsQuery);
       const itemsList = querySnapshot.docs.map(doc => ({
         id: doc.id,
@@ -147,10 +145,14 @@ const Menu = () => {
       };
 
       if (selectedItem) {
-        await updateDoc(doc(db, 'menuItems', selectedItem.id), menuItemData);
+        const stadiumRef = doc(db, 'stadiums', selectedStadium.id);
+        const shopRef = doc(collection(stadiumRef, 'shops'), shopId);
+        await updateDoc(doc(shopRef, 'menuItems', selectedItem.id), menuItemData);
       } else {
         const newItem = menuItemData;
-        await addDoc(collection(db, 'menuItems'), newItem);
+        const stadiumRef = doc(db, 'stadiums', selectedStadium.id);
+        const shopRef = doc(collection(stadiumRef, 'shops'), shopId);
+        await addDoc(collection(shopRef, 'menuItems'), newItem);
       }
 
       handleCloseDialog();
@@ -204,7 +206,9 @@ const Menu = () => {
           const imageRef = ref(storage, item.imageUrl);
           await deleteObject(imageRef);
         }
-        await deleteDoc(doc(db, 'menuItems', item.id));
+        const stadiumRef = doc(db, 'stadiums', selectedStadium.id);
+        const shopRef = doc(collection(stadiumRef, 'shops'), shopId);
+        await deleteDoc(doc(shopRef, 'menuItems', item.id));
         loadMenuItems();
       } catch (error) {
         console.error('Error deleting menu item:', error);
