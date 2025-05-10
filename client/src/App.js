@@ -11,6 +11,7 @@ import Profile from './pages/Profile';
 import Dashboard from './pages/dashboard/Dashboard';
 import Orders from './pages/orders/Orders';
 import Menus from './pages/menus/Menus';
+import Shops from './pages/shops/Shops';
 import AddCustomer from './pages/customers/AddCustomer';
 import Members from './pages/customers/Members';
 import GeneralCustomers from './pages/customers/GeneralCustomers';
@@ -99,6 +100,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Auth />} />
             <Route path="/stadiums" element={<RequireAuth><Stadiums /></RequireAuth>} />
+            <Route path="/shops" element={<RequireAuth><AppLayout><Shops /></AppLayout></RequireAuth>} />
             <Route path="/dashboard" element={<RequireAuth><AppLayout><Dashboard /></AppLayout></RequireAuth>} />
             <Route path="/profile" element={<RequireAuth><AppLayout><Profile /></AppLayout></RequireAuth>} />
             <Route path="/orders" element={<RequireAuth><AppLayout><Orders /></AppLayout></RequireAuth>} />

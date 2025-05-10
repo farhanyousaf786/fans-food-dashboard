@@ -9,6 +9,7 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import GroupsIcon from '@mui/icons-material/Groups';
 import StadiumIcon from '@mui/icons-material/Stadium';
+import StorefrontIcon from '@mui/icons-material/Storefront';
 import { Badge } from '@mui/material';
 
 const Sidebar = () => {
@@ -34,6 +35,10 @@ const Sidebar = () => {
             <ReceiptIcon />
           </Badge>
           Orders
+        </NavLink>
+
+        <NavLink to="/shops" className="nav-item" activeClassName="active">
+          <StorefrontIcon /> Shops
         </NavLink>
 
         <NavLink to="/menus" className="nav-item" activeClassName="active">
