@@ -98,28 +98,51 @@ function App() {
     <AuthProvider>
       <StadiumProvider>
         <ShopProvider>
-
-        <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Router>
-          <Routes>
-            <Route path="/" element={<Auth />} />
-            <Route path="/stadiums" element={<RequireAuth><Stadiums /></RequireAuth>} />
-            <Route path="/shops" element={<RequireAuth><AppLayout><Shops /></AppLayout></RequireAuth>} />
-            <Route path="/dashboard" element={<RequireAuth><AppLayout><Dashboard /></AppLayout></RequireAuth>} />
-            <Route path="/profile" element={<RequireAuth><AppLayout><Profile /></AppLayout></RequireAuth>} />
-            <Route path="/orders" element={<RequireAuth><AppLayout><Orders /></AppLayout></RequireAuth>} />
-            <Route path="/shops/:shopId/menu" element={<RequireAuth><AppLayout><Menu /></AppLayout></RequireAuth>} />
-            
-            <Route path="/customers/add" element={<RequireAuth><AppLayout><AddCustomer /></AppLayout></RequireAuth>} />
-            <Route path="/customers/members" element={<RequireAuth><AppLayout><Members /></AppLayout></RequireAuth>} />
-            <Route path="/customers/general" element={<RequireAuth><AppLayout><GeneralCustomers /></AppLayout></RequireAuth>} />
-            <Route path="/analytics" element={<RequireAuth><AppLayout><Analytics /></AppLayout></RequireAuth>} />
-            <Route path="*" element={<Navigate to="/stadiums" />} />
-          </Routes>
-        </Router>
-        </ThemeProvider>
-
+          <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <Router>
+              <Routes>
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/" element={<Navigate to="/stadiums" />} />
+                <Route path="/stadiums" element={
+                  <RequireAuth>
+                    <Stadiums />
+                  </RequireAuth>
+                } />
+                <Route path="/dashboard/:stadiumId" element={
+                  <RequireAuth>
+                    <AppLayout><Dashboard /></AppLayout>
+                  </RequireAuth>
+                } />
+                <Route path="/shops/new" element={
+                  <RequireAuth>
+                    <AppLayout><Shops /></AppLayout>
+                  </RequireAuth>
+                } />
+                <Route path="/customers/add" element={
+                  <RequireAuth>
+                    <AppLayout><AddCustomer /></AppLayout>
+                  </RequireAuth>
+                } />
+                <Route path="/customers/members" element={
+                  <RequireAuth>
+                    <AppLayout><Members /></AppLayout>
+                  </RequireAuth>
+                } />
+                <Route path="/customers/general" element={
+                  <RequireAuth>
+                    <AppLayout><GeneralCustomers /></AppLayout>
+                  </RequireAuth>
+                } />
+                <Route path="/analytics" element={
+                  <RequireAuth>
+                    <AppLayout><Analytics /></AppLayout>
+                  </RequireAuth>
+                } />
+                <Route path="*" element={<Navigate to="/stadiums" />} />
+              </Routes>
+            </Router>
+          </ThemeProvider>
         </ShopProvider>
       </StadiumProvider>
     </AuthProvider>

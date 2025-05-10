@@ -237,8 +237,9 @@ const Stadiums = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/');
+      navigate('/auth');
     } catch (error) {
+      console.error('Logout error:', error);
       showSnackbar('Error logging out', 'error');
     }
   };
@@ -248,28 +249,43 @@ const Stadiums = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#FFFFFFFF', color: '#fff' }}>
-      <AppBar position="static" color="transparent" elevation={0}>
-        <Toolbar>
-          <Typography variant="h4" component="h1" sx={{ flexGrow: 1 }}>
-            {user?.role === 'stadium_owner' ? 'My Stadiums' : 'Available Stadiums'}
+    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#FAFAFA' }}>
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+          <Typography variant="h4" sx={{ color: '#15BE77', fontWeight: 'bold' }}>
+            {user?.role === 'stadium_owner' ? 'Your Stadiums' : 'Available Stadiums'}
           </Typography>
-          {user?.role === 'stadium_owner' && (
+          <Box>
+            {user?.role === 'stadium_owner' && (
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setOpenDialog(true)}
+                sx={{
+                  backgroundColor: '#15BE77',
+                  '&:hover': { backgroundColor: '#13a86b' },
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  mr: 2
+                }}
+              >
+                Add Stadium
+              </Button>
+            )}
             <Button
-              variant="contained"
-              color="primary"
-              startIcon={<AddIcon />}
-              onClick={() => setOpenDialog(true)}
-              sx={{ mr: 2 }}
+              variant="outlined"
+              onClick={handleLogout}
+              sx={{
+                borderRadius: '8px',
+                fontWeight: 'bold'
+              }}
             >
-              Add Stadium
+              Logout
             </Button>
-          )}
-          <IconButton color="inherit" onClick={handleLogout}><ExitToAppIcon /></IconButton>
-        </Toolbar>
-      </AppBar>
+          </Box>
+        </Box>
 
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
+
 
         <Box sx={{
           display: 'grid',
@@ -345,53 +361,27 @@ const Stadiums = () => {
                   </Typography>
                 </Box>
                 <Box sx={{ px: 3, pb: 3, display: 'grid', gap: 2 }}>
-                  {user.role === 'stadium_owner' ? (
-                    <>
-                      <Button
-                        fullWidth
-                        variant="contained"
-                        sx={{
-                          backgroundColor: '#15BE77',
-                          '&:hover': { backgroundColor: '#13a86b' },
-                          borderRadius: '8px',
-                          fontWeight: 'bold'
-                        }}
-                        onClick={() => {
-                          setSelectedStadium(stadium);
-                          navigate('/dashboard');
-                        }}
-                        endIcon={<ArrowForwardIcon />}
-                      >
-                        Go to Dashboard
-                      </Button>
-                      <Button
-                        fullWidth
-                        variant="outlined"
-                        onClick={() => handleManageAdmins(stadium)}
-                        sx={{ borderRadius: '8px' }}
-                      >
-                        Manage Admins
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      sx={{
-                        backgroundColor: '#15BE77',
-                        '&:hover': { backgroundColor: '#13a86b' },
-                        borderRadius: '8px',
-                        fontWeight: 'bold'
-                      }}
-                      onClick={() => {
-                        setSelectedStadium(stadium);
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    sx={{
+                      backgroundColor: '#15BE77',
+                      '&:hover': { backgroundColor: '#13a86b' },
+                      borderRadius: '8px',
+                      fontWeight: 'bold'
+                    }}
+                    onClick={() => {
+                      setSelectedStadium(stadium);
+                      if (user.role === 'stadium_owner') {
+                        navigate(`/dashboard/${stadium.id}`);
+                      } else {
                         navigate(`/shops/new?stadiumId=${stadium.id}`);
-                      }}
-                      endIcon={<ArrowForwardIcon />}
-                    >
-                      Create Shop Here
-                    </Button>
-                  )}
+                      }
+                    }}
+                    endIcon={<ArrowForwardIcon />}
+                  >
+                    {user.role === 'stadium_owner' ? 'Go to Dashboard' : 'Create Shop Here'}
+                  </Button>
                 </Box>
               </Box>
             ))
