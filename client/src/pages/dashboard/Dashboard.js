@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStadium } from '../../context/StadiumContext';
 import { useAuth } from '../../context/AuthContext';
@@ -14,65 +14,73 @@ import RevenueChart from './components/RevenueChart';
 
 const Dashboard = () => {
   const { selectedStadium } = useStadium();
+  const { user } = useAuth();
   const navigate = useNavigate();
+  
+  const [venueData, setVenueData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchVenueData = useCallback(async () => {
+    try {
+      if (user?.uid && selectedStadium?.id) {
+        // Get admin data
+        const docRef = doc(db, 'users', user.uid);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const adminData = docSnap.data();
+
+          // Get stadium-specific data
+          const ordersQuery = query(
+            collection(db, 'orders'),
+            where('stadiumId', '==', selectedStadium.id)
+          );
+
+          const ordersSnap = await getDocs(ordersQuery);
+          const orders = ordersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+          // Calculate stadium-specific stats
+          const activeOrders = orders.filter(order => order.status === 'active').length;
+          const completedOrders = orders.filter(order => order.status === 'completed').length;
+          const cancelledOrders = orders.filter(order => order.status === 'cancelled').length;
+          const totalOrders = orders.length;
+
+          // Calculate total revenue from completed orders
+          const totalRevenue = orders
+            .filter(order => order.status === 'completed')
+            .reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+
+          // Get unique customer count
+          const uniqueCustomers = new Set(orders.map(order => order.customerId)).size;
+
+          setVenueData({
+            venues: [adminData],
+            totalRevenue,
+            totalOrders,
+            totalCustomers: uniqueCustomers,
+            activeOrders,
+            completedOrders,
+            cancelledOrders
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching venue data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, selectedStadium]);
 
   useEffect(() => {
     if (!selectedStadium) {
       navigate('/stadiums');
       return;
     }
-  }, [selectedStadium, navigate]);
-  const { user } = useAuth();
-  const [venueData, setVenueData] = useState(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchVenueData = async () => {
-      try {
-        if (user?.uid && selectedStadium?.id) {
-          // Get admin data
-          const docRef = doc(db, 'admins', user.uid);
-          const docSnap = await getDoc(docRef);
-          
-          if (docSnap.exists()) {
-            const adminData = docSnap.data();
-            
-            // Get stadium-specific data
-            const ordersQuery = query(
-              collection(db, 'orders'),
-              where('stadiumId', '==', selectedStadium.id)
-            );
-            
-            const ordersSnap = await getDocs(ordersQuery);
-            const orders = ordersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            
-            // Calculate stadium-specific stats
-            const activeOrders = orders.filter(order => order.status === 'active').length;
-            const completedOrders = orders.filter(order => order.status === 'completed').length;
-            const cancelledOrders = orders.filter(order => order.status === 'cancelled').length;
-            const totalRevenue = orders
-              .filter(order => order.status === 'completed')
-              .reduce((sum, order) => sum + (order.totalAmount || 0), 0);
-            
-            setVenueData({
-              ...adminData,
-              activeOrders,
-              completedOrders,
-              cancelledOrders,
-              totalRevenue,
-              totalOrders: orders.length
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching venue data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchVenueData();
-  }, [user]);
+    if (user?.uid && selectedStadium?.id) {
+      fetchVenueData();
+    }
+  }, [selectedStadium, user, navigate, fetchVenueData]);
 
   if (loading) {
     return (
@@ -86,7 +94,9 @@ const Dashboard = () => {
     <div className="dashboard-container">
       <div className="dashboard-header">
         <div className="welcome-section">
-          <h1>{selectedStadium ? `${selectedStadium.name} Dashboard` : 'Dashboard'}</h1>
+          <Typography variant="h4" gutterBottom>
+            {selectedStadium ? `${selectedStadium.name} Dashboard` : 'Dashboard'}
+          </Typography>
         </div>
 
         <div className="stats-grid">
@@ -126,9 +136,7 @@ const Dashboard = () => {
             Add New Shop
           </button>
           <button className="action-button" onClick={() => console.log('View orders')}>
-            <Typography variant="h4" gutterBottom>
-              {selectedStadium ? `${selectedStadium.name} Dashboard` : 'Dashboard'}
-            </Typography>
+            View Orders
           </button>
         </div>
       </div>
