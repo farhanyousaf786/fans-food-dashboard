@@ -26,6 +26,7 @@ import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useStadium } from '../../context/StadiumContext';
 
 const Stadiums = () => {
   const [stadiums, setStadiums] = useState([]);
@@ -43,6 +44,7 @@ const Stadiums = () => {
   });
   const { user, logout, loading } = useAuth();
   const navigate = useNavigate();
+  const { setSelectedStadium } = useStadium();
 
   useEffect(() => {
     loadStadiums();
@@ -187,7 +189,10 @@ const Stadiums = () => {
                       <Button 
                         variant="contained" 
                         color="primary" 
-                        onClick={() => navigate(`/dashboard`)}
+                        onClick={() => {
+                          setSelectedStadium(stadium);
+                          navigate('/dashboard');
+                        }}
                       >
                         Go to Dashboard
                       </Button>

@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { StadiumProvider } from './context/StadiumContext';
 import Auth from './pages/auth/Auth';
 import Profile from './pages/Profile';
 import Dashboard from './pages/dashboard/Dashboard';
@@ -91,7 +92,8 @@ const AppLayout = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
-      <ThemeProvider theme={theme}>
+      <StadiumProvider>
+        <ThemeProvider theme={theme}>
         <CssBaseline />
         <Router>
           <Routes>
@@ -108,7 +110,8 @@ function App() {
             <Route path="*" element={<Navigate to="/stadiums" />} />
           </Routes>
         </Router>
-      </ThemeProvider>
+        </ThemeProvider>
+      </StadiumProvider>
     </AuthProvider>
   );
 }
