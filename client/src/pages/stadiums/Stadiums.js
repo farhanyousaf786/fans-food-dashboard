@@ -52,43 +52,57 @@ const Stadiums = () => {
   const { setSelectedStadium } = useStadium();
   const navigate = useNavigate();
 
-  useEffect(() => { loadStadiums(); }, [user]);
+  useEffect(() => {
+    if (!user) return;
+    
+    if (user.role === 'stadium_owner') {
+      // Stadium owners see only their own stadiums
+      fetchUserStadiums();
+    } else if (user.role === 'shop_owner') {
+      // Shop owners see all stadiums
+      fetchAllStadiums();
+    }
+  }, [user]);
 
-  const loadStadiums = async () => {
+  const fetchUserStadiums = async () => {
     try {
-      // Get stadiums where user is in admins array
-      const adminsQuery = query(collection(db, 'stadiums'), where('admins', 'array-contains', user.uid));
-      const adminsSnapshot = await getDocs(adminsQuery);
-      
-      // Get stadiums with old adminId field
-      const adminIdQuery = query(collection(db, 'stadiums'), where('adminId', '==', user.uid));
-      const adminIdSnapshot = await getDocs(adminIdQuery);
-      
-      // Combine and deduplicate results
-      const stadiumsList = [
-        ...adminsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-        ...adminIdSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      ];
-      
-      // Remove duplicates based on id
-      const uniqueStadiums = Array.from(new Map(stadiumsList.map(s => [s.id, s])).values());
-      
-      setStadiums(uniqueStadiums);
+      setLoading(true);
+      const stadiumsRef = collection(db, 'stadiums');
+      const q = query(stadiumsRef, where('createdBy', '==', user.uid));
+      const querySnapshot = await getDocs(q);
+      const stadiumsList = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setStadiums(stadiumsList);
+    } catch (error) {
+      console.error('Error fetching user stadiums:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to load stadiums',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      // Update old stadiums to new format
-      for (const stadium of adminIdSnapshot.docs) {
-        const stadiumData = stadium.data();
-        if (!stadiumData.admins) {
-          await updateDoc(doc(db, 'stadiums', stadium.id), {
-            admins: [user.uid],
-            createdBy: user.uid,
-            updatedAt: new Date().toISOString()
-          });
-        }
-      }
+  const fetchAllStadiums = async () => {
+    try {
+      setLoading(true);
+      // Get all stadiums
+      const stadiumsRef = collection(db, 'stadiums');
+      const querySnapshot = await getDocs(stadiumsRef);
+      const stadiumsList = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setStadiums(stadiumsList);
     } catch (error) {
       console.error('Error loading stadiums:', error);
       showSnackbar('Error loading stadiums', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -128,7 +142,7 @@ const Stadiums = () => {
       showSnackbar('Stadium added successfully', 'success');
       setOpenDialog(false);
       resetForm();
-      await loadStadiums();
+      await fetchUserStadiums();
     } catch (error) {
       showSnackbar('Error adding stadium', 'error');
     } finally {
@@ -181,7 +195,7 @@ const Stadiums = () => {
       
       showSnackbar('Admin added successfully', 'success');
       setNewAdminEmail('');
-      loadStadiums();
+      fetchUserStadiums();
     } catch (error) {
       showSnackbar(error.message, 'error');
     } finally {
@@ -212,7 +226,7 @@ const Stadiums = () => {
       });
 
       showSnackbar('Admin removed successfully', 'success');
-      loadStadiums();
+      fetchUserStadiums();
     } catch (error) {
       showSnackbar(error.message, 'error');
     } finally {
@@ -235,114 +249,153 @@ const Stadiums = () => {
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#FFFFFFFF', color: '#fff' }}>
-      <AppBar position="static" sx={{ backgroundColor: '#15BE77' }}>
+      <AppBar position="static" color="transparent" elevation={0}>
         <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>Stadium Management</Typography>
+          <Typography variant="h4" component="h1" sx={{ flexGrow: 1 }}>
+            {user?.role === 'stadium_owner' ? 'My Stadiums' : 'Available Stadiums'}
+          </Typography>
+          {user?.role === 'stadium_owner' && (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<AddIcon />}
+              onClick={() => setOpenDialog(true)}
+              sx={{ mr: 2 }}
+            >
+              Add Stadium
+            </Button>
+          )}
           <IconButton color="inherit" onClick={handleLogout}><ExitToAppIcon /></IconButton>
         </Toolbar>
       </AppBar>
 
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-          <Typography variant="h4">Your Stadiums</Typography>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpenDialog(true)}>Add Stadium</Button>
-        </Box>
 
         <Box sx={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
           gap: '2rem'
         }}>
-          {stadiums.map(stadium => (
-            <Box
-              key={stadium.id}
-              sx={{
-                background: '#FEFEFEFF',
-                borderRadius: '16px',
-                overflow: 'hidden',
-                display: 'flex',
-                flexDirection: 'column',
-                boxShadow: '0 8px 20px rgba(0,0,0,0.3)'
-              }}
-            >
+          {stadiums.length === 0 ? (
+            <Typography variant="h6" color="textSecondary" align="center" sx={{ mt: 4 }}>
+              {user?.role === 'stadium_owner' 
+                ? 'No stadiums found. Add your first stadium!'
+                : 'No stadiums available yet. Please check back later.'}
+            </Typography>
+          ) : (
+            stadiums.map(stadium => (
               <Box
+                key={stadium.id}
                 sx={{
-                  position: 'relative',
-                  height: '180px',
+                  background: '#FEFEFEFF',
+                  borderRadius: '16px',
                   overflow: 'hidden',
-                  backgroundColor: '#f5f5f5'
+                  display: 'flex',
+                  flexDirection: 'column',
+                  boxShadow: '0 8px 20px rgba(0,0,0,0.3)'
                 }}
               >
-                {stadium.imageUrl ? (
-                  <Box
-                    component="img"
-                    src={stadium.imageUrl}
-                    alt={stadium.name}
-                    sx={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      filter: 'brightness(0.9)'
-                    }}
-                  />
-                ) : (
-                  <Box
-                    sx={{
-                      height: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#999'
-                    }}
-                  >
-                    <Typography>No Image</Typography>
-                  </Box>
-                )}
-              </Box>
-              <Box sx={{ p: 3 }}>
-                <Typography variant="h6" color="#2D2D2D" gutterBottom>{stadium.name}</Typography>
-                <Typography variant="body2" color="gray" gutterBottom>
-                  📍 {stadium.address}
-                </Typography>
-                <Typography variant="body2" color="gray" gutterBottom>
-                  👥 Capacity: {stadium.capacity}
-                </Typography>
-                <Typography variant="body2" color="#aaa" gutterBottom>
-                  {stadium.description?.substring(0, 120)}
-                </Typography>
-                <Typography variant="body2" color="gray" sx={{ mt: 1 }}>
-                  👥 Admins: {stadium.admins?.length || 1}
-                </Typography>
-              </Box>
-              <Box sx={{ px: 3, pb: 3, display: 'grid', gap: 2 }}>
-                <Button
-                  fullWidth
-                  variant="contained"
+                <Box
                   sx={{
-                    backgroundColor: '#15BE77',
-                    '&:hover': { backgroundColor: '#13a86b' },
-                    borderRadius: '8px',
-                    fontWeight: 'bold'
+                    position: 'relative',
+                    height: '180px',
+                    overflow: 'hidden',
+                    backgroundColor: '#f5f5f5'
                   }}
-                  onClick={() => {
-                    setSelectedStadium(stadium);
-                    navigate('/dashboard');
-                  }}
-                  endIcon={<ArrowForwardIcon />}
                 >
-                  Go to Dashboard
-                </Button>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  onClick={() => handleManageAdmins(stadium)}
-                  sx={{ borderRadius: '8px' }}
-                >
-                  Manage Admins
-                </Button>
+                  {stadium.imageUrl ? (
+                    <Box
+                      component="img"
+                      src={stadium.imageUrl}
+                      alt={stadium.name}
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        filter: 'brightness(0.9)'
+                      }}
+                    />
+                  ) : (
+                    <Box
+                      sx={{
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#999'
+                      }}
+                    >
+                      <Typography>No Image</Typography>
+                    </Box>
+                  )}
+                </Box>
+                <Box sx={{ p: 3 }}>
+                  <Typography variant="h6" color="#2D2D2D" gutterBottom>{stadium.name}</Typography>
+                  <Typography variant="body2" color="gray" gutterBottom>
+                    📍 {stadium.address}
+                  </Typography>
+                  <Typography variant="body2" color="gray" gutterBottom>
+                    👥 Capacity: {stadium.capacity}
+                  </Typography>
+                  <Typography variant="body2" color="#aaa" gutterBottom>
+                    {stadium.description?.substring(0, 120)}
+                  </Typography>
+                  <Typography variant="body2" color="gray" sx={{ mt: 1 }}>
+                    👥 Admins: {stadium.admins?.length || 1}
+                  </Typography>
+                </Box>
+                <Box sx={{ px: 3, pb: 3, display: 'grid', gap: 2 }}>
+                  {user.role === 'stadium_owner' ? (
+                    <>
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        sx={{
+                          backgroundColor: '#15BE77',
+                          '&:hover': { backgroundColor: '#13a86b' },
+                          borderRadius: '8px',
+                          fontWeight: 'bold'
+                        }}
+                        onClick={() => {
+                          setSelectedStadium(stadium);
+                          navigate('/dashboard');
+                        }}
+                        endIcon={<ArrowForwardIcon />}
+                      >
+                        Go to Dashboard
+                      </Button>
+                      <Button
+                        fullWidth
+                        variant="outlined"
+                        onClick={() => handleManageAdmins(stadium)}
+                        sx={{ borderRadius: '8px' }}
+                      >
+                        Manage Admins
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      sx={{
+                        backgroundColor: '#15BE77',
+                        '&:hover': { backgroundColor: '#13a86b' },
+                        borderRadius: '8px',
+                        fontWeight: 'bold'
+                      }}
+                      onClick={() => {
+                        setSelectedStadium(stadium);
+                        navigate(`/shops/new?stadiumId=${stadium.id}`);
+                      }}
+                      endIcon={<ArrowForwardIcon />}
+                    >
+                      Create Shop Here
+                    </Button>
+                  )}
+                </Box>
               </Box>
-            </Box>
-          ))}
+            ))
+          )}
         </Box>
       </Container>
 

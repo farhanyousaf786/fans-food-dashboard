@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../config/firebase';
 import './Auth.css';
 
 const Auth = () => {
@@ -9,10 +11,10 @@ const Auth = () => {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
-    venueName: '',
     email: '',
     password: '',
-    adminPin: ''
+    adminPin: '',
+    role: 'stadium_owner'
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -32,16 +34,28 @@ const Auth = () => {
     setLoading(true);
 
     try {
+      if (!formData.email || !formData.password) {
+        throw new Error('Please fill in all fields');
+      }
+
       if (isLogin) {
-        await login(formData.email, formData.password);
-        navigate('/stadiums');
+        const result = await login(formData.email, formData.password);
+        // Navigate based on user role
+        const userDoc = await getDoc(doc(db, 'users', result.user.uid));
+        const userData = userDoc.data();
+        if (userData?.role === 'stadium_owner') {
+          navigate('/stadiums');
+        } else if (userData?.role === 'shop_owner') {
+          navigate('/stadiums'); // Shop owners see list of stadiums
+        }
       } else {
         if (formData.adminPin !== 'fanfood786') {
           throw new Error('Invalid admin PIN');
         }
         await signup(formData.email, formData.password, {
-          role: 'admin',
-          createdAt: new Date().toISOString()
+          role: formData.role,
+          venues: formData.role === 'stadium_owner' ? [] : undefined,
+          shops: formData.role === 'shop_owner' ? [] : undefined
         });
         navigate('/stadiums');
       }
@@ -55,10 +69,10 @@ const Auth = () => {
     setIsLogin(!isLogin);
     setError('');
     setFormData({
-      venueName: '',
       email: '',
       password: '',
-      adminPin: ''
+      adminPin: '',
+      role: 'stadium_owner'
     });
   };
 
@@ -78,7 +92,21 @@ const Auth = () => {
           <form onSubmit={handleSubmit}>
             {!isLogin && (
               <>
-             
+                <div className="form-field">
+                  <label htmlFor="role">Account Type</label>
+                  <select
+                    id="role"
+                    name="role"
+                    value={formData.role}
+                    onChange={handleInputChange}
+                    required
+                    className="auth-select"
+                  >
+                    <option value="stadium_owner">Stadium Owner</option>
+                    <option value="shop_owner">Shop Owner</option>
+                  </select>
+                </div>
+
                 <div className="form-field">
                   <label htmlFor="adminPin">Admin PIN</label>
                   <div style={{ position: 'relative' }}>
