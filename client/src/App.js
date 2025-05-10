@@ -1,4 +1,5 @@
 import React from 'react';
+import Header from './components/Header';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { Box } from '@mui/material';
@@ -37,9 +38,18 @@ const theme = createTheme({
 
 const DashboardLayout = ({ children }) => {
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      <Header />
       <Sidebar />
-      <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
+      <Box 
+        component="main" 
+        sx={{ 
+          flexGrow: 1, 
+          p: 3, 
+          mt: '70px',  // Match header height
+          backgroundColor: '#f8f9fa'
+        }}
+      >
         {children}
       </Box>
     </Box>
