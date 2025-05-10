@@ -1,68 +1,96 @@
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { useShop } from '../context/ShopContext';
-import './Sidebar.css';
-import HomeIcon from '@mui/icons-material/Home';
+import { useNavigate, useLocation } from 'react-router-dom';
+import {
+    Box,
+    Drawer,
+    List,
+    ListItem,
+    ListItemButton,
+    ListItemIcon,
+    ListItemText
+} from '@mui/material';
+import {
+    Person as PersonIcon,
+    Settings as ManageIcon,
+    Stadium as StadiumIcon,
+    Logout as LogoutIcon,
+} from '@mui/icons-material';
 
-import ReceiptIcon from '@mui/icons-material/Receipt';
-import PeopleIcon from '@mui/icons-material/People';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import GroupsIcon from '@mui/icons-material/Groups';
-import StadiumIcon from '@mui/icons-material/Stadium';
-import StorefrontIcon from '@mui/icons-material/Storefront';
-import { Badge } from '@mui/material';
+const drawerWidth = 240;
+
+const menuItems = [
+    { text: 'Profile', icon: <PersonIcon />, path: '/profile' },
+    { text: 'Manage', icon: <ManageIcon />, path: '/manage' },
+    { text: 'Stadium', icon: <StadiumIcon />, path: '/stadium' },
+];
 
 const Sidebar = () => {
-  const location = useLocation();
-  const { selectedShop } = useShop();
+    const navigate = useNavigate();
+    const location = useLocation();
 
-  return (
-    <div className="sidebar">
-      <div className="sidebar-header">
-        <div className="sidebar-logo">
-          <img src="https://i.imgur.com/a7sYFli.png" alt="FansFood" />
-          <span>FansFood</span>
-        </div>
-      </div>
-      <div className="sidebar-content">
-        <NavLink to="/stadiums" className="nav-item" activeClassName="active">
-          <StadiumIcon /> Stadiums
-        </NavLink>
+    const handleLogout = () => {
+        localStorage.removeItem('user');
+        navigate('/');
+    };
 
-        <NavLink to="/dashboard" className="nav-item" activeClassName="active">
-          <HomeIcon /> Dashboard
-        </NavLink>
-
-        <NavLink to="/orders" className="nav-item" activeClassName="active">
-          <Badge badgeContent={0} color="error">
-            <ReceiptIcon />
-          </Badge>
-          Orders
-        </NavLink>
-
-        <NavLink to="/shops" className="nav-item" activeClassName="active">
-          <StorefrontIcon /> Shops
-        </NavLink>
-
-
-   
-
-        <NavLink to="/analytics" className="nav-item" activeClassName="active">
-          <BarChartIcon /> Analytics
-        </NavLink>
-      </div>
-
-      <div className="sidebar-footer">
-
-
-        <div className="footer-text">
-          <p>FansFood Admin Dashboard</p>
-          <small>© 2024 All Rights Reserved</small>
-        </div>
-      </div>
-    </div>
-  );
+    return (
+        <Drawer
+            variant="permanent"
+            sx={{
+                width: drawerWidth,
+                flexShrink: 0,
+                '& .MuiDrawer-paper': {
+                    width: drawerWidth,
+                    boxSizing: 'border-box',
+                    backgroundColor: '#f8f9fa',
+                    borderRight: '1px solid rgba(0, 0, 0, 0.12)',
+                },
+            }}
+        >
+            <Box sx={{ overflow: 'auto', mt: 8 }}>
+                <List>
+                    {menuItems.map((item) => (
+                        <ListItem key={item.text} disablePadding>
+                            <ListItemButton
+                                selected={location.pathname === item.path}
+                                onClick={() => navigate(item.path)}
+                                sx={{
+                                    '&.Mui-selected': {
+                                        backgroundColor: 'primary.light',
+                                        '&:hover': {
+                                            backgroundColor: 'primary.light',
+                                        },
+                                    },
+                                }}
+                            >
+                                <ListItemIcon sx={{ color: location.pathname === item.path ? 'primary.main' : 'inherit' }}>
+                                    {item.icon}
+                                </ListItemIcon>
+                                <ListItemText 
+                                    primary={item.text}
+                                    sx={{ 
+                                        color: location.pathname === item.path ? 'primary.main' : 'inherit'
+                                    }}
+                                />
+                            </ListItemButton>
+                        </ListItem>
+                    ))}
+                </List>
+                <Box sx={{ position: 'fixed', bottom: 0, width: drawerWidth }}>
+                    <List>
+                        <ListItem disablePadding>
+                            <ListItemButton onClick={handleLogout}>
+                                <ListItemIcon>
+                                    <LogoutIcon />
+                                </ListItemIcon>
+                                <ListItemText primary="Logout" />
+                            </ListItemButton>
+                        </ListItem>
+                    </List>
+                </Box>
+            </Box>
+        </Drawer>
+    );
 };
 
 export default Sidebar;

@@ -1,26 +1,14 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import Header from './components/Header';
-import Sidebar from './components/Sidebar';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { Box } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import { StadiumProvider } from './context/StadiumContext';
-import { ShopProvider } from './context/ShopContext';
-
-import Auth from './pages/auth/Auth';
-import Profile from './pages/Profile';
+import Auth from './pages/Auth';
 import Dashboard from './pages/dashboard/Dashboard';
-import Orders from './pages/orders/Orders';
-import Menu from './pages/menus/Menu';
-
-import Shops from './pages/shops/Shops';
-import AddCustomer from './pages/customers/AddCustomer';
-import Members from './pages/customers/Members';
-import GeneralCustomers from './pages/customers/GeneralCustomers';
-import Analytics from './pages/analytics/Analytics';
-import Stadiums from './pages/stadiums/Stadiums';
-import RequireAuth from './components/RequireAuth';
+import Profile from './pages/profile/Profile';
+import Manage from './pages/manage/Manage';
+import Stadium from './pages/stadium/Stadium';
+import Sidebar from './components/Sidebar';
 
 // Create theme instance
 const theme = createTheme({
@@ -41,111 +29,50 @@ const theme = createTheme({
   },
   typography: {
     fontFamily: '"Lato", "Helvetica", "Arial", sans-serif',
-    h1: {
-      fontFamily: '"Lato", "Helvetica", "Arial", sans-serif',
-      fontWeight: 700,
-    },
-    h2: {
-      fontFamily: '"Lato", "Helvetica", "Arial", sans-serif',
-      fontWeight: 700,
-    },
-    h3: {
-      fontFamily: '"Lato", "Helvetica", "Arial", sans-serif',
-      fontWeight: 600,
-    },
-    h4: {
-      fontFamily: '"Lato", "Helvetica", "Arial", sans-serif',
-      fontWeight: 600,
-    },
-    body1: {
-      fontFamily: '"Lato", "Helvetica", "Arial", sans-serif',
-      fontWeight: 400,
-    },
-    body2: {
-      fontFamily: '"Lato", "Helvetica", "Arial", sans-serif',
-      fontWeight: 400,
-    },
     button: {
-      fontFamily: '"Lato", "Helvetica", "Arial", sans-serif',
-      fontWeight: 500,
       textTransform: 'none',
     },
   },
 });
 
-const PrivateRoute = ({ children }) => {
-  const { user } = useAuth();
-  return user ? children : <Navigate to="/" />;
-};
-
-const AppLayout = ({ children }) => {
-  const location = useLocation();
-  const isAuthPage = location.pathname === '/';
-
-  return isAuthPage ? children : (
-    <div className="app-layout">
+const DashboardLayout = ({ children }) => {
+  return (
+    <Box sx={{ display: 'flex' }}>
       <Sidebar />
-      <Header />
-      <main className="main-content">
+      <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
         {children}
-      </main>
-    </div>
+      </Box>
+    </Box>
   );
 };
 
 function App() {
+  const isAuthenticated = !!localStorage.getItem('user');
+
   return (
-    <AuthProvider>
-      <StadiumProvider>
-        <ShopProvider>
-          <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <Router>
-              <Routes>
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/" element={<Navigate to="/stadiums" />} />
-                <Route path="/stadiums" element={
-                  <RequireAuth>
-                    <Stadiums />
-                  </RequireAuth>
-                } />
-                <Route path="/dashboard/:stadiumId" element={
-                  <RequireAuth>
-                    <AppLayout><Dashboard /></AppLayout>
-                  </RequireAuth>
-                } />
-                <Route path="/shops/new" element={
-                  <RequireAuth>
-                    <AppLayout><Shops /></AppLayout>
-                  </RequireAuth>
-                } />
-                <Route path="/customers/add" element={
-                  <RequireAuth>
-                    <AppLayout><AddCustomer /></AppLayout>
-                  </RequireAuth>
-                } />
-                <Route path="/customers/members" element={
-                  <RequireAuth>
-                    <AppLayout><Members /></AppLayout>
-                  </RequireAuth>
-                } />
-                <Route path="/customers/general" element={
-                  <RequireAuth>
-                    <AppLayout><GeneralCustomers /></AppLayout>
-                  </RequireAuth>
-                } />
-                <Route path="/analytics" element={
-                  <RequireAuth>
-                    <AppLayout><Analytics /></AppLayout>
-                  </RequireAuth>
-                } />
-                <Route path="*" element={<Navigate to="/stadiums" />} />
-              </Routes>
-            </Router>
-          </ThemeProvider>
-        </ShopProvider>
-      </StadiumProvider>
-    </AuthProvider>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Router>
+        <Routes>
+          <Route path="/" element={
+            isAuthenticated ? <Navigate to="/dashboard" /> : <Auth />
+          } />
+          <Route path="/dashboard" element={
+            isAuthenticated ? <DashboardLayout><Dashboard /></DashboardLayout> : <Navigate to="/" />
+          } />
+          <Route path="/profile" element={
+            isAuthenticated ? <DashboardLayout><Profile /></DashboardLayout> : <Navigate to="/" />
+          } />
+          <Route path="/manage" element={
+            isAuthenticated ? <DashboardLayout><Manage /></DashboardLayout> : <Navigate to="/" />
+          } />
+          <Route path="/stadium" element={
+            isAuthenticated ? <DashboardLayout><Stadium /></DashboardLayout> : <Navigate to="/" />
+          } />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 }
 
