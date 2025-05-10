@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStadium } from '../../context/StadiumContext';
+import { useShop } from '../../context/ShopContext';
 import {
   collection,
   query,
@@ -41,11 +42,13 @@ import {
   FormControlLabel
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 const Shops = () => {
   const { selectedStadium } = useStadium();
+  const { setSelectedShop: setGlobalSelectedShop } = useShop();
   const navigate = useNavigate();
 
   const [shops, setShops] = useState([]);
@@ -243,28 +246,66 @@ const Shops = () => {
         </Button>
       </Box>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={4}>
         {shops.map(shop => (
-          <Grid item xs={12} sm={6} md={4} key={shop.id}>
-            <Card>
+          <Grid item xs={12} sm={6} md={4} lg={3} key={shop.id}>
+            <Card sx={{
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+              }
+            }}>
               {shop.imageUrl && (
                 <CardMedia
                   component="img"
-                  height="200"
+                  height="180"
                   image={shop.imageUrl}
                   alt={shop.name}
                 />
               )}
-              <CardContent>
-                <Typography variant="h6" component="div">
+              <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                <Typography 
+                  variant="h6" 
+                  component="div" 
+                  sx={{ 
+                    fontWeight: 600,
+                    mb: 1,
+                    color: 'primary.main'
+                  }}
+                >
                   {shop.name}
                 </Typography>
                 {shop.description && (
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography 
+                  variant="body2" 
+                  color="text.secondary"
+                  sx={{ 
+                    mb: 2,
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    lineHeight: 1.5
+                  }}
+                >
                     {shop.description}
                   </Typography>
                 )}
-                <Typography variant="body2">
+                <Typography 
+                  variant="body2"
+                  sx={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    mb: 2,
+                    color: 'text.primary'
+                  }}
+                >
+                  <LocationOnIcon fontSize="small" color="action" />
                   Location: {shop.location}
                 </Typography>
                 <FormControlLabel
@@ -277,26 +318,55 @@ const Shops = () => {
                   label={shop.isOpen ? 'Open' : 'Closed'}
                 />
               </CardContent>
-              <CardActions>
+              <CardActions sx={{ 
+                p: 2, 
+                pt: 0,
+                display: 'flex',
+                justifyContent: 'space-between'
+              }}>
                 <Button
-                  size="small"
-                  onClick={() => navigate(`/shops/${shop.id}/menu`)}
+                  variant="contained"
+                  size="medium"
+                  onClick={() => {
+                    setGlobalSelectedShop(shop);
+                    navigate(`/shops/${shop.id}/menu`);
+                  }}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 600
+                  }}
                 >
                   View Menu
                 </Button>
-                <IconButton
-                  onClick={() => handleEditShop(shop)}
-                  size="small"
-                >
-                  <EditIcon />
-                </IconButton>
-                <IconButton
-                  onClick={() => handleDeleteShop(shop)}
-                  size="small"
-                  color="error"
-                >
-                  <DeleteIcon />
-                </IconButton>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <IconButton
+                    onClick={() => handleEditShop(shop)}
+                    size="medium"
+                    sx={{
+                      backgroundColor: 'action.hover',
+                      '&:hover': {
+                        backgroundColor: 'action.selected'
+                      }
+                    }}
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    onClick={() => handleDeleteShop(shop)}
+                    size="medium"
+                    sx={{
+                      backgroundColor: 'error.lighter',
+                      color: 'error.main',
+                      '&:hover': {
+                        backgroundColor: 'error.light',
+                        color: 'error.dark'
+                      }
+                    }}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Box>
               </CardActions>
             </Card>
           </Grid>

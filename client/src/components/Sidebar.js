@@ -1,8 +1,9 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
+import { useShop } from '../context/ShopContext';
 import './Sidebar.css';
 import HomeIcon from '@mui/icons-material/Home';
-import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
+
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import PeopleIcon from '@mui/icons-material/People';
 import BarChartIcon from '@mui/icons-material/BarChart';
@@ -13,6 +14,9 @@ import StorefrontIcon from '@mui/icons-material/Storefront';
 import { Badge } from '@mui/material';
 
 const Sidebar = () => {
+  const location = useLocation();
+  const { selectedShop } = useShop();
+
   return (
     <div className="sidebar">
       <div className="sidebar-header">
@@ -41,9 +45,6 @@ const Sidebar = () => {
           <StorefrontIcon /> Shops
         </NavLink>
 
-        <NavLink to="/menus" className="nav-item" activeClassName="active">
-          <RestaurantMenuIcon /> Menus
-        </NavLink>
 
         <div className="nav-group">
           <div className="nav-header">Customers</div>
@@ -64,12 +65,7 @@ const Sidebar = () => {
       </div>
 
       <div className="sidebar-footer">
-        <div className="add-menu-card">
-          <img src="/assets/images/menu-icon.png" alt="Menu" className="menu-icon" />
-          <h3>Organize your menus</h3>
-          <p>Add and manage your menu items here</p>
-          <button className="add-menu-btn">+ Add Menus</button>
-        </div>
+
 
         <div className="footer-text">
           <p>FansFood Admin Dashboard</p>

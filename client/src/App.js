@@ -6,11 +6,13 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { StadiumProvider } from './context/StadiumContext';
+import { ShopProvider } from './context/ShopContext';
+
 import Auth from './pages/auth/Auth';
 import Profile from './pages/Profile';
 import Dashboard from './pages/dashboard/Dashboard';
 import Orders from './pages/orders/Orders';
-import Menus from './pages/menus/Menus';
+
 import Shops from './pages/shops/Shops';
 import AddCustomer from './pages/customers/AddCustomer';
 import Members from './pages/customers/Members';
@@ -94,6 +96,8 @@ function App() {
   return (
     <AuthProvider>
       <StadiumProvider>
+        <ShopProvider>
+
         <ThemeProvider theme={theme}>
         <CssBaseline />
         <Router>
@@ -104,7 +108,7 @@ function App() {
             <Route path="/dashboard" element={<RequireAuth><AppLayout><Dashboard /></AppLayout></RequireAuth>} />
             <Route path="/profile" element={<RequireAuth><AppLayout><Profile /></AppLayout></RequireAuth>} />
             <Route path="/orders" element={<RequireAuth><AppLayout><Orders /></AppLayout></RequireAuth>} />
-            <Route path="/menus" element={<RequireAuth><AppLayout><Menus /></AppLayout></RequireAuth>} />
+            
             <Route path="/customers/add" element={<RequireAuth><AppLayout><AddCustomer /></AppLayout></RequireAuth>} />
             <Route path="/customers/members" element={<RequireAuth><AppLayout><Members /></AppLayout></RequireAuth>} />
             <Route path="/customers/general" element={<RequireAuth><AppLayout><GeneralCustomers /></AppLayout></RequireAuth>} />
@@ -113,6 +117,8 @@ function App() {
           </Routes>
         </Router>
         </ThemeProvider>
+
+        </ShopProvider>
       </StadiumProvider>
     </AuthProvider>
   );
