@@ -14,6 +14,7 @@ import AddCustomer from './pages/customers/AddCustomer';
 import Members from './pages/customers/Members';
 import GeneralCustomers from './pages/customers/GeneralCustomers';
 import Analytics from './pages/analytics/Analytics';
+import Stadiums from './pages/stadiums/Stadiums';
 import RequireAuth from './components/RequireAuth';
 
 // Create theme instance
@@ -95,6 +96,7 @@ function App() {
         <Router>
           <Routes>
             <Route path="/" element={<Auth />} />
+            <Route path="/stadiums" element={<RequireAuth><Stadiums /></RequireAuth>} />
             <Route path="/dashboard" element={<RequireAuth><AppLayout><Dashboard /></AppLayout></RequireAuth>} />
             <Route path="/profile" element={<RequireAuth><AppLayout><Profile /></AppLayout></RequireAuth>} />
             <Route path="/orders" element={<RequireAuth><AppLayout><Orders /></AppLayout></RequireAuth>} />
@@ -103,7 +105,7 @@ function App() {
             <Route path="/customers/members" element={<RequireAuth><AppLayout><Members /></AppLayout></RequireAuth>} />
             <Route path="/customers/general" element={<RequireAuth><AppLayout><GeneralCustomers /></AppLayout></RequireAuth>} />
             <Route path="/analytics" element={<RequireAuth><AppLayout><Analytics /></AppLayout></RequireAuth>} />
-            <Route path="*" element={<Navigate to="/" />} />
+            <Route path="*" element={<Navigate to="/stadiums" />} />
           </Routes>
         </Router>
       </ThemeProvider>

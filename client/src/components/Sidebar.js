@@ -8,6 +8,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import GroupsIcon from '@mui/icons-material/Groups';
+import StadiumIcon from '@mui/icons-material/Stadium';
 import { Badge } from '@mui/material';
 
 const Sidebar = () => {
@@ -20,6 +21,10 @@ const Sidebar = () => {
         </div>
       </div>
       <div className="sidebar-content">
+        <NavLink to="/stadiums" className="nav-item" activeClassName="active">
+          <StadiumIcon /> Stadiums
+        </NavLink>
+
         <NavLink to="/dashboard" className="nav-item" activeClassName="active">
           <HomeIcon /> Dashboard
         </NavLink>

@@ -34,7 +34,7 @@ const Auth = () => {
     try {
       if (isLogin) {
         await login(formData.email, formData.password);
-        navigate('/dashboard');
+        navigate('/stadiums');
       } else {
         if (formData.adminPin !== 'fanfood786') {
           throw new Error('Invalid admin PIN');
@@ -45,7 +45,7 @@ const Auth = () => {
           shops: [],
           createdAt: new Date().toISOString()
         });
-        navigate('/dashboard');
+        navigate('/stadiums');
       }
     } catch (err) {
       setError(err.message);
