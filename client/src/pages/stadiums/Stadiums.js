@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Container,
   Typography,
@@ -15,36 +15,45 @@ import {
   Box,
   Snackbar,
   Alert,
-  Paper,
   AppBar,
   Toolbar,
-  IconButton
+  IconButton,
+  CircularProgress 
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
-import { db } from '../../config/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../../config/firebase';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import { useStadium } from '../../context/StadiumContext';
+import { useNavigate } from 'react-router-dom';
+import './Stadiums.css';
 
 const Stadiums = () => {
   const [stadiums, setStadiums] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [newStadium, setNewStadium] = useState({
     name: '',
     address: '',
     capacity: '',
-    description: ''
+    description: '',
+    imageUrl: ''
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'success'
   });
-  const { user, logout, loading } = useAuth();
-  const navigate = useNavigate();
+
+  const fileInputRef = useRef(null);
+  const { user, logout } = useAuth();
   const { setSelectedStadium } = useStadium();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadStadiums();
@@ -68,10 +77,41 @@ const Stadiums = () => {
     }
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        showSnackbar('Image size should be less than 5MB', 'error');
+        return;
+      }
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleAddStadium = async () => {
+    if (!newStadium.name || !newStadium.address || !newStadium.capacity || !newStadium.description) {
+      showSnackbar('Please fill in all required fields', 'error');
+      return;
+    }
+
     try {
+      setLoading(true);
+      let imageUrl = '';
+      
+      if (imageFile) {
+        const imageRef = ref(storage, `stadiums/${user.uid}/${Date.now()}_${imageFile.name}`);
+        await uploadBytes(imageRef, imageFile);
+        imageUrl = await getDownloadURL(imageRef);
+      }
+
       const stadiumData = {
         ...newStadium,
+        imageUrl,
         adminId: user.uid,
         createdAt: new Date().toISOString()
       };
@@ -79,16 +119,28 @@ const Stadiums = () => {
       await addDoc(collection(db, 'stadiums'), stadiumData);
       showSnackbar('Stadium added successfully', 'success');
       setOpenDialog(false);
-      setNewStadium({
-        name: '',
-        address: '',
-        capacity: '',
-        description: ''
-      });
-      loadStadiums();
+      resetForm();
+      await loadStadiums();
     } catch (error) {
       console.error('Error adding stadium:', error);
-      showSnackbar('Error adding stadium', 'error');
+      showSnackbar(error.message || 'Error adding stadium', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setNewStadium({
+      name: '',
+      address: '',
+      capacity: '',
+      description: '',
+      imageUrl: ''
+    });
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -110,19 +162,12 @@ const Stadiums = () => {
       navigate('/');
     } catch (error) {
       console.error('Error logging out:', error);
+      showSnackbar('Error logging out', 'error');
     }
   };
 
-  if (loading) {
-    return (
-      <Box sx={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Typography variant="h5">Loading...</Typography>
-      </Box>
-    );
-  }
-
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <AppBar position="static" sx={{ backgroundColor: '#15BE77' }}>
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
@@ -134,9 +179,22 @@ const Stadiums = () => {
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="md" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
         {stadiums.length === 0 ? (
-          <Paper sx={{ p: 4, textAlign: 'center', mt: 4 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: '60vh',
+              textAlign: 'center',
+              p: 3,
+              bgcolor: 'background.paper',
+              borderRadius: 2,
+              boxShadow: 1
+            }}
+          >
             <Typography variant="h5" gutterBottom>
               Welcome to Stadium Management
             </Typography>
@@ -151,7 +209,7 @@ const Stadiums = () => {
             >
               Add Your First Stadium
             </Button>
-          </Paper>
+          </Box>
         ) : (
           <>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3, alignItems: 'center' }}>
@@ -169,30 +227,90 @@ const Stadiums = () => {
 
             <Grid container spacing={3}>
               {stadiums.map((stadium) => (
-                <Grid item xs={12} md={6} key={stadium.id}>
-                  <Card>
-                    <CardContent>
-                      <Typography variant="h6" component="h2">
+                <Grid item xs={12} sm={6} md={4} key={stadium.id}>
+                  <Card
+                    sx={{
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: 4
+                      }
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        position: 'relative',
+                        paddingTop: '56.25%', // 16:9 aspect ratio
+                        bgcolor: 'grey.200'
+                      }}
+                    >
+                      {stadium.imageUrl ? (
+                        <Box
+                          component="img"
+                          src={stadium.imageUrl}
+                          alt={stadium.name}
+                          sx={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover'
+                          }}
+                        />
+                      ) : (
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          <Typography color="textSecondary">No Image</Typography>
+                        </Box>
+                      )}
+                    </Box>
+                    <CardContent sx={{ flexGrow: 1 }}>
+                      <Typography variant="h6" component="h2" gutterBottom>
                         {stadium.name}
                       </Typography>
                       <Typography color="textSecondary" gutterBottom>
-                        {stadium.address}
+                        📍 {stadium.address}
                       </Typography>
-                      <Typography variant="body2">
-                        Capacity: {stadium.capacity}
+                      <Typography variant="body2" paragraph>
+                        👥 Capacity: {stadium.capacity}
                       </Typography>
-                      <Typography variant="body2">
+                      <Typography
+                        variant="body2"
+                        color="textSecondary"
+                        sx={{
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden'
+                        }}
+                      >
                         {stadium.description}
                       </Typography>
                     </CardContent>
-                    <CardActions>
-                      <Button 
-                        variant="contained" 
-                        color="primary" 
+                    <CardActions sx={{ p: 2, pt: 0 }}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        fullWidth
                         onClick={() => {
                           setSelectedStadium(stadium);
                           navigate('/dashboard');
                         }}
+                        endIcon={<ArrowForwardIcon />}
                       >
                         Go to Dashboard
                       </Button>
@@ -205,46 +323,112 @@ const Stadiums = () => {
         )}
       </Container>
 
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+      <Dialog
+        open={openDialog}
+        onClose={() => !loading && setOpenDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Add New Stadium</DialogTitle>
         <DialogContent>
+          <Box
+            sx={{
+              mt: 2,
+              mb: 3,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center'
+            }}
+          >
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              style={{ display: 'none' }}
+              ref={fileInputRef}
+            />
+            <Box
+              onClick={() => !loading && fileInputRef.current?.click()}
+              sx={{
+                width: '100%',
+                height: 200,
+                border: '2px dashed',
+                borderColor: 'grey.300',
+                borderRadius: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: loading ? 'default' : 'pointer',
+                backgroundImage: imagePreview ? `url(${imagePreview})` : 'none',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                '&:hover': {
+                  borderColor: loading ? 'grey.300' : 'primary.main'
+                }
+              }}
+            >
+              {!imagePreview && (
+                <Typography color="textSecondary">
+                  {loading ? 'Uploading...' : 'Click to upload stadium image'}
+                </Typography>
+              )}
+            </Box>
+          </Box>
+
           <TextField
-            autoFocus
-            margin="dense"
             label="Stadium Name"
             fullWidth
+            required
             value={newStadium.name}
             onChange={(e) => setNewStadium(prev => ({ ...prev, name: e.target.value }))}
+            disabled={loading}
+            sx={{ mb: 2 }}
           />
           <TextField
-            margin="dense"
             label="Address"
             fullWidth
+            required
             value={newStadium.address}
             onChange={(e) => setNewStadium(prev => ({ ...prev, address: e.target.value }))}
+            disabled={loading}
+            sx={{ mb: 2 }}
           />
           <TextField
-            margin="dense"
             label="Capacity"
             type="number"
             fullWidth
+            required
             value={newStadium.capacity}
             onChange={(e) => setNewStadium(prev => ({ ...prev, capacity: e.target.value }))}
+            disabled={loading}
+            sx={{ mb: 2 }}
           />
           <TextField
-            margin="dense"
             label="Description"
             fullWidth
             multiline
             rows={4}
+            required
             value={newStadium.description}
             onChange={(e) => setNewStadium(prev => ({ ...prev, description: e.target.value }))}
+            disabled={loading}
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button onClick={handleAddStadium} color="primary">
-            Add
+        <DialogActions sx={{ p: 2.5 }}>
+          <Button
+            onClick={() => setOpenDialog(false)}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAddStadium}
+            variant="contained"
+            color="primary"
+            disabled={loading}
+            startIcon={loading ? <CircularProgress size={20} /> : <AddIcon />}
+          >
+            {loading ? 'Adding...' : 'Add Stadium'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -253,8 +437,14 @@ const Stadiums = () => {
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity}>
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>
