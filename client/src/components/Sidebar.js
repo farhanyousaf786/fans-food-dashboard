@@ -46,18 +46,7 @@ const Sidebar = () => {
         </NavLink>
 
 
-        <div className="nav-group">
-          <div className="nav-header">Customers</div>
-          <NavLink to="/customers/add" className="nav-item sub-item">
-            <PersonAddIcon /> Add New
-          </NavLink>
-          <NavLink to="/customers/members" className="nav-item sub-item">
-            <GroupsIcon /> Members
-          </NavLink>
-          <NavLink to="/customers/general" className="nav-item sub-item">
-            <PeopleIcon /> General Customers
-          </NavLink>
-        </div>
+   
 
         <NavLink to="/analytics" className="nav-item" activeClassName="active">
           <BarChartIcon /> Analytics
