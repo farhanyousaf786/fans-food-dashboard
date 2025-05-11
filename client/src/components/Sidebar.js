@@ -22,7 +22,6 @@ const drawerWidth = 240;
 
 const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-    { text: 'Stadium', icon: <StadiumIcon />, path: '/stadium' },
     { text: 'Profile', icon: <PersonIcon />, path: '/profile' },
 ];
 

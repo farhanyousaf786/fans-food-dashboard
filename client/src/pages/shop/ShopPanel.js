@@ -145,7 +145,12 @@ const ShopPanel = () => {
           ) : (
             <div className="stadiums-grid">
               {shops.map((shop) => (
-                <Card className="stadium-card" key={shop.id}>
+                <Card 
+                  className="stadium-card" 
+                  key={shop.id}
+                  onClick={() => navigate('/dashboard', { state: { shopData: shop } })}
+                  sx={{ cursor: 'pointer', '&:hover': { transform: 'scale(1.02)', transition: 'transform 0.2s' } }}
+                >
                   <CardContent className="stadium-content">
                     <div className="stadium-header">
                       <Typography variant="h6" className="stadium-title">{shop.name}</Typography>

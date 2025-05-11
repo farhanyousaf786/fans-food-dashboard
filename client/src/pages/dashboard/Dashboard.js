@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Box, Typography, Grid, Paper, ToggleButtonGroup, ToggleButton } from '@mui/material';
-import { RestaurantMenu, AttachMoney, ShoppingCart, People } from '@mui/icons-material';
+import { useLocation } from 'react-router-dom';
+import { Box, Typography, Grid, Paper, ToggleButtonGroup, ToggleButton, Divider } from '@mui/material';
+import { RestaurantMenu, AttachMoney, ShoppingCart, People, LocationOn, Store } from '@mui/icons-material';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const mockData = [
@@ -18,6 +19,8 @@ const mockData = [
 ];
 
 const Dashboard = () => {
+    const location = useLocation();
+    const shopData = location.state?.shopData;
     const [timeRange, setTimeRange] = useState('today');
 
     const handleTimeRangeChange = (event, newValue) => {
@@ -36,6 +39,31 @@ const Dashboard = () => {
             marginLeft: '240px', // Sidebar width
             width: 'calc(100% - 240px)' // Full width minus sidebar
         }}>
+            {/* Shop Details Card */}
+            {shopData && (
+                <Paper sx={{ p: 3, mb: 4, borderRadius: '12px' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                        <Store sx={{ fontSize: 40, color: '#15BE77', mr: 2 }} />
+                        <Typography variant="h4" fontWeight="bold">{shopData.name}</Typography>
+                    </Box>
+                    <Divider sx={{ my: 2 }} />
+                    <Grid container spacing={3}>
+                        <Grid item xs={12} md={4}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                <LocationOn sx={{ color: '#15BE77', mr: 1 }} />
+                                <Typography><strong>Stadium:</strong> {shopData.stadiumName}</Typography>
+                            </Box>
+                            <Typography sx={{ ml: 4 }}><strong>Location:</strong> {shopData.location}</Typography>
+                            <Typography sx={{ ml: 4 }}><strong>Gate:</strong> {shopData.gate}</Typography>
+                            <Typography sx={{ ml: 4 }}><strong>Floor:</strong> {shopData.floor}</Typography>
+                        </Grid>
+                        <Grid item xs={12} md={8}>
+                            <Typography><strong>Description:</strong></Typography>
+                            <Typography sx={{ mt: 1 }}>{shopData.description}</Typography>
+                        </Grid>
+                    </Grid>
+                </Paper>
+            )}
             {/* Stats Cards */}
             <Grid container spacing={4} sx={{ px: 2 }} mb={4}>
                 <Grid item xs={12} sm={6} md={3}>
