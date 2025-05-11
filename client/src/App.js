@@ -1,11 +1,13 @@
 import React from 'react';
 import Header from './components/Header';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { Box } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
 import Auth from './pages/Auth';
 import Dashboard from './pages/dashboard/Dashboard';
+import AdminPanel from './pages/admin/AdminPanel';
+import ShopPanel from './pages/shop/ShopPanel';
 import Profile from './pages/profile/Profile';
 import Manage from './pages/manage/Manage';
 import Stadium from './pages/stadium/Stadium';
@@ -56,6 +58,35 @@ const DashboardLayout = ({ children }) => {
   );
 };
 
+const PrivateRoute = ({ children, requiredRole }) => {
+  const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem('user'));
+
+  if (!user) {
+    return <Navigate to="/auth" />;
+  }
+
+  if (requiredRole && user.role !== requiredRole) {
+    return <Navigate to="/dashboard" />;
+  }
+
+  return children;
+};
+
+const HomeRedirect = () => {
+  const userData = JSON.parse(localStorage.getItem('user'));
+  if (!userData) return <Navigate to="/dashboard" />;
+
+  switch (userData.role) {
+    case 'admin':
+      return <Navigate to="/admin" />;
+    case 'shopowner':
+      return <Navigate to="/shop" />;
+    default:
+      return <Navigate to="/dashboard" />;
+  }
+};
+
 function App() {
   const isAuthenticated = !!localStorage.getItem('user');
 
@@ -64,12 +95,10 @@ function App() {
       <CssBaseline />
       <Router>
         <Routes>
-          <Route path="/" element={
-            isAuthenticated ? <Navigate to="/dashboard" /> : <Auth />
-          } />
-          <Route path="/dashboard" element={
-            isAuthenticated ? <DashboardLayout><Dashboard /></DashboardLayout> : <Navigate to="/" />
-          } />
+          <Route path="/" element={isAuthenticated ? <HomeRedirect /> : <Auth />} />
+          <Route path="/dashboard" element={<PrivateRoute><DashboardLayout><Dashboard /></DashboardLayout></PrivateRoute>} />
+          <Route path="/admin" element={<PrivateRoute requiredRole="admin"><AdminPanel /></PrivateRoute>} />
+          <Route path="/shop" element={<PrivateRoute requiredRole="shopowner"><ShopPanel /></PrivateRoute>} />
           <Route path="/profile" element={
             isAuthenticated ? <DashboardLayout><Profile /></DashboardLayout> : <Navigate to="/" />
           } />

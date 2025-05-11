@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth, db } from '../config/firebase';
+import { auth, db } from "../config/firebase";
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { motion } from 'framer-motion';
 import { FiMail, FiLock, FiUser, FiKey } from 'react-icons/fi';
 import User from '../models/User';
@@ -96,7 +96,22 @@ const Auth = () => {
 
             // Navigate after animation
             setTimeout(() => {
-                navigate('/dashboard');
+                // Check user role and navigate accordingly
+                const userData = JSON.parse(localStorage.getItem('user'));
+                if (userData) {
+                    switch (userData.role) {
+                        case 'admin':
+                            navigate('/admin');
+                            break;
+                        case 'shopowner':
+                            navigate('/shop');
+                            break;
+                        default:
+                            navigate('/dashboard');
+                    }
+                } else {
+                    navigate('/dashboard');
+                }
                 window.location.reload(); // Force reload to update auth state
             }, 500);
 

@@ -37,7 +37,7 @@ const Dashboard = () => {
             width: 'calc(100% - 240px)' // Full width minus sidebar
         }}>
             {/* Stats Cards */}
-            <Grid container spacing={3} mb={4}>
+            <Grid container spacing={4} sx={{ px: 2 }} mb={4}>
                 <Grid item xs={12} sm={6} md={3}>
                     <Paper
                         sx={{
@@ -49,7 +49,7 @@ const Dashboard = () => {
                             alignItems: 'center',
                             borderRadius: '12px',
                             boxShadow: '0 4px 20px rgba(21, 190, 119, 0.15)',
-                            minHeight: '120px'
+                            minHeight: '140px'
                         }}
                     >
                         <Box>
@@ -70,7 +70,7 @@ const Dashboard = () => {
                             alignItems: 'center',
                             borderRadius: '12px',
                             boxShadow: '0 4px 20px rgba(21, 190, 119, 0.15)',
-                            minHeight: '120px'
+                            minHeight: '140px'
                         }}
                     >
                         <Box>
@@ -91,7 +91,7 @@ const Dashboard = () => {
                             alignItems: 'center',
                             borderRadius: '12px',
                             boxShadow: '0 4px 20px rgba(21, 190, 119, 0.15)',
-                            minHeight: '120px'
+                            minHeight: '140px'
                         }}
                     >
                         <Box>
@@ -112,7 +112,7 @@ const Dashboard = () => {
                             alignItems: 'center',
                             borderRadius: '12px',
                             boxShadow: '0 4px 20px rgba(21, 190, 119, 0.15)',
-                            minHeight: '120px'
+                            minHeight: '140px'
                         }}
                     >
                         <Box>
@@ -125,9 +125,9 @@ const Dashboard = () => {
             </Grid>
 
             {/* Orders Summary */}
-            <Grid container spacing={3} mb={4}>
-                <Grid item xs={12} md={6}>
-                    <Paper sx={{ p: 3, borderRadius: '12px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)' }}>
+            <Grid container spacing={4} sx={{ px: 2 }} mb={4}>
+                <Grid item xs={12} md={5} sx={{ height: '400px' }}>
+                    <Paper sx={{ p: 3, borderRadius: '12px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)', height: '100%' }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                             <Typography variant="h6">Orders Summary</Typography>
                             <ToggleButtonGroup
@@ -207,8 +207,8 @@ const Dashboard = () => {
                 </Grid>
 
                 {/* Revenue Chart */}
-                <Grid item xs={12} md={6}>
-                    <Paper sx={{ p: 3, borderRadius: '12px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)' }}>
+                <Grid item xs={12} md={7} sx={{ height: '400px' }}>
+                    <Paper sx={{ p: 3, borderRadius: '12px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)', height: '100%' }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                             <Typography variant="h6">Revenue</Typography>
                             <ToggleButtonGroup
@@ -265,15 +265,15 @@ const Dashboard = () => {
             </Grid>
 
             {/* Customer Map and Trending Menus */}
-            <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                    <Paper sx={{ p: 3, borderRadius: '12px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)' }}>
+            <Grid container spacing={4} sx={{ px: 2 }}>
+                <Grid item xs={12} md={6} sx={{ height: '400px' }}>
+                    <Paper sx={{ p: 3, borderRadius: '12px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)', height: '100%' }}>
                         <Typography variant="h6">Customer Map</Typography>
                         {/* Add map component here */}
                     </Paper>
                 </Grid>
-                <Grid item xs={12} md={6}>
-                    <Paper sx={{ p: 3, borderRadius: '12px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)' }}>
+                <Grid item xs={12} md={6} sx={{ height: '400px' }}>
+                    <Paper sx={{ p: 3, borderRadius: '12px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)', height: '100%' }}>
                         <Typography variant="h6">Daily Trending Menus</Typography>
                         {/* Add trending menus list here */}
                     </Paper>
