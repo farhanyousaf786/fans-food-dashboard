@@ -4,8 +4,11 @@ import { Box, Typography, Button, Grid } from '@mui/material';
 import { Add, Restaurant } from '@mui/icons-material';
 import { db } from '../../config/firebase';
 import { collection, addDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../../config/firebase';
 import MenuItem from '../../models/MenuItem';
-import AddMenuDialog from './components/AddMenuDialog';
+import AddMenuDialog from './components/AddMenuDialod/AddMenuDialog';
+import MenuList from './components/MenuList/MenuList';
 
 const Dashboard = () => {
     const location = useLocation();
@@ -17,7 +20,7 @@ const Dashboard = () => {
         description: '',
         price: '',
         category: '',
-        imageUrl: '',
+        images: [], // Initialize images array
         isAvailable: true,
         preparationTime: 15,
         options: [],
@@ -42,13 +45,21 @@ const Dashboard = () => {
     };
 
     const handleCloseDialog = () => {
+        // Clean up image previews before resetting
+        if (newMenuItem.images?.length > 0) {
+            newMenuItem.images.forEach(img => {
+                if (img.preview) {
+                    URL.revokeObjectURL(img.preview);
+                }
+            });
+        }
         setOpenDialog(false);
         setNewMenuItem({
             name: '',
             description: '',
             price: '',
             category: '',
-            images: [],
+            images: [], // Initialize images array
             isAvailable: true,
             preparationTime: 15,
             options: [],
@@ -67,12 +78,19 @@ const Dashboard = () => {
 
     const handleCreateMenuItem = async () => {
         try {
+            // First upload all images and get their URLs
+            const imageUrls = await Promise.all(newMenuItem.images.map(async (img) => {
+                const imageRef = ref(storage, `menuItems/${shopData.id}/${Date.now()}-${img.file.name}`);
+                await uploadBytes(imageRef, img.file);
+                return getDownloadURL(imageRef);
+            }));
+
             const menuItem = new MenuItem(
                 newMenuItem.name,
                 newMenuItem.description,
                 parseFloat(newMenuItem.price),
                 newMenuItem.category,
-                newMenuItem.images.map(img => img.file),
+                imageUrls, // Store the download URLs instead of files
                 newMenuItem.isAvailable,
                 parseInt(newMenuItem.preparationTime),
                 shopData.id
@@ -81,9 +99,11 @@ const Dashboard = () => {
             const menuItemsRef = collection(db, 'stadiums', shopData.stadiumId, 'shops', shopData.id, 'menuItems');
             await addDoc(menuItemsRef, menuItem.toFirestore());
             handleCloseDialog();
-            // TODO: Refresh menu items list
+            // Show success message
+            alert('Menu item saved successfully!');
         } catch (error) {
             console.error('Error creating menu item:', error);
+            alert('Error saving menu item. Please try again.');
         }
     };
 
@@ -100,17 +120,26 @@ const Dashboard = () => {
         }}>
             {shopData ? (
                 <>
-                    <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="h4" fontWeight="500" color="#333">
-                            Menu Management
-                        </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Restaurant sx={{ fontSize: 40, color: '#15BE77' }} />
+                            <Box>
+                                <Typography variant="h4" fontWeight="600">
+                                    Menu Management
+                                </Typography>
+                                <Typography variant="subtitle1" color="text.secondary">
+                                    {shopData.name}
+                                </Typography>
+                            </Box>
+                        </Box>
                         <Button
                             variant="contained"
                             startIcon={<Add />}
                             onClick={handleAddMenu}
                             sx={{
                                 bgcolor: '#15BE77',
-                                '&:hover': { bgcolor: '#13ab6c' }
+                                '&:hover': { bgcolor: '#13ab6c' },
+                                px: 3
                             }}
                         >
                             Add Menu Item
@@ -126,31 +155,8 @@ const Dashboard = () => {
                         onChange={handleInputChange}
                     />
 
-                    <Grid container spacing={3}>
-                        {/* Menu items will be added here */}
-                        <Grid item xs={12}>
-                            <Box sx={{ 
-                                display: 'flex', 
-                                flexDirection: 'column', 
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                minHeight: '300px',
-                                border: '2px dashed #e0e0e0',
-                                borderRadius: '12px',
-                                p: 4
-                            }}>
-                                <Restaurant sx={{ fontSize: 64, color: '#15BE77', mb: 2, opacity: 0.5 }} />
-                                <Typography variant="h6" color="text.secondary" gutterBottom>
-                                    No Menu Items Yet
-                                </Typography>
-                                <Typography color="text.secondary" align="center">
-                                    Click the "Add Menu Item" button above to start creating your menu.
-                                </Typography>
-                            </Box>
-                        </Grid>
-                    </Grid>
+                    <MenuList shopData={shopData} />
                 </>
-
             ) : (
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
                     <Typography variant="h5" color="text.secondary">
