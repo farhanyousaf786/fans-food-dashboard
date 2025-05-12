@@ -1,12 +1,13 @@
 // AddMenuDialog.jsx (Modern Revamp - One Field Per Line)
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     TextField, Select, MenuItem, FormControl, InputLabel,
     Switch, Button, Grid, Box, Typography,
-    IconButton, Stack, Divider
+    IconButton, Stack, Divider, CircularProgress,
+    Snackbar, Alert
 } from '@mui/material';
-import { AccessTime, CloudUpload, Delete, Save } from '@mui/icons-material';
+import { AccessTime, CloudUpload, Delete, Save, CheckCircle } from '@mui/icons-material';
 import './AddMenuDialog.css';
 
 const categories = [
@@ -14,6 +15,8 @@ const categories = [
 ];
 
 const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange }) => {
+    const [loading, setLoading] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
     const fileInputRef = useRef(null);
 
     const handleImageUpload = (event) => {
@@ -41,6 +44,22 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange }) => {
         onChange({ target: { name: 'images', value: newImages } });
     };
 
+    const handleSubmit = async () => {
+        setLoading(true);
+        try {
+            await onSubmit();
+            setShowSuccess(true);
+            setTimeout(() => {
+                setShowSuccess(false);
+                onClose();
+            }, 1500);
+        } catch (error) {
+            console.error('Error saving menu item:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth scroll="paper">
             <Box className="modern-dialog">
@@ -52,11 +71,13 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange }) => {
                         </Box>
                         <Button
                             variant="contained"
+                            color="primary"
+                            startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <Save />}
+                            onClick={handleSubmit}
                             className="modern-submit"
-                            onClick={onSubmit}
-                            startIcon={<Save />}
+                            disabled={loading}
                         >
-                            Save Menu
+                            {loading ? 'Saving...' : 'Save Menu Item'}
                         </Button>
                     </Box>
                 </DialogTitle>

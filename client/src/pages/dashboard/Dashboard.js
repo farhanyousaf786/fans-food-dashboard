@@ -79,18 +79,24 @@ const Dashboard = () => {
     const handleCreateMenuItem = async () => {
         try {
             // First upload all images and get their URLs
-            const imageUrls = await Promise.all(newMenuItem.images.map(async (img) => {
-                const imageRef = ref(storage, `menuItems/${shopData.id}/${Date.now()}-${img.file.name}`);
-                await uploadBytes(imageRef, img.file);
-                return getDownloadURL(imageRef);
-            }));
+            const imageUrls = [];
+            if (newMenuItem.images?.length > 0) {
+                for (const image of newMenuItem.images) {
+                    if (image.file) {
+                        const storageRef = ref(storage, `menuItems/${shopData.id}/${Date.now()}-${image.file.name}`);
+                        const snapshot = await uploadBytes(storageRef, image.file);
+                        const url = await getDownloadURL(snapshot.ref);
+                        imageUrls.push(url);
+                    }
+                }
+            }
 
             const menuItem = new MenuItem(
                 newMenuItem.name,
                 newMenuItem.description,
                 parseFloat(newMenuItem.price),
                 newMenuItem.category,
-                imageUrls, // Store the download URLs instead of files
+                imageUrls,
                 newMenuItem.isAvailable,
                 parseInt(newMenuItem.preparationTime),
                 shopData.id
@@ -98,12 +104,10 @@ const Dashboard = () => {
 
             const menuItemsRef = collection(db, 'stadiums', shopData.stadiumId, 'shops', shopData.id, 'menuItems');
             await addDoc(menuItemsRef, menuItem.toFirestore());
-            handleCloseDialog();
-            // Show success message
-            alert('Menu item saved successfully!');
+            return true; // Return success to trigger success dialog
         } catch (error) {
             console.error('Error creating menu item:', error);
-            alert('Error saving menu item. Please try again.');
+            throw error; // Re-throw to handle in AddMenuDialog
         }
     };
 
