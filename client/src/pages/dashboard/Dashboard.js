@@ -1,35 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Box, Typography, Grid, Paper, ToggleButtonGroup, ToggleButton, Divider } from '@mui/material';
-import { RestaurantMenu, AttachMoney, ShoppingCart, People, LocationOn, Store } from '@mui/icons-material';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
-const mockData = [
-    { month: 'Jan', revenue: 600 },
-    { month: 'Feb', revenue: 400 },
-    { month: 'Mar', revenue: 1000 },
-    { month: 'Apr', revenue: 300 },
-    { month: 'May', revenue: 400 },
-    { month: 'Jun', revenue: 500 },
-    { month: 'Jul', revenue: 800 },
-    { month: 'Aug', revenue: 400 },
-    { month: 'Sep', revenue: 900 },
-    { month: 'Oct', revenue: 700 },
-    { month: 'Nov', revenue: 800 }
-];
+import { Box, Typography, Card, Divider } from '@mui/material';
+import { Store, LocationOn, AccessTime, MeetingRoom } from '@mui/icons-material';
 
 const Dashboard = () => {
     const location = useLocation();
     const [shopData, setShopData] = useState(null);
-    const [timeRange, setTimeRange] = useState('today');
 
     useEffect(() => {
-        // If new shop data comes from navigation, update both state and localStorage
         if (location.state?.shopData) {
             setShopData(location.state.shopData);
             localStorage.setItem('currentShopData', JSON.stringify(location.state.shopData));
         } else {
-            // If no shop data in navigation, try to get from localStorage
             const savedShopData = localStorage.getItem('currentShopData');
             if (savedShopData) {
                 setShopData(JSON.parse(savedShopData));
@@ -37,290 +19,83 @@ const Dashboard = () => {
         }
     }, [location]);
 
-    const handleTimeRangeChange = (event, newValue) => {
-        if (newValue !== null) {
-            setTimeRange(newValue);
-        }
-    };
-
     return (
         <Box sx={{ 
-            flexGrow: 1,
-            p: 3,
-            minHeight: 'calc(100vh - 70px)', // Full height minus header
-            backgroundColor: '#f8f9fa',
-            marginTop: '70px', // Header height
-            marginLeft: '240px', // Sidebar width
-            width: 'calc(100% - 240px)' // Full width minus sidebar
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'flex-start',
+            minHeight: 'calc(100vh - 70px)',
+            backgroundColor: '#ffffff',
+            marginTop: '70px',
+            marginLeft: '240px',
+            width: 'calc(100% - 240px)',
+            p: 4
         }}>
-            {/* Shop Details Card */}
-            {shopData && (
-                <Paper sx={{ p: 3, mb: 4, borderRadius: '12px' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <Store sx={{ fontSize: 40, color: '#15BE77', mr: 2 }} />
-                        <Typography variant="h4" fontWeight="bold">{shopData.name}</Typography>
+            {shopData ? (
+                <Card 
+                    sx={{ 
+                        width: '100%',
+                        maxWidth: '800px',
+                        p: 4, 
+                        borderRadius: '12px',
+                        border: '1px solid #f0f0f0'
+                    }}
+                >
+                    {/* Shop Name and Icon */}
+                    <Box sx={{ textAlign: 'center', mb: 4 }}>
+                        <Store sx={{ fontSize: 56, color: '#15BE77', mb: 2 }} />
+                        <Typography variant="h4" fontWeight="500" color="#333">
+                            {shopData.name}
+                        </Typography>
+                        <Typography variant="subtitle1" color="text.secondary">
+                            {shopData.stadiumName}
+                        </Typography>
                     </Box>
-                    <Divider sx={{ my: 2 }} />
-                    <Grid container spacing={3}>
-                        <Grid item xs={12} md={4}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                <LocationOn sx={{ color: '#15BE77', mr: 1 }} />
-                                <Typography><strong>Stadium:</strong> {shopData.stadiumName}</Typography>
+
+                    <Divider sx={{ mb: 4 }} />
+
+                    {/* Location Info */}
+                    <Box sx={{ mb: 4 }}>
+                        <Typography variant="h6" sx={{ mb: 2, color: '#555', fontWeight: '500' }}>
+                            Location Details
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <LocationOn sx={{ color: '#15BE77', mr: 2 }} />
+                                <Typography color="#666">{shopData.location}</Typography>
                             </Box>
-                            <Typography sx={{ ml: 4 }}><strong>Location:</strong> {shopData.location}</Typography>
-                            <Typography sx={{ ml: 4 }}><strong>Gate:</strong> {shopData.gate}</Typography>
-                            <Typography sx={{ ml: 4 }}><strong>Floor:</strong> {shopData.floor}</Typography>
-                        </Grid>
-                        <Grid item xs={12} md={8}>
-                            <Typography><strong>Description:</strong></Typography>
-                            <Typography sx={{ mt: 1 }}>{shopData.description}</Typography>
-                        </Grid>
-                    </Grid>
-                </Paper>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <MeetingRoom sx={{ color: '#15BE77', mr: 2 }} />
+                                <Typography color="#666">Gate {shopData.gate}, Floor {shopData.floor}</Typography>
+                            </Box>
+                        </Box>
+                    </Box>
+
+                    {/* Shop Description */}
+                    <Box sx={{ mb: 4 }}>
+                        <Typography variant="h6" sx={{ mb: 2, color: '#555', fontWeight: '500' }}>
+                            About Shop
+                        </Typography>
+                        <Typography color="#666" sx={{ lineHeight: 1.6 }}>
+                            {shopData.description || 'No description available'}
+                        </Typography>
+                    </Box>
+
+                    {/* Created Date */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <AccessTime sx={{ color: '#15BE77', mr: 1 }} />
+                        <Typography color="text.secondary">
+                            Created on {new Date(shopData.createdAt).toLocaleDateString()}
+                        </Typography>
+                    </Box>
+                </Card>
+            ) : (
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+                    <Typography variant="h5" color="text.secondary">
+                        No shop selected. Please select a shop from the shop panel.
+                    </Typography>
+                </Box>
             )}
-            {/* Stats Cards */}
-            <Grid container spacing={4} sx={{ px: 2 }} mb={4}>
-                <Grid item xs={12} sm={6} md={3}>
-                    <Paper
-                        sx={{
-                            p: 3,
-                            background: 'linear-gradient(135deg, #15BE77 30%, #17CF81 100%)',
-                            color: 'white',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            borderRadius: '12px',
-                            boxShadow: '0 4px 20px rgba(21, 190, 119, 0.15)',
-                            minHeight: '140px'
-                        }}
-                    >
-                        <Box>
-                            <Typography variant="h4" fontWeight="bold" sx={{ mb: 0.5 }}>459</Typography>
-                            <Typography variant="body2" sx={{ opacity: 0.9 }}>Total Menus</Typography>
-                        </Box>
-                        <RestaurantMenu sx={{ fontSize: 40, opacity: 0.8 }} />
-                    </Paper>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                    <Paper
-                        sx={{
-                            p: 3,
-                            background: 'linear-gradient(135deg, #15BE77 30%, #17CF81 100%)',
-                            color: 'white',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            borderRadius: '12px',
-                            boxShadow: '0 4px 20px rgba(21, 190, 119, 0.15)',
-                            minHeight: '140px'
-                        }}
-                    >
-                        <Box>
-                            <Typography variant="h4" fontWeight="bold">$87,561</Typography>
-                            <Typography variant="subtitle2">Total Revenue</Typography>
-                        </Box>
-                        <AttachMoney sx={{ fontSize: 40, opacity: 0.8 }} />
-                    </Paper>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                    <Paper
-                        sx={{
-                            p: 3,
-                            background: 'linear-gradient(135deg, #15BE77 30%, #17CF81 100%)',
-                            color: 'white',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            borderRadius: '12px',
-                            boxShadow: '0 4px 20px rgba(21, 190, 119, 0.15)',
-                            minHeight: '140px'
-                        }}
-                    >
-                        <Box>
-                            <Typography variant="h4" fontWeight="bold">247</Typography>
-                            <Typography variant="subtitle2">Total Orders</Typography>
-                        </Box>
-                        <ShoppingCart sx={{ fontSize: 40, opacity: 0.8 }} />
-                    </Paper>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                    <Paper
-                        sx={{
-                            p: 3,
-                            background: 'linear-gradient(135deg, #15BE77 30%, #17CF81 100%)',
-                            color: 'white',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            borderRadius: '12px',
-                            boxShadow: '0 4px 20px rgba(21, 190, 119, 0.15)',
-                            minHeight: '140px'
-                        }}
-                    >
-                        <Box>
-                            <Typography variant="h4" fontWeight="bold">872</Typography>
-                            <Typography variant="subtitle2">Total Customers</Typography>
-                        </Box>
-                        <People sx={{ fontSize: 40, opacity: 0.8 }} />
-                    </Paper>
-                </Grid>
-            </Grid>
-
-            {/* Orders Summary */}
-            <Grid container spacing={4} sx={{ px: 2 }} mb={4}>
-                <Grid item xs={12} md={5} sx={{ height: '400px' }}>
-                    <Paper sx={{ p: 3, borderRadius: '12px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)', height: '100%' }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                            <Typography variant="h6">Orders Summary</Typography>
-                            <ToggleButtonGroup
-                                value={timeRange}
-                                exclusive
-                                onChange={handleTimeRangeChange}
-                                size="small"
-                                sx={{
-                                    '& .MuiToggleButton-root': {
-                                        border: 'none',
-                                        borderRadius: '20px !important',
-                                        mx: 0.5,
-                                        color: '#666',
-                                        '&.Mui-selected': {
-                                            backgroundColor: '#15BE77',
-                                            color: 'white',
-                                            '&:hover': {
-                                                backgroundColor: '#15BE77',
-                                            }
-                                        }
-                                    }
-                                }}
-                            >
-                                <ToggleButton value="monthly">Monthly</ToggleButton>
-                                <ToggleButton value="weekly">Weekly</ToggleButton>
-                                <ToggleButton value="today">Today</ToggleButton>
-                            </ToggleButtonGroup>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                            <Box
-                                sx={{
-                                    position: 'relative',
-                                    width: 120,
-                                    height: 120,
-                                    borderRadius: '50%',
-                                    background: `conic-gradient(#15BE77 0% 85%, #eee 85% 100%)`,
-                                    boxShadow: '0 4px 20px rgba(21, 190, 119, 0.15)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}
-                            >
-                                <Box
-                                    sx={{
-                                        width: 100,
-                                        height: 100,
-                                        borderRadius: '50%',
-                                        background: 'white',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}
-                                >
-                                    <Typography variant="h4" fontWeight="bold">85%</Typography>
-                                </Box>
-                            </Box>
-                            <Box sx={{ ml: 4 }}>
-                                <Typography variant="h5" fontWeight="bold">$456,005.56</Typography>
-                                <Typography variant="body2" color="text.secondary">from $500,000.00</Typography>
-                            </Box>
-                        </Box>
-                        <Grid container spacing={2}>
-                            <Grid item xs={4}>
-                                <Typography variant="h6" fontWeight="bold">25</Typography>
-                                <Typography variant="body2" color="text.secondary">On Delivery</Typography>
-                            </Grid>
-                            <Grid item xs={4}>
-                                <Typography variant="h6" fontWeight="bold">60</Typography>
-                                <Typography variant="body2" color="text.secondary">Delivered</Typography>
-                            </Grid>
-                            <Grid item xs={4}>
-                                <Typography variant="h6" fontWeight="bold">7</Typography>
-                                <Typography variant="body2" color="text.secondary">Cancelled</Typography>
-                            </Grid>
-                        </Grid>
-                    </Paper>
-                </Grid>
-
-                {/* Revenue Chart */}
-                <Grid item xs={12} md={7} sx={{ height: '400px' }}>
-                    <Paper sx={{ p: 3, borderRadius: '12px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)', height: '100%' }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                            <Typography variant="h6">Revenue</Typography>
-                            <ToggleButtonGroup
-                                value={timeRange}
-                                exclusive
-                                onChange={handleTimeRangeChange}
-                                size="small"
-                                sx={{
-                                    '& .MuiToggleButton-root': {
-                                        border: 'none',
-                                        borderRadius: '20px !important',
-                                        mx: 0.5,
-                                        color: '#666',
-                                        '&.Mui-selected': {
-                                            backgroundColor: '#15BE77',
-                                            color: 'white',
-                                            '&:hover': {
-                                                backgroundColor: '#15BE77',
-                                            }
-                                        }
-                                    }
-                                }}
-                            >
-                                <ToggleButton value="all">All Food</ToggleButton>
-                                <ToggleButton value="food">Food</ToggleButton>
-                                <ToggleButton value="beverages">Beverages</ToggleButton>
-                            </ToggleButtonGroup>
-                        </Box>
-                        <Box sx={{ width: '100%', height: 300 }}>
-                            <ResponsiveContainer>
-                                <AreaChart data={mockData}>
-                                    <defs>
-                                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#15BE77" stopOpacity={0.8}/>
-                                            <stop offset="95%" stopColor="#15BE77" stopOpacity={0}/>
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="month" />
-                                    <YAxis />
-                                    <Tooltip />
-                                    <Area
-                                        type="monotone"
-                                        dataKey="revenue"
-                                        stroke="#15BE77"
-                                        fillOpacity={1}
-                                        fill="url(#colorRevenue)"
-                                    />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        </Box>
-                    </Paper>
-                </Grid>
-            </Grid>
-
-            {/* Customer Map and Trending Menus */}
-            <Grid container spacing={4} sx={{ px: 2 }}>
-                <Grid item xs={12} md={6} sx={{ height: '400px' }}>
-                    <Paper sx={{ p: 3, borderRadius: '12px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)', height: '100%' }}>
-                        <Typography variant="h6">Customer Map</Typography>
-                        {/* Add map component here */}
-                    </Paper>
-                </Grid>
-                <Grid item xs={12} md={6} sx={{ height: '400px' }}>
-                    <Paper sx={{ p: 3, borderRadius: '12px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)', height: '100%' }}>
-                        <Typography variant="h6">Daily Trending Menus</Typography>
-                        {/* Add trending menus list here */}
-                    </Paper>
-                </Grid>
-            </Grid>
         </Box>
     );
 };
