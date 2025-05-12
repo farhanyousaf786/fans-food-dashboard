@@ -7,7 +7,7 @@ import {
     IconButton, Stack, Divider, CircularProgress,
     Snackbar, Alert
 } from '@mui/material';
-import { AccessTime, CloudUpload, Delete, Save, CheckCircle } from '@mui/icons-material';
+import { AccessTime, CloudUpload, Delete, Save, CheckCircle, Add, Restaurant, AddCircleOutline, RemoveCircleOutline } from '@mui/icons-material';
 import './AddMenuDialog.css';
 
 const categories = [
@@ -44,6 +44,27 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange }) => {
         onChange({ target: { name: 'images', value: newImages } });
     };
 
+    const handleAddOption = (type) => {
+        const updatedCustomization = { ...menuItem.customization };
+        updatedCustomization[type] = [
+            ...updatedCustomization[type],
+            { name: '', price: '' }
+        ];
+        onChange({ target: { name: 'customization', value: updatedCustomization } });
+    };
+
+    const handleRemoveOption = (type, index) => {
+        const updatedCustomization = { ...menuItem.customization };
+        updatedCustomization[type].splice(index, 1);
+        onChange({ target: { name: 'customization', value: updatedCustomization } });
+    };
+
+    const handleOptionChange = (type, index, field, value) => {
+        const updatedCustomization = { ...menuItem.customization };
+        updatedCustomization[type][index][field] = value;
+        onChange({ target: { name: 'customization', value: updatedCustomization } });
+    };
+
     const handleSubmit = async () => {
         setLoading(true);
         try {
@@ -61,8 +82,22 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange }) => {
     };
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth scroll="paper">
-            <Box className="modern-dialog">
+        <Dialog 
+            open={open} 
+            onClose={onClose} 
+            maxWidth="md" 
+            fullWidth 
+            scroll="paper"
+            PaperProps={{
+                sx: {
+                    maxHeight: '90vh',
+                    height: '90vh',
+                    display: 'flex',
+                    flexDirection: 'column'
+                }
+            }}
+        >
+            <Box className="modern-dialog" sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                 <DialogTitle className="modern-header">
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <Box>
@@ -82,8 +117,9 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange }) => {
                     </Box>
                 </DialogTitle>
                 <Divider />
-                <DialogContent className="modern-content">
-                    <Stack spacing={3}>
+                <DialogContent className="modern-content" sx={{ overflowY: 'auto', flexGrow: 1, pb: 3 }}>
+                    <Stack spacing={3} sx={{ minHeight: 'min-content' }}>
+                            {/* Basic Information */}
                         <TextField
                             fullWidth
                             label="Item Name"
@@ -152,6 +188,146 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange }) => {
                             InputProps={{ endAdornment: <AccessTime sx={{ color: '#888' }} /> }}
                         />
 
+                                                {/* Customization Options */}
+                        <Box sx={{ border: '1px solid #ddd', borderRadius: '8px', p: 2, bgcolor: '#fff' }}>
+                            <Typography variant="subtitle1" fontWeight="500" gutterBottom>
+                                Customization Options
+                            </Typography>
+                            
+                            {/* Toppings */}
+                            <Box sx={{ mb: 2 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                                    <Typography variant="subtitle2">Toppings</Typography>
+                                    <IconButton size="small" onClick={() => handleAddOption('toppings')}>
+                                        <AddCircleOutline />
+                                    </IconButton>
+                                </Box>
+                                {menuItem.customization?.toppings.map((topping, index) => (
+                                    <Box key={index} sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                                        <TextField
+                                            size="small"
+                                            placeholder="Name (e.g., Extra Cheese)"
+                                            value={topping.name}
+                                            onChange={(e) => handleOptionChange('toppings', index, 'name', e.target.value)}
+                                            sx={{ flex: 2 }}
+                                        />
+                                        <TextField
+                                            size="small"
+                                            type="number"
+                                            placeholder="Price"
+                                            value={topping.price}
+                                            onChange={(e) => handleOptionChange('toppings', index, 'price', e.target.value)}
+                                            sx={{ flex: 1 }}
+                                            InputProps={{ startAdornment: <span>$</span> }}
+                                        />
+                                        <IconButton size="small" onClick={() => handleRemoveOption('toppings', index)}>
+                                            <RemoveCircleOutline />
+                                        </IconButton>
+                                    </Box>
+                                ))}
+                            </Box>
+
+                            {/* Extras */}
+                            <Box sx={{ mb: 2 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                                    <Typography variant="subtitle2">Extras</Typography>
+                                    <IconButton size="small" onClick={() => handleAddOption('extras')}>
+                                        <AddCircleOutline />
+                                    </IconButton>
+                                </Box>
+                                {menuItem.customization?.extras.map((extra, index) => (
+                                    <Box key={index} sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                                        <TextField
+                                            size="small"
+                                            placeholder="Name (e.g., Double Meat)"
+                                            value={extra.name}
+                                            onChange={(e) => handleOptionChange('extras', index, 'name', e.target.value)}
+                                            sx={{ flex: 2 }}
+                                        />
+                                        <TextField
+                                            size="small"
+                                            type="number"
+                                            placeholder="Price"
+                                            value={extra.price}
+                                            onChange={(e) => handleOptionChange('extras', index, 'price', e.target.value)}
+                                            sx={{ flex: 1 }}
+                                            InputProps={{ startAdornment: <span>$</span> }}
+                                        />
+                                        <IconButton size="small" onClick={() => handleRemoveOption('extras', index)}>
+                                            <RemoveCircleOutline />
+                                        </IconButton>
+                                    </Box>
+                                ))}
+                            </Box>
+
+                            {/* Sauces */}
+                            <Box sx={{ mb: 2 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                                    <Typography variant="subtitle2">Sauces</Typography>
+                                    <IconButton size="small" onClick={() => handleAddOption('sauces')}>
+                                        <AddCircleOutline />
+                                    </IconButton>
+                                </Box>
+                                {menuItem.customization?.sauces.map((sauce, index) => (
+                                    <Box key={index} sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                                        <TextField
+                                            size="small"
+                                            placeholder="Name (e.g., BBQ Sauce)"
+                                            value={sauce.name}
+                                            onChange={(e) => handleOptionChange('sauces', index, 'name', e.target.value)}
+                                            sx={{ flex: 2 }}
+                                        />
+                                        <TextField
+                                            size="small"
+                                            type="number"
+                                            placeholder="Price"
+                                            value={sauce.price}
+                                            onChange={(e) => handleOptionChange('sauces', index, 'price', e.target.value)}
+                                            sx={{ flex: 1 }}
+                                            InputProps={{ startAdornment: <span>$</span> }}
+                                        />
+                                        <IconButton size="small" onClick={() => handleRemoveOption('sauces', index)}>
+                                            <RemoveCircleOutline />
+                                        </IconButton>
+                                    </Box>
+                                ))}
+                            </Box>
+
+                            {/* Sizes */}
+                            <Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                                    <Typography variant="subtitle2">Sizes</Typography>
+                                    <IconButton size="small" onClick={() => handleAddOption('sizes')}>
+                                        <AddCircleOutline />
+                                    </IconButton>
+                                </Box>
+                                {menuItem.customization?.sizes.map((size, index) => (
+                                    <Box key={index} sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                                        <TextField
+                                            size="small"
+                                            placeholder="Name (e.g., Large)"
+                                            value={size.name}
+                                            onChange={(e) => handleOptionChange('sizes', index, 'name', e.target.value)}
+                                            sx={{ flex: 2 }}
+                                        />
+                                        <TextField
+                                            size="small"
+                                            type="number"
+                                            placeholder="Price"
+                                            value={size.price}
+                                            onChange={(e) => handleOptionChange('sizes', index, 'price', e.target.value)}
+                                            sx={{ flex: 1 }}
+                                            InputProps={{ startAdornment: <span>$</span> }}
+                                        />
+                                        <IconButton size="small" onClick={() => handleRemoveOption('sizes', index)}>
+                                            <RemoveCircleOutline />
+                                        </IconButton>
+                                    </Box>
+                                ))}
+                            </Box>
+                        </Box>
+
+                        {/* Image Upload Section */}
                         <Box sx={{ border: '1px solid #ddd', borderRadius: '8px', p: 2, bgcolor: '#fff' }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                                 <Typography variant="subtitle1" fontWeight="500">Menu Images</Typography>
@@ -245,7 +421,7 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange }) => {
                     </Stack>
                 </DialogContent>
                 <Divider />
-                <DialogActions className="modern-actions">
+                <DialogActions className="modern-actions" sx={{ p: 2, borderTop: '1px solid #ddd' }}>
                     <Button onClick={onClose} variant="outlined" className="modern-cancel">
                         Cancel
                     </Button>

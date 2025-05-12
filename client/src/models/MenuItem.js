@@ -8,7 +8,12 @@ class MenuItem {
         isAvailable = true,
         preparationTime = 15,
         shopId,
-        options = [],
+        customization = {
+            toppings: [],
+            extras: [],
+            sauces: [],
+            sizes: []
+        },
         allergens = [],
         nutritionalInfo = {}
     ) {
@@ -20,7 +25,7 @@ class MenuItem {
         this.isAvailable = isAvailable;
         this.preparationTime = preparationTime;
         this.shopId = shopId;
-        this.options = options;
+        this.customization = customization;
         this.allergens = allergens;
         this.nutritionalInfo = nutritionalInfo;
         this.createdAt = new Date();
@@ -37,7 +42,7 @@ class MenuItem {
             isAvailable: this.isAvailable,
             preparationTime: this.preparationTime,
             shopId: this.shopId,
-            options: this.options,
+            customization: this.customization,
             allergens: this.allergens,
             nutritionalInfo: this.nutritionalInfo,
             createdAt: this.createdAt,
@@ -51,16 +56,21 @@ class MenuItem {
             data.description,
             data.price,
             data.category,
-            data.imageUrl,
+            data.images || [],
             data.isAvailable,
             data.preparationTime,
             data.shopId,
-            data.options,
-            data.allergens,
-            data.nutritionalInfo
+            data.customization || {
+                toppings: [],
+                extras: [],
+                sauces: [],
+                sizes: []
+            },
+            data.allergens || [],
+            data.nutritionalInfo || {}
         );
-        menuItem.createdAt = data.createdAt.toDate();
-        menuItem.updatedAt = data.updatedAt.toDate();
+        menuItem.createdAt = data.createdAt?.toDate() || new Date();
+        menuItem.updatedAt = data.updatedAt?.toDate() || new Date();
         return menuItem;
     }
 }

@@ -20,10 +20,15 @@ const Dashboard = () => {
         description: '',
         price: '',
         category: '',
-        images: [], // Initialize images array
+        images: [],
         isAvailable: true,
         preparationTime: 15,
-        options: [],
+        customization: {
+            toppings: [],
+            extras: [],
+            sauces: [],
+            sizes: []
+        },
         allergens: [],
         nutritionalInfo: {}
     });
@@ -59,10 +64,15 @@ const Dashboard = () => {
             description: '',
             price: '',
             category: '',
-            images: [], // Initialize images array
+            images: [],
             isAvailable: true,
             preparationTime: 15,
-            options: [],
+            customization: {
+                toppings: [],
+                extras: [],
+                sauces: [],
+                sizes: []
+            },
             allergens: [],
             nutritionalInfo: {}
         });
@@ -70,10 +80,19 @@ const Dashboard = () => {
 
     const handleInputChange = (e) => {
         const { name, value, checked } = e.target;
-        setNewMenuItem(prev => ({
-            ...prev,
-            [name]: name === 'isAvailable' ? checked : value
-        }));
+        if (name === 'customization') {
+            // Handle customization updates
+            setNewMenuItem(prev => ({
+                ...prev,
+                customization: value
+            }));
+        } else {
+            // Handle other field updates
+            setNewMenuItem(prev => ({
+                ...prev,
+                [name]: name === 'isAvailable' ? checked : value
+            }));
+        }
     };
 
     const handleCreateMenuItem = async () => {
@@ -99,7 +118,10 @@ const Dashboard = () => {
                 imageUrls,
                 newMenuItem.isAvailable,
                 parseInt(newMenuItem.preparationTime),
-                shopData.id
+                shopData.id,
+                newMenuItem.customization,
+                newMenuItem.allergens,
+                newMenuItem.nutritionalInfo
             );
 
             const menuItemsRef = collection(db, 'stadiums', shopData.stadiumId, 'shops', shopData.id, 'menuItems');
@@ -112,16 +134,7 @@ const Dashboard = () => {
     };
 
     return (
-        <Box sx={{ 
-            display: 'flex',
-            flexDirection: 'column',
-            minHeight: 'calc(100vh - 70px)',
-            backgroundColor: '#ffffff',
-            marginTop: '70px',
-            marginLeft: '240px',
-            width: 'calc(100% - 240px)',
-            p: 4
-        }}>
+        <Box>
             {shopData ? (
                 <>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
