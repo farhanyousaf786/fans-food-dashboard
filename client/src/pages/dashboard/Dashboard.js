@@ -1,11 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Box, Typography, Card, Divider } from '@mui/material';
-import { Store, LocationOn, AccessTime, MeetingRoom } from '@mui/icons-material';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Box, Typography, Button, Grid } from '@mui/material';
+import { Add, Restaurant } from '@mui/icons-material';
+import { db } from '../../config/firebase';
+import { collection, addDoc } from 'firebase/firestore';
+import MenuItem from '../../models/MenuItem';
+import AddMenuDialog from './components/AddMenuDialog';
 
 const Dashboard = () => {
     const location = useLocation();
+    const navigate = useNavigate();
     const [shopData, setShopData] = useState(null);
+    const [openDialog, setOpenDialog] = useState(false);
+    const [newMenuItem, setNewMenuItem] = useState({
+        name: '',
+        description: '',
+        price: '',
+        category: '',
+        imageUrl: '',
+        isAvailable: true,
+        preparationTime: 15,
+        options: [],
+        allergens: [],
+        nutritionalInfo: {}
+    });
 
     useEffect(() => {
         if (location.state?.shopData) {
@@ -19,11 +37,60 @@ const Dashboard = () => {
         }
     }, [location]);
 
+    const handleAddMenu = () => {
+        setOpenDialog(true);
+    };
+
+    const handleCloseDialog = () => {
+        setOpenDialog(false);
+        setNewMenuItem({
+            name: '',
+            description: '',
+            price: '',
+            category: '',
+            images: [],
+            isAvailable: true,
+            preparationTime: 15,
+            options: [],
+            allergens: [],
+            nutritionalInfo: {}
+        });
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value, checked } = e.target;
+        setNewMenuItem(prev => ({
+            ...prev,
+            [name]: name === 'isAvailable' ? checked : value
+        }));
+    };
+
+    const handleCreateMenuItem = async () => {
+        try {
+            const menuItem = new MenuItem(
+                newMenuItem.name,
+                newMenuItem.description,
+                parseFloat(newMenuItem.price),
+                newMenuItem.category,
+                newMenuItem.images.map(img => img.file),
+                newMenuItem.isAvailable,
+                parseInt(newMenuItem.preparationTime),
+                shopData.id
+            );
+
+            const menuItemsRef = collection(db, 'stadiums', shopData.stadiumId, 'shops', shopData.id, 'menuItems');
+            await addDoc(menuItemsRef, menuItem.toFirestore());
+            handleCloseDialog();
+            // TODO: Refresh menu items list
+        } catch (error) {
+            console.error('Error creating menu item:', error);
+        }
+    };
+
     return (
         <Box sx={{ 
             display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'flex-start',
+            flexDirection: 'column',
             minHeight: 'calc(100vh - 70px)',
             backgroundColor: '#ffffff',
             marginTop: '70px',
@@ -32,63 +99,58 @@ const Dashboard = () => {
             p: 4
         }}>
             {shopData ? (
-                <Card 
-                    sx={{ 
-                        width: '100%',
-                        maxWidth: '800px',
-                        p: 4, 
-                        borderRadius: '12px',
-                        border: '1px solid #f0f0f0'
-                    }}
-                >
-                    {/* Shop Name and Icon */}
-                    <Box sx={{ textAlign: 'center', mb: 4 }}>
-                        <Store sx={{ fontSize: 56, color: '#15BE77', mb: 2 }} />
+                <>
+                    <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Typography variant="h4" fontWeight="500" color="#333">
-                            {shopData.name}
+                            Menu Management
                         </Typography>
-                        <Typography variant="subtitle1" color="text.secondary">
-                            {shopData.stadiumName}
-                        </Typography>
+                        <Button
+                            variant="contained"
+                            startIcon={<Add />}
+                            onClick={handleAddMenu}
+                            sx={{
+                                bgcolor: '#15BE77',
+                                '&:hover': { bgcolor: '#13ab6c' }
+                            }}
+                        >
+                            Add Menu Item
+                        </Button>
                     </Box>
 
-                    <Divider sx={{ mb: 4 }} />
+                    {/* Add Menu Item Dialog */}
+                    <AddMenuDialog
+                        open={openDialog}
+                        onClose={handleCloseDialog}
+                        onSubmit={handleCreateMenuItem}
+                        menuItem={newMenuItem}
+                        onChange={handleInputChange}
+                    />
 
-                    {/* Location Info */}
-                    <Box sx={{ mb: 4 }}>
-                        <Typography variant="h6" sx={{ mb: 2, color: '#555', fontWeight: '500' }}>
-                            Location Details
-                        </Typography>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <LocationOn sx={{ color: '#15BE77', mr: 2 }} />
-                                <Typography color="#666">{shopData.location}</Typography>
+                    <Grid container spacing={3}>
+                        {/* Menu items will be added here */}
+                        <Grid item xs={12}>
+                            <Box sx={{ 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                minHeight: '300px',
+                                border: '2px dashed #e0e0e0',
+                                borderRadius: '12px',
+                                p: 4
+                            }}>
+                                <Restaurant sx={{ fontSize: 64, color: '#15BE77', mb: 2, opacity: 0.5 }} />
+                                <Typography variant="h6" color="text.secondary" gutterBottom>
+                                    No Menu Items Yet
+                                </Typography>
+                                <Typography color="text.secondary" align="center">
+                                    Click the "Add Menu Item" button above to start creating your menu.
+                                </Typography>
                             </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <MeetingRoom sx={{ color: '#15BE77', mr: 2 }} />
-                                <Typography color="#666">Gate {shopData.gate}, Floor {shopData.floor}</Typography>
-                            </Box>
-                        </Box>
-                    </Box>
+                        </Grid>
+                    </Grid>
+                </>
 
-                    {/* Shop Description */}
-                    <Box sx={{ mb: 4 }}>
-                        <Typography variant="h6" sx={{ mb: 2, color: '#555', fontWeight: '500' }}>
-                            About Shop
-                        </Typography>
-                        <Typography color="#666" sx={{ lineHeight: 1.6 }}>
-                            {shopData.description || 'No description available'}
-                        </Typography>
-                    </Box>
-
-                    {/* Created Date */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <AccessTime sx={{ color: '#15BE77', mr: 1 }} />
-                        <Typography color="text.secondary">
-                            Created on {new Date(shopData.createdAt).toLocaleDateString()}
-                        </Typography>
-                    </Box>
-                </Card>
             ) : (
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
                     <Typography variant="h5" color="text.secondary">
