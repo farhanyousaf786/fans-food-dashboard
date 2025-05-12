@@ -39,6 +39,8 @@ const ShopPanel = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Clear any stored shop data when viewing shop list
+        localStorage.removeItem('currentShopData');
         const stadiumsCollection = collection(db, 'stadiums');
         const stadiumSnapshot = await getDocs(stadiumsCollection);
         const stadiumList = stadiumSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));

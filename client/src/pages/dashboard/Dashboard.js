@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Box, Typography, Grid, Paper, ToggleButtonGroup, ToggleButton, Divider } from '@mui/material';
 import { RestaurantMenu, AttachMoney, ShoppingCart, People, LocationOn, Store } from '@mui/icons-material';
@@ -20,8 +20,22 @@ const mockData = [
 
 const Dashboard = () => {
     const location = useLocation();
-    const shopData = location.state?.shopData;
+    const [shopData, setShopData] = useState(null);
     const [timeRange, setTimeRange] = useState('today');
+
+    useEffect(() => {
+        // If new shop data comes from navigation, update both state and localStorage
+        if (location.state?.shopData) {
+            setShopData(location.state.shopData);
+            localStorage.setItem('currentShopData', JSON.stringify(location.state.shopData));
+        } else {
+            // If no shop data in navigation, try to get from localStorage
+            const savedShopData = localStorage.getItem('currentShopData');
+            if (savedShopData) {
+                setShopData(JSON.parse(savedShopData));
+            }
+        }
+    }, [location]);
 
     const handleTimeRangeChange = (event, newValue) => {
         if (newValue !== null) {
