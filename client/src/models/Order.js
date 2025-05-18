@@ -10,7 +10,8 @@ class Order {
         paymentMethod = 0, // 0: Cash, 1: Card
         cart = [],
         restaurant = 'restaurants/default',
-        isCompleted = false
+        isCompleted = false,
+        customerName = 'Customer'
     ) {
         this.itemId = itemId;
         this.shopId = shopId;
@@ -23,6 +24,7 @@ class Order {
         this.cart = cart;
         this.restaurant = restaurant;
         this.isCompleted = isCompleted;
+        this.customerName = customerName;
         this.createdAt = new Date();
         this.updatedAt = new Date();
     }
@@ -40,6 +42,7 @@ class Order {
             cart: this.cart,
             restaurant: this.restaurant,
             isCompleted: this.isCompleted,
+            customerName: this.customerName,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt
         };
@@ -61,7 +64,8 @@ class Order {
             data.paymentMethod,
             data.cart,
             data.restaurant,
-            data.isCompleted
+            data.isCompleted,
+            data.customerName
         );
         order.createdAt = createdAt;
         order.updatedAt = updatedAt;

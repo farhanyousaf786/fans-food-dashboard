@@ -1,44 +1,147 @@
+.orders-container {
+    padding: 24px;
+}
+
+.orders-header {
+    margin-bottom: 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.orders-title {
+    font-weight: 600;
+}
+
+.orders-filters {
+    display: flex;
+    gap: 16px;
+}
+
+.filter-select {
+    min-width: 120px;
+}
+
+.order-card {
+    transition: all 0.3s ease;
+    min-height: 280px;
+}
+
+.order-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.order-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.order-head.price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 1rem;
+}
+
+.order-customer {
+    margin-bottom: 8px;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1976d2;
+}
+
+.order-id {
+    color: rgba(0, 0, 0, 0.6);
+}
+
 .status-chip {
     font-weight: 500;
+}
+
+.status-row {
+    display: flex;
+    gap: 8px;
+    margin: 16px 0;
+}
+
+.order-info {
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.order-total {
+    color: #1976d2;
+}
+
+.order-location {
+    color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.view-details-btn {
+    margin-top: auto;
 }
 
 .order-menu-item {
     min-width: 150px;
 }
 
-.order-card {
-    transition: all 0.3s ease;
-}
-
-.order-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
 .item-image {
     border-radius: 8px;
     overflow: hidden;
+    width: 40px;
+    height: 40px;
 }
 
 .item-details {
     display: flex;
     align-items: center;
-    margin-bottom: 8px;
-    padding: 8px;
-    border-radius: 4px;
-    background-color: rgba(0, 0, 0, 0.02);
+    margin-bottom: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.03);
+    transition: all 0.2s ease;
+}
+
+.item-details:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    transform: translateX(4px);
 }
 
 .price-details {
-    background-color: rgba(0, 0, 0, 0.02);
-    padding: 16px;
-    border-radius: 8px;
-    margin-top: 16px;
+    background-color: rgba(25, 118, 210, 0.03);
+    padding: 20px;
+    border-radius: 12px;
+    margin: 24px 0;
+    border: 1px solid rgba(25, 118, 210, 0.1);
 }
 
 .delivery-info {
     background-color: rgba(0, 0, 0, 0.02);
-    padding: 16px;
-    border-radius: 8px;
-    margin-top: 16px;
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 24px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
 }
