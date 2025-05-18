@@ -11,6 +11,7 @@ import ShopPanel from './pages/shop/ShopPanel';
 import Profile from './pages/profile/Profile';
 import Manage from './pages/manage/Manage';
 import Stadium from './pages/stadium/Stadium';
+import Orders from './pages/orders/Orders';
 import Sidebar from './components/Sidebar';
 
 // Create theme instance
@@ -97,6 +98,7 @@ function App() {
         <Routes>
           <Route path="/" element={isAuthenticated ? <HomeRedirect /> : <Auth />} />
           <Route path="/dashboard" element={<PrivateRoute><DashboardLayout><Dashboard /></DashboardLayout></PrivateRoute>} />
+          <Route path="/orders" element={<PrivateRoute><DashboardLayout><Orders /></DashboardLayout></PrivateRoute>} />
           <Route path="/admin" element={<PrivateRoute requiredRole="admin"><AdminPanel /></PrivateRoute>} />
           <Route path="/shop" element={<PrivateRoute requiredRole="shopowner"><ShopPanel /></PrivateRoute>} />
           <Route path="/profile" element={

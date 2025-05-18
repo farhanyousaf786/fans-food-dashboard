@@ -16,11 +16,13 @@ import {
     Stadium as StadiumIcon,
     Logout as LogoutIcon,
     Dashboard as DashboardIcon,
+    ShoppingCart
 } from '@mui/icons-material';
 
 const drawerWidth = 240;
 
 const menuItems = [
+    { text: 'Orders', icon: <ShoppingCart />, path: '/orders' },
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
     { text: 'Profile', icon: <PersonIcon />, path: '/profile' },
 ];
