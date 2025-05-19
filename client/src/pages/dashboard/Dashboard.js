@@ -119,6 +119,7 @@ const Dashboard = () => {
                 newMenuItem.isAvailable,
                 parseInt(newMenuItem.preparationTime),
                 shopData.id,
+                shopData.stadiumId,
                 newMenuItem.customization,
                 newMenuItem.allergens,
                 newMenuItem.nutritionalInfo
@@ -170,6 +171,7 @@ const Dashboard = () => {
                         onSubmit={handleCreateMenuItem}
                         menuItem={newMenuItem}
                         onChange={handleInputChange}
+                        shopData={shopData}
                     />
 
                     <MenuList shopData={shopData} />

@@ -14,7 +14,7 @@ const categories = [
     'Appetizers', 'Main Course', 'Sides', 'Beverages', 'Desserts', 'Specials'
 ];
 
-const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange }) => {
+const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, shopData }) => {
     const [loading, setLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const fileInputRef = useRef(null);
@@ -66,6 +66,10 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange }) => {
     };
 
     const handleSubmit = async () => {
+        // Add stadiumId to menuItem
+        if (shopData?.stadiumId) {
+            onChange({ target: { name: 'stadiumId', value: shopData.stadiumId } });
+        }
         setLoading(true);
         try {
             await onSubmit();

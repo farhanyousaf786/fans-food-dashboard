@@ -8,6 +8,7 @@ class MenuItem {
         isAvailable = true,
         preparationTime = 15,
         shopId,
+        stadiumId,
         customization = {
             toppings: [],
             extras: [],
@@ -25,6 +26,7 @@ class MenuItem {
         this.isAvailable = isAvailable;
         this.preparationTime = preparationTime;
         this.shopId = shopId;
+        this.stadiumId = stadiumId;
         this.customization = customization;
         this.allergens = allergens;
         this.nutritionalInfo = nutritionalInfo;
@@ -42,6 +44,7 @@ class MenuItem {
             isAvailable: this.isAvailable,
             preparationTime: this.preparationTime,
             shopId: this.shopId,
+            stadiumId: this.stadiumId,
             customization: this.customization,
             allergens: this.allergens,
             nutritionalInfo: this.nutritionalInfo,
@@ -60,6 +63,7 @@ class MenuItem {
             data.isAvailable,
             data.preparationTime,
             data.shopId,
+            data.stadiumId,
             data.customization || {
                 toppings: [],
                 extras: [],
