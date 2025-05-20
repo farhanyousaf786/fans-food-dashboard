@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   Card, CardContent, Typography, Box, Chip, IconButton, Button,
-  Paper
+  Paper, useTheme, Dialog, DialogTitle, DialogContent
 } from '@mui/material';
 import {
   MoreVert, Payment, ShoppingCart, LocationOn, AccessTime
@@ -9,6 +9,8 @@ import {
 import Order from '../../../models/Order';
 
 const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatusColor }) => {
+  const theme = useTheme();
+  const [openDialog, setOpenDialog] = React.useState(false);
   const formatDate = (date) => {
     return new Date(date).toLocaleString('en-US', {
       month: 'short',
@@ -19,14 +21,21 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
   };
   return (
     <Card 
-      elevation={3} 
+      elevation={1}
       className="order-card"
       component={Paper}
+      sx={{
+        borderRadius: 3,
+        border: `1px solid ${theme.palette.primary.main}`,
+        '&:hover': {
+          boxShadow: `0 0 0 2px ${theme.palette.primary.main}`,
+        }
+      }}
     >
-      <CardContent className="order-content">
+      <CardContent className="order-content" sx={{ p: 3 }}>
         <Box className="order-header">
           <Box>
-            <Typography variant="h6" className="order-customer">
+            <Typography variant="h6" className="order-customer" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
               {order.userInfo?.userName || 'Customer'}
             </Typography>
             <Typography variant="caption" className="order-id">
@@ -53,25 +62,55 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
         </Box>
 
         {/* Seat Info */}
-        <Box sx={{ mb: 2, bgcolor: 'grey.50', p: 1, borderRadius: 1 }}>
-          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+        <Box sx={{ mb: 2, bgcolor: theme.palette.primary.light, p: 2, borderRadius: 2, color: theme.palette.primary.contrastText }}>
+          <Typography variant="subtitle2" sx={{ color: 'inherit', fontWeight: 600 }} gutterBottom>
             Seat Information
           </Typography>
-          <Typography variant="body2">
+          <Typography variant="body2" sx={{ color: 'inherit' }}>
             Section {order.seatInfo?.section || '-'}, 
             Row {order.seatInfo?.row || '-'}, 
             Seat {order.seatInfo?.seatNo || '-'}
           </Typography>
           {order.seatInfo?.seatDetails && (
-            <Typography variant="caption" color="text.secondary" display="block">
-              {order.seatInfo.seatDetails}
-            </Typography>
+            <Box sx={{ 
+              display: 'flex',
+              justifyContent: 'center',
+              mt: 1.5
+            }}>
+              <Typography 
+                variant="caption" 
+                onClick={() => setOpenDialog(true)}
+                sx={{ 
+                  color: theme.palette.primary.main,
+                  bgcolor: '#fff',
+                  py: 0.5,
+                  px: 2,
+                  borderRadius: '20px',
+                  fontWeight: 600,
+                  display: 'inline-block',
+                  maxWidth: '100%',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    bgcolor: 'rgba(255,255,255,0.9)',
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }
+                }}
+              >
+                {order.seatInfo.seatDetails}
+              </Typography>
+            </Box>
           )}
         </Box>
 
         {/* Order Items */}
         <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+          <Typography variant="subtitle2" sx={{ color: theme.palette.primary.main, fontWeight: 600 }} gutterBottom>
             Order Items
           </Typography>
           {order.cart?.map((item, index) => (
@@ -102,13 +141,46 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
         <Button
           size="small"
           fullWidth
-          variant="outlined"
+          variant="contained"
+          sx={{ 
+            mt: 2,
+            bgcolor: theme.palette.primary.main,
+            color: 'white',
+            '&:hover': {
+              bgcolor: theme.palette.primary.dark
+            }
+          }}
           className="view-details-btn"
           onClick={() => onViewDetails(order)}
         >
           View Details
         </Button>
       </CardContent>
+
+      {/* Seat Details Dialog */}
+      <Dialog 
+        open={openDialog} 
+        onClose={() => setOpenDialog(false)}
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            maxWidth: '90%',
+            width: 'auto'
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          bgcolor: theme.palette.primary.main, 
+          color: 'white',
+          fontSize: '1rem',
+          py: 1.5
+        }}>
+          Seat Details
+        </DialogTitle>
+        <DialogContent sx={{ p: 3, minWidth: 250 }}>
+          <Typography>{order.seatInfo.seatDetails}</Typography>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
