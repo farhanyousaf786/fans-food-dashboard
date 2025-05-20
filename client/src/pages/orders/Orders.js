@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Menu, MenuItem, CircularProgress, Grid } from '@mui/material';
 import { AccessTime, LocalDining, LocalShipping } from '@mui/icons-material';
-import { collection, query, onSnapshot, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import Order from '../../models/Order';
 import OrderCard from './components/OrderCard';
@@ -16,12 +16,26 @@ const Orders = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date');
-  const [restaurantNames, setRestaurantNames] = useState({});
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [shopData, setShopData] = useState(null);
+
+  // Get shop data from localStorage
+  useEffect(() => {
+    const savedShopData = localStorage.getItem('currentShopData');
+    if (savedShopData) {
+      setShopData(JSON.parse(savedShopData));
+    }
+  }, []);
 
   useEffect(() => {
+    const savedShopId = JSON.parse(localStorage.getItem('currentShopData'))?.id;
+    if (!savedShopId) return;
+
     const ordersRef = collection(db, 'orders');
-    const q = query(ordersRef);
+    // Filter orders by shop ID
+    const q = query(ordersRef, where('shopId', '==', savedShopId));
+
+    setLoading(true);
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const ordersList = snapshot.docs.map(doc => {
@@ -36,25 +50,7 @@ const Orders = () => {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    const fetchRestaurantNames = async () => {
-      const newNames = { ...restaurantNames };
-      for (const order of orders) {
-        if (order.restaurant && typeof order.restaurant === 'object' && !newNames[order.restaurant?.path]) {
-          try {
-            const restaurantRef = doc(db, order.restaurant.path);
-            const snapshot = await getDoc(restaurantRef);
-            newNames[order.restaurant.path] = snapshot.exists() ? snapshot.data().name : 'Unknown Restaurant';
-          } catch {
-            newNames[order.restaurant.path] = 'Unknown Restaurant';
-          }
-        }
-      }
-      setRestaurantNames(newNames);
-    };
 
-    if (orders.length > 0) fetchRestaurantNames();
-  }, [orders]);
 
   const getStatusColor = (status) => {
     const map = { 0: 'warning', 1: 'info', 2: 'info', 3: 'success', 4: 'default', 5: 'error' };
@@ -125,7 +121,7 @@ const Orders = () => {
                 order={order}
                 onViewDetails={openDialog}
                 onMenuClick={handleMenuClick}
-                restaurantName={restaurantNames[order.restaurant?.path]}
+                restaurantName="Order"
                 getStatusColor={getStatusColor}
               />
             </Grid>
@@ -136,7 +132,7 @@ const Orders = () => {
         order={selectedOrder}
         open={dialogOpen}
         onClose={closeDialog}
-        restaurantName={selectedOrder ? restaurantNames[selectedOrder.restaurant?.path] : ''}
+        restaurantName="Order"
       />
 
       {/* MENU */}
