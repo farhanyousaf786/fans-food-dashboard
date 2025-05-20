@@ -1,9 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Box, Typography, Button, Grid } from '@mui/material';
-import { Add, Restaurant } from '@mui/icons-material';
+import { 
+  Box, 
+  Typography, 
+  Button, 
+  Grid, 
+  Card, 
+  CardContent, 
+  LinearProgress 
+} from '@mui/material';
+import { 
+  Add, 
+  Restaurant,
+  ShoppingCart as OrdersIcon,
+  AttachMoney as MoneyIcon,
+  TrendingUp as TrendingUpIcon,
+  People as PeopleIcon 
+} from '@mui/icons-material';
 import { db } from '../../config/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, query, getDocs, orderBy, where } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../config/firebase';
 import MenuItem from '../../models/MenuItem';
@@ -15,6 +30,13 @@ const Dashboard = () => {
     const navigate = useNavigate();
     const [shopData, setShopData] = useState(null);
     const [openDialog, setOpenDialog] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState({
+        totalOrders: 0,
+        revenue: 0,
+        customers: 0,
+        growth: 0
+    });
     const [newMenuItem, setNewMenuItem] = useState({
         name: '',
         description: '',
@@ -32,6 +54,40 @@ const Dashboard = () => {
         allergens: [],
         nutritionalInfo: {}
     });
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const ordersRef = collection(db, 'orders');
+                const ordersQuery = query(ordersRef, orderBy('createdAt', 'desc'));
+                const ordersSnap = await getDocs(ordersQuery);
+
+                let totalRevenue = 0;
+                const customers = new Set();
+
+                ordersSnap.forEach(doc => {
+                    const order = doc.data();
+                    totalRevenue += order.total || 0;
+                    if (order.userInfo?.userId) {
+                        customers.add(order.userInfo.userId);
+                    }
+                });
+
+                setStats({
+                    totalOrders: ordersSnap.size,
+                    revenue: totalRevenue,
+                    customers: customers.size,
+                    growth: 12.5 // Example growth rate
+                });
+                setLoading(false);
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+                setLoading(false);
+            }
+        };
+
+        fetchStats();
+    }, []);
 
     useEffect(() => {
         if (location.state?.shopData) {
@@ -134,8 +190,98 @@ const Dashboard = () => {
         }
     };
 
+    const statsCards = [
+        {
+            title: 'Total Orders',
+            value: stats.totalOrders,
+            icon: <OrdersIcon />,
+            color: '#4C9E48',
+            lightColor: '#e8f5e9'
+        },
+        {
+            title: 'Revenue',
+            value: `$${stats.revenue.toFixed(2)}`,
+            icon: <MoneyIcon />,
+            color: '#2196f3',
+            lightColor: '#e3f2fd'
+        },
+        {
+            title: 'Customers',
+            value: stats.customers,
+            icon: <PeopleIcon />,
+            color: '#ff9800',
+            lightColor: '#fff3e0'
+        },
+        {
+            title: 'Growth',
+            value: `${stats.growth}%`,
+            icon: <TrendingUpIcon />,
+            color: '#e91e63',
+            lightColor: '#fce4ec'
+        }
+    ];
+
+    if (loading) {
+        return (
+            <Box sx={{ mt: 4 }}>
+                <LinearProgress />
+            </Box>
+        );
+    }
+
     return (
-        <Box>
+        <Box sx={{ mt: 4 }}>
+            <Box sx={{ mb: 4 }}>
+                <Typography variant="h4" sx={{ fontWeight: 600, color: 'text.primary', mb: 3 }}>
+                    Dashboard Overview
+                </Typography>
+
+                <Grid container spacing={3} sx={{ mb: 4 }}>
+                    {statsCards.map((card, index) => (
+                        <Grid item xs={12} sm={6} md={3} key={index}>
+                            <Card 
+                                sx={{ 
+                                    height: '100%',
+                                    backgroundColor: card.lightColor,
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                    '&:hover': {
+                                        boxShadow: '0 4px 20px 0 rgba(0,0,0,0.12)',
+                                        transform: 'translateY(-2px)',
+                                        transition: 'all 0.3s'
+                                    }
+                                }}
+                            >
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                        <Box>
+                                            <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 1 }}>
+                                                {card.title}
+                                            </Typography>
+                                            <Typography variant="h4" sx={{ color: card.color, fontWeight: 600 }}>
+                                                {card.value}
+                                            </Typography>
+                                        </Box>
+                                        <Box 
+                                            sx={{ 
+                                                backgroundColor: card.color,
+                                                borderRadius: '12px',
+                                                p: 1,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
+                                            }}
+                                        >
+                                            {React.cloneElement(card.icon, { sx: { color: '#fff' } })}
+                                        </Box>
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    ))}
+                </Grid>
+            </Box>
+
             {shopData ? (
                 <>
                     <Box sx={{ backgroundColor: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
