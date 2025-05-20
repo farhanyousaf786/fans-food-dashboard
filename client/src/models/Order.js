@@ -76,11 +76,10 @@ class Order {
     static getStatusText(status) {
         const statusMap = {
             0: 'Pending',
-            1: 'Accepted',
-            2: 'Preparing',
-            3: 'Ready',
-            4: 'Delivered',
-            5: 'Cancelled'
+            1: 'Preparing',
+            2: 'Delivering',
+            3: 'Delivered',
+            4: 'Cancelled'
         };
         return statusMap[status] || 'Unknown';
     }

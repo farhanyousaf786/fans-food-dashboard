@@ -137,13 +137,12 @@ const Orders = () => {
 
       {/* MENU */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-        <MenuItem onClick={() => handleStatusChange(1)}><AccessTime fontSize="small" sx={{ mr: 1 }} /> Accept</MenuItem>
-        <MenuItem onClick={() => handleStatusChange(2)}><LocalDining fontSize="small" sx={{ mr: 1 }} /> Prepare</MenuItem>
-        <MenuItem onClick={() => handleStatusChange(3)}><LocalShipping fontSize="small" sx={{ mr: 1 }} /> Ready</MenuItem>
-        <MenuItem onClick={() => handleStatusChange(4)}><LocalShipping fontSize="small" sx={{ mr: 1 }} /> Delivered</MenuItem>
-        <MenuItem onClick={() => handleStatusChange(5)} sx={{ color: 'error.main' }}>
-          <LocalShipping fontSize="small" sx={{ mr: 1 }} /> Cancel
-        </MenuItem>
+        <MenuItem onClick={() => handleStatusChange(0)}><AccessTime fontSize="small" sx={{ mr: 1 }} /> Pending</MenuItem>
+        <MenuItem onClick={() => handleStatusChange(1)}><LocalDining fontSize="small" sx={{ mr: 1 }} /> Preparing</MenuItem>
+        <MenuItem onClick={() => handleStatusChange(2)}><LocalShipping fontSize="small" sx={{ mr: 1 }} /> Delivering</MenuItem>
+        <MenuItem onClick={() => handleStatusChange(3)}><LocalShipping fontSize="small" sx={{ mr: 1 }} /> Delivered</MenuItem>
+        <MenuItem onClick={() => handleStatusChange(4)}><LocalShipping fontSize="small" sx={{ mr: 1 }} /> Cancelled</MenuItem>
+  
       </Menu>
     </Box>
   );
