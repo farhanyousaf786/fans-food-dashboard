@@ -89,14 +89,14 @@ const Orders = () => {
   };
 
   const filterOrders = (status) => {
-    setSelectedFilter(status);
     // Convert status text to numeric status
     const statusMap = {
       'all': 'all',
       'pending': '0',
       'preparing': '1',
       'delivering': '2',
-      'completed': '3'
+      'delivered': '3',
+      'cancelled': '4'
     };
     setSelectedFilter(statusMap[status] || 'all');
   };
@@ -171,16 +171,28 @@ const Orders = () => {
               Delivering
             </Button>
             <Button 
-              onClick={() => filterOrders('completed')}
+              onClick={() => filterOrders('delivered')}
               sx={{ 
-                bgcolor: selectedFilter === 'completed' ? 'primary.main' : 'white',
-                color: selectedFilter === 'completed' ? 'white' : 'primary.main',
+                bgcolor: selectedFilter === '3' ? 'primary.main' : 'white',
+                color: selectedFilter === '3' ? 'white' : 'primary.main',
                 '&:hover': {
-                  bgcolor: selectedFilter === 'completed' ? 'primary.dark' : 'grey.100'
+                  bgcolor: selectedFilter === '3' ? 'primary.dark' : 'grey.100'
                 }
               }}
             >
-              Completed
+              Delivered
+            </Button>
+            <Button 
+              onClick={() => filterOrders('cancelled')}
+              sx={{ 
+                bgcolor: selectedFilter === '4' ? 'primary.main' : 'white',
+                color: selectedFilter === '4' ? 'white' : 'primary.main',
+                '&:hover': {
+                  bgcolor: selectedFilter === '4' ? 'primary.dark' : 'grey.100'
+                }
+              }}
+            >
+              Cancelled
             </Button>
           </ButtonGroup>
         </Box>
