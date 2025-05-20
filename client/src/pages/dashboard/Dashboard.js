@@ -231,50 +231,94 @@ const Dashboard = () => {
 
     return (
         <Box sx={{ mt: 4 }}>
-            <Box sx={{ mb: 4 }}>
-                <Typography variant="h4" sx={{ fontWeight: 600, color: 'text.primary', mb: 3 }}>
+            <Box sx={{ mb: 6, px: 2 }}>
+                <Typography 
+                    variant="h4" 
+                    sx={{ 
+                        fontWeight: 700, 
+                        color: '#2D3748', 
+                        mb: 4,
+                        fontSize: { xs: '1.5rem', md: '2rem' },
+                        textAlign: { xs: 'center', sm: 'left' }
+                    }}
+                >
                     Dashboard Overview
                 </Typography>
 
-                <Grid container spacing={3} sx={{ mb: 4 }}>
+                <Grid container spacing={4}>
                     {statsCards.map((card, index) => (
                         <Grid item xs={12} sm={6} md={3} key={index}>
                             <Card 
+                                elevation={0}
                                 sx={{ 
                                     height: '100%',
                                     backgroundColor: card.lightColor,
-                                    border: '1px solid',
-                                    borderColor: 'divider',
+                                    borderRadius: 3,
+                                    position: 'relative',
+                                    overflow: 'hidden',
                                     '&:hover': {
-                                        boxShadow: '0 4px 20px 0 rgba(0,0,0,0.12)',
-                                        transform: 'translateY(-2px)',
-                                        transition: 'all 0.3s'
+                                        transform: 'translateY(-4px)',
+                                        transition: 'all 0.3s ease',
+                                        boxShadow: '0 12px 24px 0 rgba(0,0,0,0.09)'
+                                    },
+                                    '&::before': {
+                                        content: '""',
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        width: '100%',
+                                        height: '100%',
+                                        background: `linear-gradient(45deg, ${card.color}15, ${card.color}05)`,
+                                        zIndex: 0
                                     }
                                 }}
                             >
-                                <CardContent>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                        <Box>
-                                            <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 1 }}>
-                                                {card.title}
-                                            </Typography>
-                                            <Typography variant="h4" sx={{ color: card.color, fontWeight: 600 }}>
-                                                {card.value}
-                                            </Typography>
-                                        </Box>
+                                <CardContent sx={{ position: 'relative', zIndex: 1, p: 3 }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                                        <Typography 
+                                            variant="h6" 
+                                            sx={{ 
+                                                color: 'text.secondary',
+                                                fontSize: '0.875rem',
+                                                fontWeight: 500,
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.1em'
+                                            }}
+                                        >
+                                            {card.title}
+                                        </Typography>
                                         <Box 
                                             sx={{ 
                                                 backgroundColor: card.color,
-                                                borderRadius: '12px',
-                                                p: 1,
+                                                borderRadius: '50%',
+                                                width: 46,
+                                                height: 46,
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                justifyContent: 'center'
+                                                justifyContent: 'center',
+                                                boxShadow: `0 8px 16px ${card.color}40`
                                             }}
                                         >
-                                            {React.cloneElement(card.icon, { sx: { color: '#fff' } })}
+                                            {React.cloneElement(card.icon, { 
+                                                sx: { 
+                                                    color: '#fff',
+                                                    fontSize: 24
+                                                } 
+                                            })}
                                         </Box>
                                     </Box>
+                                    <Typography 
+                                        variant="h3" 
+                                        sx={{ 
+                                            color: card.color,
+                                            fontWeight: 700,
+                                            fontSize: { xs: '1.75rem', md: '2rem' },
+                                            lineHeight: 1.2,
+                                            letterSpacing: '-0.01em'
+                                        }}
+                                    >
+                                        {card.value}
+                                    </Typography>
                                 </CardContent>
                             </Card>
                         </Grid>
