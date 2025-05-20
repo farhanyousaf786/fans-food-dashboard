@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Avatar } from '@mui/material';
+import { Box, Typography, Avatar, useTheme } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../config/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import PersonIcon from '@mui/icons-material/Person';
 
 const Header = () => {
+    const theme = useTheme();
     const navigate = useNavigate();
     const [userRole, setUserRole] = useState('');
     const [userName, setUserName] = useState('');
@@ -18,9 +19,8 @@ const Header = () => {
                 const userDoc = await getDoc(doc(db, 'users', user.uid));
                 if (userDoc.exists()) {
                     const userData = userDoc.data();
-                    // Get role from Firestore and capitalize first letter
-                    const role = userData.role || 'shopowner';
-                    setUserRole(role.charAt(0).toUpperCase() + role.slice(1));
+                    // Get user's name from Firestore
+                    setUserName(userData.name || 'User');
                     setUserName(userData.name || '');
                     // Use Firebase auth photo or set to empty for default avatar
                     setUserImage(user.photoURL || '');
@@ -48,19 +48,33 @@ const Header = () => {
                 justifyContent: 'space-between'
             }}
         >
+            
             <Box sx={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 2 }}>
-                {userRole && (
+                <Avatar
+                src={userImage}
+                sx={{
+                    width: 40,
+                    height: 40,
+                    bgcolor: userImage ? 'transparent' : theme.palette.primary.main,
+                    transition: 'all 0.2s',
+                    border: '2px solid transparent'
+                }}
+            >
+                {!userImage && <PersonIcon />}
+            </Avatar>
+                {userName && (
+
                     <>
                         <Typography 
                             sx={{ 
-                                color: '#15BE77',
+                                color: theme.palette.primary.main,
                                 fontWeight: 600,
                                 fontSize: '0.9rem',
                                 display: 'flex',
                                 alignItems: 'center'
                             }}
                         >
-                            {userRole}
+                            {userName}
                         </Typography>
                         <Box 
                             onClick={() => navigate('/profile')}
@@ -70,24 +84,13 @@ const Header = () => {
                                 alignItems: 'center',
                                 '&:hover': {
                                     '& .MuiAvatar-root': {
-                                        border: '2px solid #15BE77',
+                                        border: `2px solid ${theme.palette.primary.main}`,
                                         transform: 'scale(1.05)',
                                     }
                                 }
                             }}
                         >
-                            <Avatar
-                                src={userImage}
-                                sx={{
-                                    width: 40,
-                                    height: 40,
-                                    bgcolor: userImage ? 'transparent' : '#15BE77',
-                                    transition: 'all 0.2s',
-                                    border: '2px solid transparent'
-                                }}
-                            >
-                                {!userImage && <PersonIcon />}
-                            </Avatar>
+                            
                         </Box>
                     </>
                 )}
