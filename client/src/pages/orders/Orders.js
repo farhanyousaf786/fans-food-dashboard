@@ -171,12 +171,12 @@ const Orders = () => {
               Delivering
             </Button>
             <Button 
-              onClick={() => filterOrders('delivered')}
+              onClick={() => filterOrders('completed')}
               sx={{ 
-                bgcolor: selectedFilter === 'delivered' ? 'primary.main' : 'white',
-                color: selectedFilter === 'delivered' ? 'white' : 'primary.main',
+                bgcolor: selectedFilter === 'completed' ? 'primary.main' : 'white',
+                color: selectedFilter === 'completed' ? 'white' : 'primary.main',
                 '&:hover': {
-                  bgcolor: selectedFilter === 'delivered' ? 'primary.dark' : 'grey.100'
+                  bgcolor: selectedFilter === 'completed' ? 'primary.dark' : 'grey.100'
                 }
               }}
             >

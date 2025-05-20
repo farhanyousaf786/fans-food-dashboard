@@ -102,7 +102,8 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
                   }
                 }}
               >
-                {order.seatInfo.seatDetails}
+                {order.seatInfo.seatDetails.split(' ').slice(0, 5).join(' ')}
+                {order.seatInfo.seatDetails.split(' ').length > 5 && '...'}
               </Typography>
             </Box>
           )}
@@ -177,8 +178,14 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
         }}>
           Seat Details
         </DialogTitle>
-        <DialogContent sx={{ p: 3, minWidth: 250 }}>
-          <Typography>{order.seatInfo.seatDetails}</Typography>
+        <DialogContent sx={{ p: 3, minWidth: 300 }}>
+          <Typography sx={{ 
+            fontSize: '1rem',
+            lineHeight: 1.6,
+            color: 'text.primary'
+          }}>
+            {order.seatInfo.seatDetails}
+          </Typography>
         </DialogContent>
       </Dialog>
     </Card>
