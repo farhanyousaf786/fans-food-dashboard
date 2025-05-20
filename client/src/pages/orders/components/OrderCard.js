@@ -27,10 +27,10 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
         <Box className="order-header">
           <Box>
             <Typography variant="h6" className="order-customer">
-              {order.customerName || 'Customer'}
+              {order.userInfo?.userName || 'Customer'}
             </Typography>
             <Typography variant="caption" className="order-id">
-              #{order.id.slice(0, 6)}
+              #{order.orderId.slice(0, 6)}
             </Typography>
           </Box>
           <IconButton size="small" onClick={(e) => onMenuClick(e, order)}>
@@ -38,35 +38,66 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
           </IconButton>
         </Box>
 
-        <Box className="status-row">
+        <Box className="status-row" sx={{ mb: 2 }}>
           <Chip 
             label={Order.getStatusText(order.status)} 
             color={getStatusColor(order.status)} 
             size="small"
           />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <AccessTime fontSize="small" color="action" />
+            <Typography variant="caption" color="text.secondary">
+              {formatDate(order.createdAt)}
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* Seat Info */}
+        <Box sx={{ mb: 2, bgcolor: 'grey.50', p: 1, borderRadius: 1 }}>
+          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+            Seat Information
+          </Typography>
+          <Typography variant="body2">
+            Section {order.seatInfo?.section || '-'}, 
+            Row {order.seatInfo?.row || '-'}, 
+            Seat {order.seatInfo?.seatNo || '-'}
+          </Typography>
+          {order.seatInfo?.seatDetails && (
+            <Typography variant="caption" color="text.secondary" display="block">
+              {order.seatInfo.seatDetails}
+            </Typography>
+          )}
+        </Box>
+
+        {/* Order Items */}
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+            Order Items
+          </Typography>
+          {order.cart?.map((item, index) => (
+            <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+              <Typography variant="body2">{item.name}</Typography>
+              <Typography variant="body2" color="text.secondary">×{item.quantity}</Typography>
+            </Box>
+          ))}
+        </Box>
+
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+          <Box>
+            <Typography variant="caption" color="text.secondary">
+              Total Amount
+            </Typography>
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+              ${order.total}
+            </Typography>
+          </Box>
           <Chip 
             icon={<Payment fontSize="small" />} 
             label={Order.getPaymentMethodText(order.paymentMethod)} 
             size="small" 
+            variant="outlined"
           />
         </Box>
-
-        <Typography variant="body2" className="order-info">
-          <ShoppingCart fontSize="small" /> {order.cart?.length || 0} items
-        </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-          <AccessTime fontSize="small" color="action" />
-          <Typography variant="caption" color="text.secondary">
-            {formatDate(order.createdAt)}
-          </Typography>
-        </Box>
-        <Typography variant="subtitle1" className="order-total" sx={{ fontSize: '1.25rem' }}>
-          ${order.total}
-        </Typography>
-        
-        <Typography variant="body2" className="order-location">
-          <LocationOn fontSize="small" /> {restaurantName || 'Restaurant'}
-        </Typography>
 
         <Button
           size="small"
