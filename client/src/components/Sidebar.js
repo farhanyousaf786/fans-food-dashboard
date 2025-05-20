@@ -49,7 +49,7 @@ const Sidebar = () => {
                 width: '240px',
                 flexShrink: 0,
                 '& .MuiDrawer-paper': {
-                    backgroundColor: '#15BE77',
+                    backgroundColor: '#4C9E48', // Darker green to match logo
                     color: 'white',
                     width: '240px',
                     boxSizing: 'border-box',
@@ -107,13 +107,13 @@ const Sidebar = () => {
                                     }
                                 }}
                             >
-                                <ListItemIcon sx={{ color: location.pathname === item.path ? '#15BE77' : '#fff' }}>
+                                <ListItemIcon sx={{ color: location.pathname === item.path ? '#4C9E48' : '#fff' }}>
                                     {item.icon}
                                 </ListItemIcon>
                                 <ListItemText 
                                     primary={item.text}
                                     sx={{ 
-                                        color: location.pathname === item.path ? '#15BE77' : '#fff',
+                                        color: location.pathname === item.path ? '#4C9E48' : '#fff',
                                         backgroundColor: location.pathname === item.path ? '#fff' : 'transparent',
                                         fontWeight: location.pathname === item.path ? '600' : '400',
                                     }}

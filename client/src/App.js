@@ -18,9 +18,9 @@ import Sidebar from './components/Sidebar';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#15BE77',
-      light: '#4dcf95',
-      dark: '#0e8553',
+      main: '#4C9E48',
+      light: '#6abe66',
+      dark: '#356e32',
       contrastText: '#ffffff',
     },
     secondary: {
