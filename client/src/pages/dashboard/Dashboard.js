@@ -232,18 +232,58 @@ const Dashboard = () => {
     return (
         <Box sx={{ mt: 4 }}>
             <Box sx={{ mb: 6, px: 2 }}>
-                <Typography 
-                    variant="h4" 
-                    sx={{ 
-                        fontWeight: 700, 
-                        color: '#2D3748', 
-                        mb: 4,
-                        fontSize: { xs: '1.5rem', md: '2rem' },
-                        textAlign: { xs: 'center', sm: 'left' }
-                    }}
-                >
-                    Dashboard Overview
-                </Typography>
+                <Box sx={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'flex-start',
+                    mb: 4
+                }}>
+                    <Box>
+                        <Typography 
+                            variant="h4" 
+                            sx={{ 
+                                fontWeight: 700, 
+                                color: '#2D3748',
+                                fontSize: { xs: '1.5rem', md: '2rem' },
+                                mb: 1
+                            }}
+                        >
+                            Dashboard Overview
+                        </Typography>
+                        {shopData && (
+                            <Typography 
+                                variant="subtitle1" 
+                                sx={{ 
+                                    color: 'text.secondary',
+                                    fontSize: '1rem'
+                                }}
+                            >
+                                {shopData.name}
+                            </Typography>
+                        )}
+                    </Box>
+
+                    {shopData && (
+                        <Button
+                            variant="contained"
+                            startIcon={<Add />}
+                            onClick={handleAddMenu}
+                            sx={{
+                                bgcolor: '#4C9E48',
+                                '&:hover': { bgcolor: '#3d8b3d' },
+                                px: 3,
+                                py: 1,
+                                borderRadius: 2,
+                                textTransform: 'none',
+                                fontSize: '1rem',
+                                fontWeight: 500,
+                                boxShadow: '0 4px 12px rgba(76, 158, 72, 0.2)'
+                            }}
+                        >
+                            Add Menu Item
+                        </Button>
+                    )}
+                </Box>
 
                 <Grid container spacing={4}>
                     {statsCards.map((card, index) => (
@@ -328,31 +368,7 @@ const Dashboard = () => {
 
             {shopData ? (
                 <>
-                    <Box sx={{ backgroundColor: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Restaurant sx={{ fontSize: 40, color: '#15BE77' }} />
-                            <Box>
-                                <Typography variant="h4" fontWeight="600">
-                                    Menu Management
-                                </Typography>
-                                <Typography variant="subtitle1" color="text.secondary">
-                                    {shopData.name}
-                                </Typography>
-                            </Box>
-                        </Box>
-                        <Button
-                            variant="contained"
-                            startIcon={<Add />}
-                            onClick={handleAddMenu}
-                            sx={{
-                                bgcolor: '#15BE77',
-                                '&:hover': { bgcolor: '#13ab6c' },
-                                px: 3
-                            }}
-                        >
-                            Add Menu Item
-                        </Button>
-                    </Box>
+
 
                     {/* Add Menu Item Dialog */}
                     <AddMenuDialog
