@@ -138,7 +138,7 @@ const Dashboard = () => {
         <Box>
             {shopData ? (
                 <>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+                    <Box sx={{ backgroundColor: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                             <Restaurant sx={{ fontSize: 40, color: '#15BE77' }} />
                             <Box>

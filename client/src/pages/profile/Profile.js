@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Card, Divider } from '@mui/material';
-import { Store, LocationOn, AccessTime, MeetingRoom } from '@mui/icons-material';
+import { Box, Typography, Card, Divider, useTheme, Paper } from '@mui/material';
+import { Store, LocationOn, AccessTime, MeetingRoom, Restaurant } from '@mui/icons-material';
 
 const Profile = () => {
+    const theme = useTheme();
     const [shopData, setShopData] = useState(null);
 
     useEffect(() => {
@@ -14,29 +15,22 @@ const Profile = () => {
 
     return (
         <Box sx={{ 
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'flex-start',
-            minHeight: 'calc(100vh - 70px)',
-            backgroundColor: '#ffffff',
-            marginTop: '70px',
-            marginLeft: '240px',
-            width: 'calc(100% - 240px)',
-            p: 4
+          
         }}>
             {shopData ? (
                 <Card 
+                    elevation={1}
                     sx={{ 
                         width: '100%',
                         maxWidth: '800px',
                         p: 4, 
                         borderRadius: '12px',
-                        border: '1px solid #f0f0f0'
+                        boxShadow: 'none'
                     }}
                 >
                     {/* Shop Name and Icon */}
                     <Box sx={{ textAlign: 'center', mb: 4 }}>
-                        <Store sx={{ fontSize: 56, color: '#15BE77', mb: 2 }} />
+                        <Restaurant sx={{ fontSize: 56, color: theme.palette.primary.main, mb: 2 }} />
                         <Typography variant="h4" fontWeight="500" color="#333">
                             {shopData.name}
                         </Typography>
@@ -54,12 +48,12 @@ const Profile = () => {
                         </Typography>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <LocationOn sx={{ color: '#15BE77', mr: 2 }} />
-                                <Typography color="#666">{shopData.location}</Typography>
+                                <LocationOn sx={{ color: theme.palette.primary.main, mr: 2 }} />
+                                <Typography sx={{ color: theme.palette.text.secondary }}>{shopData.location}</Typography>
                             </Box>
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <MeetingRoom sx={{ color: '#15BE77', mr: 2 }} />
-                                <Typography color="#666">Gate {shopData.gate}, Floor {shopData.floor}</Typography>
+                                <MeetingRoom sx={{ color: theme.palette.primary.main, mr: 2 }} />
+                                <Typography sx={{ color: theme.palette.text.secondary }}>Gate {shopData.gate}, Floor {shopData.floor}</Typography>
                             </Box>
                         </Box>
                     </Box>
@@ -69,14 +63,14 @@ const Profile = () => {
                         <Typography variant="h6" sx={{ mb: 2, color: '#555', fontWeight: '500' }}>
                             About Shop
                         </Typography>
-                        <Typography color="#666" sx={{ lineHeight: 1.6 }}>
+                        <Typography sx={{ color: theme.palette.text.secondary, lineHeight: 1.6 }}>
                             {shopData.description || 'No description available'}
                         </Typography>
                     </Box>
 
                     {/* Created Date */}
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <AccessTime sx={{ color: '#15BE77', mr: 1 }} />
+                        <AccessTime sx={{ color: theme.palette.primary.main, mr: 1 }} />
                         <Typography color="text.secondary">
                             Created on {new Date(shopData.createdAt).toLocaleDateString()}
                         </Typography>
