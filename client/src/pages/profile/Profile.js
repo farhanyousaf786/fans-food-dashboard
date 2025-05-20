@@ -15,7 +15,13 @@ const Profile = () => {
 
     return (
         <Box sx={{ 
-          
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 'calc(100vh - 70px)',
+            marginTop: '70px',
+            marginLeft: '240px',
+            width: 'calc(100% - 240px)',
+            p: 4
         }}>
             {shopData ? (
                 <Card 
