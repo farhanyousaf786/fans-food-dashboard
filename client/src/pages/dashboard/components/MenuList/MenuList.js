@@ -222,7 +222,7 @@ const MenuList = ({ shopData }) => {
                     />
                   </Box>
                 </Box>
-              </CardContent>
+              </Box>
             </Card>
           </Grid>
         ))}
