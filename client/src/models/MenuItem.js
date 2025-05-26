@@ -16,7 +16,12 @@ class MenuItem {
             sizes: []
         },
         allergens = [],
-        nutritionalInfo = {}
+        nutritionalInfo = {},
+        foodType = {
+            halal: false,
+            kosher: false,
+            vegan: false
+        }
     ) {
         this.name = name;
         this.description = description;
@@ -30,6 +35,7 @@ class MenuItem {
         this.customization = customization;
         this.allergens = allergens;
         this.nutritionalInfo = nutritionalInfo;
+        this.foodType = foodType;
         this.createdAt = new Date();
         this.updatedAt = new Date();
     }
@@ -48,6 +54,7 @@ class MenuItem {
             customization: this.customization,
             allergens: this.allergens,
             nutritionalInfo: this.nutritionalInfo,
+            foodType: this.foodType,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt
         };
@@ -71,7 +78,12 @@ class MenuItem {
                 sizes: []
             },
             data.allergens || [],
-            data.nutritionalInfo || {}
+            data.nutritionalInfo || {},
+            data.foodType || {
+                halal: false,
+                kosher: false,
+                vegan: false
+            }
         );
         menuItem.createdAt = data.createdAt?.toDate() || new Date();
         menuItem.updatedAt = data.updatedAt?.toDate() || new Date();

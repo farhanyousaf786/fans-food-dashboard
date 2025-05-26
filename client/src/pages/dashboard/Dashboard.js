@@ -60,6 +60,11 @@ const Dashboard = () => {
     },
     allergens: [],
     nutritionalInfo: {},
+    foodType: {
+      halal: false,
+      kosher: false,
+      vegan: false
+    }
   });
 
   useEffect(() => {
@@ -141,12 +146,28 @@ const Dashboard = () => {
       },
       allergens: [],
       nutritionalInfo: {},
+      foodType: {
+        halal: false,
+        kosher: false,
+        vegan: false
+      }
     });
   };
 
   const handleInputChange = (e) => {
     const { name, value, checked } = e.target;
-    if (name === "customization") {
+    
+    if (name.startsWith("foodType.")) {
+      // Handle individual foodType checkbox updates
+      const key = name.split(".")[1];
+      setNewMenuItem((prev) => ({
+        ...prev,
+        foodType: {
+          ...prev.foodType,
+          [key]: checked
+        }
+      }));
+    } else if (name === "customization") {
       // Handle customization updates
       setNewMenuItem((prev) => ({
         ...prev,
@@ -191,7 +212,8 @@ const Dashboard = () => {
         shopData.stadiumId,
         newMenuItem.customization,
         newMenuItem.allergens,
-        newMenuItem.nutritionalInfo
+        newMenuItem.nutritionalInfo,
+        newMenuItem.foodType
       );
 
       const menuItemsRef = collection(
