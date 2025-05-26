@@ -69,14 +69,14 @@ const MenuList = ({ shopData }) => {
     setSelectedItem(null);
   };
 
-  const handleEdit = () => {
+  const handleEdit = (item) => {
+    setSelectedItem(item);
     setEditDialogOpen(true);
-    handleMenuClose();
   };
 
-  const handleDelete = () => {
+  const handleDelete = (item) => {
+    setSelectedItem(item);
     setDeleteDialogOpen(true);
-    handleMenuClose();
   };
 
   const handleUpdateMenuItem = async (updatedItem) => {
@@ -195,9 +195,14 @@ const MenuList = ({ shopData }) => {
               <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, p: 2 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                   <Typography variant="h6" className="menu-title" sx={{ fontSize: '1.1rem' }}>{item.name}</Typography>
-                  <IconButton size="small" onClick={(e) => handleMenuClick(e, item)} className="more-button">
-                    <MoreVert />
-                  </IconButton>
+                  <Box sx={{ display: 'flex', gap: 0.5 }}>
+                    <IconButton size="small" onClick={() => handleEdit(item)} sx={{ padding: '4px' }}>
+                      <Edit sx={{ fontSize: 18 }} />
+                    </IconButton>
+                    <IconButton size="small" onClick={() => handleDelete(item)} sx={{ padding: '4px', color: 'error.main' }}>
+                      <Delete sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </Box>
                 </Box>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                   {item.description}
