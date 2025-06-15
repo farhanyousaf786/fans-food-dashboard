@@ -258,7 +258,7 @@ const Dashboard = () => {
             nutritionalInfo: newMenuItem.nutritionalInfo,
             foodType: newMenuItem.foodType
           },
-          discountPercentage: newMenuItem.discountPercentage,
+          discountPercentage: Number(newMenuItem.discountPercentage || 0).toFixed(1) * 1, // Convert to number with one decimal
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           active: true

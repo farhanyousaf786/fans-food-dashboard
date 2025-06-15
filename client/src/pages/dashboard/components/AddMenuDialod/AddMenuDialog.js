@@ -165,7 +165,11 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, shopData }
                 onChange={onChange}
                 InputProps={{
                   endAdornment: <Typography sx={{ color: '#888' }}>%</Typography>,
-                  inputProps: { min: 0, max: 100 }
+                  inputProps: { 
+                    min: 0, 
+                    max: 100,
+                    step: 0.1 // Allows decimal numbers with one decimal place
+                  }
                 }}
               />
             )}
