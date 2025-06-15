@@ -26,19 +26,26 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
       component={Paper}
       sx={{
         borderRadius: 3,
-        border: `1px solid ${theme.palette.primary.main}`,
+        border: '1px solid',
+        borderColor: 'divider',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        transition: 'all 0.3s ease',
         '&:hover': {
-          boxShadow: `0 0 0 2px ${theme.palette.primary.main}`,
+          borderColor: 'primary.main',
+          transform: 'translateY(-4px)',
+          boxShadow: 4
         }
       }}
     >
-      <CardContent className="order-content" sx={{ p: 3 }}>
-        <Box className="order-header">
+      <CardContent className="order-content" sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <Box className="order-header" sx={{ mb: 2 }}>
           <Box>
-            <Typography variant="h6" className="order-customer" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
+            <Typography variant="h6" className="order-customer" sx={{ color: 'primary.main', fontWeight: 600, fontSize: '1.1rem' }}>
               {order.userInfo?.userName || 'Customer'}
             </Typography>
-            <Typography variant="caption" className="order-id">
+            <Typography variant="caption" className="order-id" color="text.secondary">
               #{order.orderId.slice(0, 6)}
             </Typography>
           </Box>
@@ -47,7 +54,7 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
           </IconButton>
         </Box>
 
-        <Box className="status-row" sx={{ mb: 2 }}>
+        <Box className="status-row" sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Chip 
             label={Order.getStatusText(order.status)} 
             color={getStatusColor(order.status)} 
@@ -62,7 +69,7 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
         </Box>
 
         {/* Seat Info */}
-        <Box sx={{ mb: 2, bgcolor: theme.palette.primary.light, p: 2, borderRadius: 2, color: theme.palette.primary.contrastText }}>
+        <Box sx={{ mb: 2, bgcolor: 'success.light', p: 2, borderRadius: 2 }}>
           <Typography variant="subtitle2" sx={{ color: 'inherit', fontWeight: 600 }} gutterBottom>
             Seat Information
           </Typography>
@@ -110,7 +117,7 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
         </Box>
 
         {/* Order Items */}
-        <Box sx={{ mb: 2 }}>
+        <Box sx={{ mb: 2, flex: 1 }}>
           <Typography variant="subtitle2" sx={{ color: theme.palette.primary.main, fontWeight: 600 }} gutterBottom>
             Order Items
           </Typography>
@@ -122,7 +129,7 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
           ))}
         </Box>
 
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+        <Box sx={{ mt: 'auto', pt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid', borderColor: 'divider' }}>
           <Box>
             <Typography variant="caption" color="text.secondary">
               Total Amount
@@ -145,11 +152,14 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
           variant="contained"
           sx={{ 
             mt: 2,
-            bgcolor: theme.palette.primary.main,
+            py: 1,
+            bgcolor: 'primary.main',
             color: 'white',
             '&:hover': {
-              bgcolor: theme.palette.primary.dark
-            }
+              bgcolor: 'primary.dark'
+            },
+            textTransform: 'none',
+            fontWeight: 500
           }}
           className="view-details-btn"
           onClick={() => onViewDetails(order)}
