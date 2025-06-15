@@ -207,7 +207,7 @@ const Dashboard = () => {
         }
       }
 
-      const menuItemData = {
+      const commonData = {
         name: newMenuItem.name,
         description: newMenuItem.description,
         price: parseFloat(newMenuItem.price),
@@ -225,44 +225,25 @@ const Dashboard = () => {
         updatedAt: new Date().toISOString()
       };
 
-      const menuItemsRef = collection(
-        db,
-        'stadiums',
-        shopData.stadiumId,
-        'shops',
-        shopData.id,
-        'menuItems'
-      );
-
-      // Create menu item
-      const menuItemDoc = await addDoc(menuItemsRef, menuItemData);
-
-      // If offer is active, create an offer document
       if (newMenuItem.offerActive) {
+        // If it's an offer, save only in offers collection
         const offersRef = collection(db, 'offers');
-
         await addDoc(offersRef, {
-          stadiumId: shopData.stadiumId,
-          menuItemId: menuItemDoc.id,
-          shopId: shopData.id,
-          menuItemDetails: {
-            name: newMenuItem.name,
-            description: newMenuItem.description,
-            price: parseFloat(newMenuItem.price),
-            category: newMenuItem.category,
-            images: imageUrls,
-            isAvailable: newMenuItem.isAvailable,
-            preparationTime: parseInt(newMenuItem.preparationTime),
-            customization: newMenuItem.customization,
-            allergens: newMenuItem.allergens,
-            nutritionalInfo: newMenuItem.nutritionalInfo,
-            foodType: newMenuItem.foodType
-          },
-          discountPercentage: Number(newMenuItem.discountPercentage || 0).toFixed(1) * 1, // Convert to number with one decimal
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          ...commonData,
+          discountPercentage: Number(newMenuItem.discountPercentage || 0).toFixed(1) * 1,
           active: true
         });
+      } else {
+        // If not an offer, save in menuItems collection
+        const menuItemsRef = collection(
+          db,
+          'stadiums',
+          shopData.stadiumId,
+          'shops',
+          shopData.id,
+          'menuItems'
+        );
+        await addDoc(menuItemsRef, commonData);
       }
 
       handleCloseDialog();

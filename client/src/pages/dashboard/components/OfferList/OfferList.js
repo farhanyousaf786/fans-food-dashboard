@@ -97,14 +97,14 @@ const OfferList = ({ shopData }) => {
             <Card sx={{ display: 'flex', height: 180, overflow: 'hidden' }}>
               <CardMedia
                 component="img"
-                image={offer.menuItemDetails.images?.[0] || '/placeholder.jpg'}
-                alt={offer.menuItemDetails.name}
+                image={offer.images?.[0] || '/placeholder.jpg'}
+                alt={offer.name}
                 sx={{ width: 180, height: 180, objectFit: 'cover' }}
               />
               <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, p: 2 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                   <Typography variant="h6" sx={{ fontSize: '1.1rem' }}>
-                    {offer.menuItemDetails.name}
+                    {offer.name}
                   </Typography>
                   <IconButton 
                     size="small" 
@@ -124,24 +124,24 @@ const OfferList = ({ shopData }) => {
                 />
 
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  Original Price: ${offer.menuItemDetails.price.toFixed(2)}
+                  Original Price: ${(offer.price || 0).toFixed(2)}
                 </Typography>
                 <Typography variant="h6" color="secondary" sx={{ fontSize: '1.1rem' }}>
-                  Discounted: ${(offer.menuItemDetails.price * (1 - offer.discountPercentage/100)).toFixed(2)}
+                  Discounted: ${((offer.price || 0) * (1 - (offer.discountPercentage || 0)/100)).toFixed(2)}
                 </Typography>
 
                 <Box sx={{ mt: 'auto', display: 'flex', gap: 1 }}>
                   <Chip
                     icon={<Circle sx={{ fontSize: 10 }} />}
-                    label={offer.menuItemDetails.isAvailable ? 'Available' : 'Unavailable'}
-                    color={offer.menuItemDetails.isAvailable ? 'success' : 'default'}
+                    label={offer.isAvailable ? 'Available' : 'Unavailable'}
+                    color={offer.isAvailable ? 'success' : 'default'}
                     size="small"
                     variant="outlined"
                     sx={{ height: 24 }}
                   />
                   <Chip
                     icon={<AccessTime sx={{ fontSize: 10 }} />}
-                    label={`${offer.menuItemDetails.preparationTime} min`}
+                    label={`${offer.preparationTime} min`}
                     size="small"
                     variant="outlined"
                     sx={{ height: 24 }}
@@ -165,7 +165,7 @@ const OfferList = ({ shopData }) => {
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
         <DialogTitle>Confirm Delete Offer</DialogTitle>
         <DialogContent>
-          Are you sure you want to delete the offer for "{selectedOffer?.menuItemDetails.name}"?
+          Are you sure you want to delete the offer for "{selectedOffer?.name}"?
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
