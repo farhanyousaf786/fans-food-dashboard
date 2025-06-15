@@ -31,6 +31,7 @@ import { storage } from "../../config/firebase";
 import MenuItem from "../../models/MenuItem";
 import AddMenuDialog from "./components/AddMenuDialod/AddMenuDialog";
 import MenuList from "./components/MenuList/MenuList";
+import OfferList from "./components/OfferList/OfferList";
 
 const Dashboard = () => {
   const location = useLocation();
@@ -485,6 +486,9 @@ const Dashboard = () => {
 
           <Box ml={2}>
             <MenuList shopData={shopData} />
+            <Box sx={{ mt: 4 }}>
+              <OfferList shopData={shopData} />
+            </Box>
           </Box>
         </>
       ) : (

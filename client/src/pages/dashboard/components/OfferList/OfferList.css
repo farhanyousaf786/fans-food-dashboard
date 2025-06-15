@@ -1,0 +1,7 @@
+.offer-card {
+  transition: transform 0.2s ease-in-out;
+}
+
+.offer-card:hover {
+  transform: translateY(-4px);
+}
