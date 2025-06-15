@@ -140,6 +140,36 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, shopData }
               <Switch name="isAvailable" checked={menuItem.isAvailable} onChange={onChange} color="success" />
             </Box>
 
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Typography>Activate Offer</Typography>
+              <Switch 
+                name="offerActive" 
+                checked={menuItem.offerActive || false} 
+                onChange={(e) => onChange({ 
+                  target: { 
+                    name: 'offerActive', 
+                    value: e.target.checked 
+                  } 
+                })} 
+                color="secondary" 
+              />
+            </Box>
+
+            {menuItem.offerActive && (
+              <TextField
+                fullWidth
+                label="Discount Percentage"
+                name="discountPercentage"
+                type="number"
+                value={menuItem.discountPercentage}
+                onChange={onChange}
+                InputProps={{
+                  endAdornment: <Typography sx={{ color: '#888' }}>%</Typography>,
+                  inputProps: { min: 0, max: 100 }
+                }}
+              />
+            )}
+
             <TextField fullWidth label="Preparation Time (min)" name="preparationTime" type="number"
               value={menuItem.preparationTime} onChange={onChange}
               InputProps={{ endAdornment: <AccessTime sx={{ color: '#888' }} /> }}

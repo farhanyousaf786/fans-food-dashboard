@@ -64,7 +64,9 @@ const Dashboard = () => {
       halal: false,
       kosher: false,
       vegan: false
-    }
+    },
+    offerActive: false,
+    discountPercentage: 10
   });
 
   useEffect(() => {
@@ -184,6 +186,10 @@ const Dashboard = () => {
 
   const handleCreateMenuItem = async () => {
     try {
+      if (!shopData?.id || !shopData?.stadiumId) {
+        throw new Error('Missing shop data');
+      }
+
       // First upload all images and get their URLs
       const imageUrls = [];
       if (newMenuItem.images?.length > 0) {
@@ -200,35 +206,67 @@ const Dashboard = () => {
         }
       }
 
-      const menuItem = new MenuItem(
-        newMenuItem.name,
-        newMenuItem.description,
-        parseFloat(newMenuItem.price),
-        newMenuItem.category,
-        imageUrls,
-        newMenuItem.isAvailable,
-        parseInt(newMenuItem.preparationTime),
-        shopData.id,
-        shopData.stadiumId,
-        newMenuItem.customization,
-        newMenuItem.allergens,
-        newMenuItem.nutritionalInfo,
-        newMenuItem.foodType
-      );
+      const menuItemData = {
+        name: newMenuItem.name,
+        description: newMenuItem.description,
+        price: parseFloat(newMenuItem.price),
+        category: newMenuItem.category,
+        images: imageUrls,
+        isAvailable: newMenuItem.isAvailable,
+        preparationTime: parseInt(newMenuItem.preparationTime),
+        customization: newMenuItem.customization,
+        allergens: newMenuItem.allergens,
+        nutritionalInfo: newMenuItem.nutritionalInfo,
+        foodType: newMenuItem.foodType,
+        shopId: shopData.id,
+        stadiumId: shopData.stadiumId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
 
       const menuItemsRef = collection(
         db,
-        "stadiums",
+        'stadiums',
         shopData.stadiumId,
-        "shops",
+        'shops',
         shopData.id,
-        "menuItems"
+        'menuItems'
       );
-      await addDoc(menuItemsRef, menuItem.toFirestore());
-      return true; // Return success to trigger success dialog
+
+      // Create menu item
+      const menuItemDoc = await addDoc(menuItemsRef, menuItemData);
+
+      // If offer is active, create an offer document
+      if (newMenuItem.offerActive) {
+        const offersRef = collection(db, 'offers');
+
+        await addDoc(offersRef, {
+          stadiumId: shopData.stadiumId,
+          menuItemId: menuItemDoc.id,
+          shopId: shopData.id,
+          menuItemDetails: {
+            name: newMenuItem.name,
+            description: newMenuItem.description,
+            price: parseFloat(newMenuItem.price),
+            category: newMenuItem.category,
+            images: imageUrls,
+            isAvailable: newMenuItem.isAvailable,
+            preparationTime: parseInt(newMenuItem.preparationTime),
+            customization: newMenuItem.customization,
+            allergens: newMenuItem.allergens,
+            nutritionalInfo: newMenuItem.nutritionalInfo,
+            foodType: newMenuItem.foodType
+          },
+          discountPercentage: newMenuItem.discountPercentage,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          active: true
+        });
+      }
+
+      handleCloseDialog();
     } catch (error) {
-      console.error("Error creating menu item:", error);
-      throw error; // Re-throw to handle in AddMenuDialog
+      console.error('Error creating menu item:', error);
     }
   };
 
