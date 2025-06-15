@@ -30,6 +30,7 @@ const OfferList = ({ shopData }) => {
   const [loading, setLoading] = useState(true);
   const [selectedOffer, setSelectedOffer] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [readMoreDialogOpen, setReadMoreDialogOpen] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -103,9 +104,29 @@ const OfferList = ({ shopData }) => {
               />
               <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, p: 2 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                  <Typography variant="h6" sx={{ fontSize: '1.1rem' }}>
-                    {offer.name}
-                  </Typography>
+                  <Box>
+                    <Typography variant="h6" sx={{ fontSize: '1.1rem', mb: 0.5 }}>
+                      {offer.name}
+                    </Typography>
+                    {offer.description && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          {offer.description.split(' ').slice(0, 5).join(' ')}
+                          {offer.description.split(' ').length > 5 ? '...' : ''}
+                        </Typography>
+                        <Button 
+                          size="small" 
+                          sx={{ minWidth: 'auto', p: 0, color: 'primary.main', fontSize: '0.75rem' }}
+                          onClick={() => {
+                            setSelectedOffer(offer);
+                            setReadMoreDialogOpen(true);
+                          }}
+                        >
+                          Read More
+                        </Button>
+                      </Box>
+                    )}
+                  </Box>
                   <IconButton 
                     size="small" 
                     onClick={() => handleDelete(offer)}
@@ -172,6 +193,57 @@ const OfferList = ({ shopData }) => {
           <Button onClick={handleConfirmDelete} color="error" variant="contained">
             Delete
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Read More Dialog */}
+      <Dialog 
+        open={readMoreDialogOpen} 
+        onClose={() => setReadMoreDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ pb: 1 }}>{selectedOffer?.name}</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>Description</Typography>
+            <Typography>{selectedOffer?.description}</Typography>
+          </Box>
+
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>Price Details</Typography>
+            <Typography>Original Price: ${(selectedOffer?.price || 0).toFixed(2)}</Typography>
+            <Typography>Discount: {selectedOffer?.discountPercentage}%</Typography>
+            <Typography color="secondary.main" sx={{ fontWeight: 600 }}>
+              Final Price: ${((selectedOffer?.price || 0) * (1 - (selectedOffer?.discountPercentage || 0)/100)).toFixed(2)}
+            </Typography>
+          </Box>
+
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>Additional Information</Typography>
+            <Typography>Category: {selectedOffer?.category}</Typography>
+            <Typography>Preparation Time: {selectedOffer?.preparationTime} minutes</Typography>
+            <Typography>Status: {selectedOffer?.isAvailable ? 'Available' : 'Unavailable'}</Typography>
+          </Box>
+
+          {selectedOffer?.customization && Object.keys(selectedOffer.customization).length > 0 && (
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>Customization Options</Typography>
+              {Object.entries(selectedOffer.customization).map(([type, options]) => (
+                <Box key={type} sx={{ mb: 1 }}>
+                  <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>{type}:</Typography>
+                  {options.map((option, idx) => (
+                    <Typography key={idx} variant="body2" color="text.secondary" sx={{ ml: 2 }}>
+                      • {option.name} (${option.price})
+                    </Typography>
+                  ))}
+                </Box>
+              ))}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReadMoreDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>
