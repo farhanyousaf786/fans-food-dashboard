@@ -95,15 +95,15 @@ const OfferList = ({ shopData }) => {
       <Grid container spacing={3}>
         {offers.map((offer) => (
           <Grid item xs={12} sm={6} md={4} key={offer.id}>
-            <Card sx={{ display: 'flex', height: 180, overflow: 'hidden' }}>
+            <Card sx={{ display: 'flex', height: 220, overflow: 'hidden' }}>
               <CardMedia
                 component="img"
                 image={offer.images?.[0] || '/placeholder.jpg'}
                 alt={offer.name}
-                sx={{ width: 180, height: 180, objectFit: 'cover' }}
+                sx={{ width: 220, height: 220, objectFit: 'cover' }}
               />
               <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, p: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                   <Box>
                     <Typography variant="h6" sx={{ fontSize: '1.1rem', mb: 0.5 }}>
                       {offer.name}
@@ -141,10 +141,10 @@ const OfferList = ({ shopData }) => {
                   label={`${offer.discountPercentage}% OFF`}
                   color="secondary"
                   size="small"
-                  sx={{ alignSelf: 'flex-start', mb: 1 }}
+                  sx={{ alignSelf: 'flex-start', mb: 2 }}
                 />
 
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
                   Original Price: ${(offer.price || 0).toFixed(2)}
                 </Typography>
                 <Typography variant="h6" color="secondary" sx={{ fontSize: '1.1rem' }}>

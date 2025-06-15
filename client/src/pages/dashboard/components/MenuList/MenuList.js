@@ -37,8 +37,9 @@ const MenuList = ({ shopData }) => {
   const [loading, setLoading] = useState(true);
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [readMoreDialogOpen, setReadMoreDialogOpen] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -185,16 +186,38 @@ const MenuList = ({ shopData }) => {
       <Grid container spacing={3}>
         {menuItems.map((item) => (
           <Grid item xs={12} sm={6} md={4} key={item.id}>
-            <Card sx={{ display: 'flex', height: 180, overflow: 'hidden' }}>
+            <Card sx={{ display: 'flex', height: 220, overflow: 'hidden' }}>
               <CardMedia
                 component="img"
                 image={item.images?.[0] || '/placeholder.jpg'}
                 alt={item.name}
-                sx={{ width: 180, height: 180, objectFit: 'cover' }}
+                sx={{ width: 220, height: 220, objectFit: 'cover' }}
               />
               <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, p: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                  <Typography variant="h6" className="menu-title" sx={{ fontSize: '1.1rem' }}>{item.name}</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                  <Box>
+                    <Typography variant="h6" sx={{ fontSize: '1.1rem', mb: 0.5 }}>
+                      {item.name}
+                    </Typography>
+                    {item.description && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          {item.description.split(' ').slice(0, 5).join(' ')}
+                          {item.description.split(' ').length > 5 ? '...' : ''}
+                        </Typography>
+                        <Button 
+                          size="small" 
+                          sx={{ minWidth: 'auto', p: 0, color: 'primary.main', fontSize: '0.75rem' }}
+                          onClick={() => {
+                            setSelectedItem(item);
+                            setReadMoreDialogOpen(true);
+                          }}
+                        >
+                          Read More
+                        </Button>
+                      </Box>
+                    )}
+                  </Box>
                   <Box sx={{ display: 'flex', gap: 0.5 }}>
                     <IconButton size="small" onClick={() => handleEdit(item)} sx={{ padding: '4px' }}>
                       <Edit sx={{ fontSize: 18 }} />
@@ -204,9 +227,7 @@ const MenuList = ({ shopData }) => {
                     </IconButton>
                   </Box>
                 </Box>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                  {item.description}
-                </Typography>
+               
                 <Box sx={{ mt: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography variant="h6" color="primary" sx={{ fontSize: '1.1rem' }}>${parseFloat(item.price).toFixed(2)}</Typography>
                   <Box sx={{ display: 'flex', gap: 0.5 }}>
@@ -257,6 +278,53 @@ const MenuList = ({ shopData }) => {
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
           <Button onClick={handleConfirmDelete} color="error" variant="contained">Delete</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Read More Dialog */}
+      <Dialog 
+        open={readMoreDialogOpen} 
+        onClose={() => setReadMoreDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ pb: 1 }}>{selectedItem?.name}</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>Description</Typography>
+            <Typography>{selectedItem?.description}</Typography>
+          </Box>
+
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>Price Details</Typography>
+            <Typography>Price: ${(selectedItem?.price || 0).toFixed(2)}</Typography>
+          </Box>
+
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>Additional Information</Typography>
+            <Typography>Category: {selectedItem?.category}</Typography>
+            <Typography>Preparation Time: {selectedItem?.preparationTime} minutes</Typography>
+            <Typography>Status: {selectedItem?.isAvailable ? 'Available' : 'Unavailable'}</Typography>
+          </Box>
+
+          {selectedItem?.customization && Object.keys(selectedItem.customization).length > 0 && (
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>Customization Options</Typography>
+              {Object.entries(selectedItem.customization).map(([type, options]) => (
+                <Box key={type} sx={{ mb: 1 }}>
+                  <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>{type}:</Typography>
+                  {options.map((option, idx) => (
+                    <Typography key={idx} variant="body2" color="text.secondary" sx={{ ml: 2 }}>
+                      • {option.name} (${option.price})
+                    </Typography>
+                  ))}
+                </Box>
+              ))}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReadMoreDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>
