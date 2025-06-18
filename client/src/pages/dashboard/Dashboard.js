@@ -15,16 +15,20 @@ import {
   ShoppingCart as OrdersIcon,
   AttachMoney as MoneyIcon,
   TrendingUp as TrendingUpIcon,
-  People as PeopleIcon,
+  People as PeopleIcon
 } from "@mui/icons-material";
 import { db } from "../../config/firebase";
 import {
   collection,
   addDoc,
+  doc,
+  getDoc,
+  updateDoc,
   query,
   getDocs,
   orderBy,
   where,
+  Timestamp
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "../../config/firebase";
@@ -221,18 +225,15 @@ const Dashboard = () => {
         foodType: newMenuItem.foodType,
         shopId: shopData.id,
         stadiumId: shopData.stadiumId,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        createdAt: Timestamp.fromDate(new Date()),
+        updatedAt: Timestamp.fromDate(new Date())
       };
 
       if (newMenuItem.offerActive) {
-        // If it's an offer, save only in offers collection
-        const offersRef = collection(db, 'offers');
-        await addDoc(offersRef, {
-          ...commonData,
-          discountPercentage: Number(newMenuItem.discountPercentage || 0).toFixed(1) * 1,
-          active: true
-        });
+        // Save only in offers collection
+        const offerDoc = await addDoc(collection(db, 'offers'), {...commonData, discountPercentage: Number(newMenuItem.discountPercentage || 0).toFixed(1) * 1, active: true});
+        // Update the document to include its own ID
+        await updateDoc(offerDoc, { id: offerDoc.id });
       } else {
         // If not an offer, save in menuItems collection
         const menuItemsRef = collection(
