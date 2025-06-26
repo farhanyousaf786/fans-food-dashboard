@@ -26,9 +26,10 @@ import {
   Circle,
   Warning
 } from '@mui/icons-material';
-import { collection, query, onSnapshot, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, deleteDoc, updateDoc, where } from 'firebase/firestore';
 import { ref, deleteObject, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../../../config/firebase';
+import MenuItemModel from '../../../../models/MenuItem';
 import EditMenuDialog from './EditMenuDialog';
 import './MenuList.css';
 
@@ -45,14 +46,13 @@ const MenuList = ({ shopData }) => {
 
   useEffect(() => {
     if (!shopData?.id) return;
-    const menuItemsRef = collection(db, 'stadiums', shopData.stadiumId, 'shops', shopData.id, 'menuItems');
-    const q = query(menuItemsRef);
+    const menuItemsRef = collection(db, 'menuItems');
+    const q = query(menuItemsRef, where('shopId', '==', shopData.id));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const items = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const items = snapshot.docs.map(doc => 
+        MenuItemModel.fromFirestore(doc.data(), doc.id)
+      );
       setMenuItems(items);
       setLoading(false);
     });
@@ -102,13 +102,24 @@ const MenuList = ({ shopData }) => {
         }
       }
 
-      const itemToUpdate = {
-        ...updatedItem,
-        images: imageUrls.length > 0 ? imageUrls : updatedItem.images || [],
-        updatedAt: new Date().toISOString()
-      };
+      const menuItem = new MenuItemModel(
+        updatedItem.name,
+        updatedItem.description,
+        updatedItem.price,
+        updatedItem.category,
+        imageUrls.length > 0 ? imageUrls : updatedItem.images || [],
+        updatedItem.isAvailable,
+        updatedItem.preparationTime,
+        shopData.id,
+        shopData.stadiumId,
+        selectedItem.docId
+      );
+      menuItem.customization = updatedItem.customization;
+      menuItem.allergens = updatedItem.allergens;
+      menuItem.nutritionalInfo = updatedItem.nutritionalInfo;
+      menuItem.foodType = updatedItem.foodType;
 
-      await updateDoc(menuItemRef, itemToUpdate);
+      await updateDoc(menuItemRef, menuItem.toFirestore());
       setSuccess('Menu item updated successfully!');
       setTimeout(() => setSuccess(''), 3000);
       setEditDialogOpen(false);
@@ -134,7 +145,7 @@ const MenuList = ({ shopData }) => {
         }
       }
 
-      const menuItemRef = doc(db, 'stadiums', shopData.stadiumId, 'shops', shopData.id, 'menuItems', selectedItem.id);
+      const menuItemRef = doc(db, 'menuItems', selectedItem.docId);
       await deleteDoc(menuItemRef);
       setSuccess('Menu item deleted successfully!');
       setTimeout(() => setSuccess(''), 3000);

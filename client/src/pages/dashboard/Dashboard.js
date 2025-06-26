@@ -211,40 +211,39 @@ const Dashboard = () => {
         }
       }
 
-      const commonData = {
-        name: newMenuItem.name,
-        description: newMenuItem.description,
-        price: parseFloat(newMenuItem.price),
-        category: newMenuItem.category,
-        images: imageUrls,
-        isAvailable: newMenuItem.isAvailable,
-        preparationTime: parseInt(newMenuItem.preparationTime),
-        customization: newMenuItem.customization,
-        allergens: newMenuItem.allergens,
-        nutritionalInfo: newMenuItem.nutritionalInfo,
-        foodType: newMenuItem.foodType,
-        shopId: shopData.id,
-        stadiumId: shopData.stadiumId,
-        createdAt: Timestamp.fromDate(new Date()),
-        updatedAt: Timestamp.fromDate(new Date())
-      };
+      // Create MenuItem instance
+      const menuItem = new MenuItem(
+        newMenuItem.name,
+        newMenuItem.description,
+        parseFloat(newMenuItem.price),
+        newMenuItem.category,
+        imageUrls,
+        newMenuItem.isAvailable,
+        parseInt(newMenuItem.preparationTime),
+        shopData.id,
+        shopData.stadiumId
+      );
+
+      menuItem.customization = newMenuItem.customization;
+      menuItem.allergens = newMenuItem.allergens;
+      menuItem.nutritionalInfo = newMenuItem.nutritionalInfo;
+      menuItem.foodType = newMenuItem.foodType;
 
       if (newMenuItem.offerActive) {
-        // Save only in offers collection
-        const offerDoc = await addDoc(collection(db, 'offers'), {...commonData, discountPercentage: Number(newMenuItem.discountPercentage || 0).toFixed(1) * 1, active: true});
-        // Update the document to include its own ID
-        await updateDoc(offerDoc, { id: offerDoc.id });
+        // Save in offers collection
+        const offerDoc = await addDoc(collection(db, 'offers'), {
+          ...menuItem.toFirestore(),
+          discountPercentage: Number(newMenuItem.discountPercentage || 0).toFixed(1) * 1,
+          active: true
+        });
+        // Update with docId
+        await updateDoc(offerDoc, { docId: offerDoc.id });
       } else {
-        // If not an offer, save in menuItems collection
-        const menuItemsRef = collection(
-          db,
-          'stadiums',
-          shopData.stadiumId,
-          'shops',
-          shopData.id,
-          'menuItems'
-        );
-        await addDoc(menuItemsRef, commonData);
+        // Save in root menuItems collection
+        const menuItemsRef = collection(db, 'menuItems');
+        const menuItemDoc = await addDoc(menuItemsRef, menuItem.toFirestore());
+        // Update with docId
+        await updateDoc(menuItemDoc, { docId: menuItemDoc.id });
       }
 
       handleCloseDialog();

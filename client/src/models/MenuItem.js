@@ -11,6 +11,7 @@ class MenuItem {
         preparationTime = 15,
         shopId,
         stadiumId,
+        docId = null,
         customization = {
             toppings: [],
             extras: [],
@@ -34,6 +35,7 @@ class MenuItem {
         this.preparationTime = preparationTime;
         this.shopId = shopId;
         this.stadiumId = stadiumId;
+        this.docId = docId;
         this.customization = customization;
         this.allergens = allergens;
         this.nutritionalInfo = nutritionalInfo;
@@ -57,6 +59,7 @@ class MenuItem {
             allergens: this.allergens,
             nutritionalInfo: this.nutritionalInfo,
             foodType: this.foodType,
+            docId: this.docId,
             createdAt: this.createdAt instanceof Date ? Timestamp.fromDate(this.createdAt) : this.createdAt,
             updatedAt: this.updatedAt instanceof Date ? Timestamp.fromDate(this.updatedAt) : this.updatedAt
         };
@@ -73,6 +76,7 @@ class MenuItem {
             data.preparationTime,
             data.shopId,
             data.stadiumId,
+            data.docId,
             data.customization || {
                 toppings: [],
                 extras: [],
