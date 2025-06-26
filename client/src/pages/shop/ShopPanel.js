@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../../config/firebase';
 import { signOut } from 'firebase/auth';
-import { collection, getDocs, addDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, doc, updateDoc } from 'firebase/firestore';
 import {
   Card,
   CardContent,
@@ -46,17 +46,12 @@ const ShopPanel = () => {
         const stadiumList = stadiumSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setStadiums(stadiumList);
 
-        const allShops = [];
-        for (const stadium of stadiumList) {
-          const shopsCollection = collection(db, 'stadiums', stadium.id, 'shops');
-          const shopsSnapshot = await getDocs(shopsCollection);
-          const stadiumShops = shopsSnapshot.docs.map(doc => ({
-            id: doc.id,
-            stadiumName: stadium.name,
-            ...doc.data()
-          }));
-          allShops.push(...stadiumShops);
-        }
+        // Get shops from root collection
+        const shopsCollection = collection(db, 'shops');
+        const shopsSnapshot = await getDocs(shopsCollection);
+        const allShops = shopsSnapshot.docs.map(doc => 
+          Shop.fromFirestore(doc.data(), doc.id)
+        );
         setShops(allShops);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -89,6 +84,9 @@ const ShopPanel = () => {
 
   const handleCreateShop = async () => {
     try {
+      const stadiumName = stadiums.find(s => s.id === selectedStadiumId)?.name;
+
+      // Create new Shop instance
       const shop = new Shop(
         newShop.name,
         newShop.location,
@@ -96,21 +94,23 @@ const ShopPanel = () => {
         newShop.gate,
         newShop.description,
         [auth.currentUser.uid],
-        selectedStadiumId
+        selectedStadiumId,
+        stadiumName
       );
 
-      const stadiumRef = doc(db, 'stadiums', selectedStadiumId);
-      const shopsCollection = collection(stadiumRef, 'shops');
-      await addDoc(shopsCollection, shop.toFirestore());
+      // First create shop in root collection
+      const shopsRootCollection = collection(db, 'shops');
+      const shopDocRef = await addDoc(shopsRootCollection, shop.toFirestore());
+      
+      // Update the shop instance and document with its own ID
+      shop.docId = shopDocRef.id;
+      await updateDoc(shopDocRef, { docId: shopDocRef.id });
+
       handleCloseDialog();
 
-      const updatedShopsSnapshot = await getDocs(shopsCollection);
-      const updatedShops = updatedShopsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        stadiumName: stadiums.find(s => s.id === selectedStadiumId)?.name,
-        ...doc.data()
-      }));
-      setShops(prev => [...prev, ...updatedShops]);
+      // Update local state with new shop
+      const shopWithId = Shop.fromFirestore({ ...shop.toFirestore() }, shopDocRef.id);
+      setShops(prev => [...prev, shopWithId]);
     } catch (error) {
       console.error('Error creating shop:', error);
     }
