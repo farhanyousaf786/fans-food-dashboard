@@ -318,19 +318,88 @@ const MenuList = ({ shopData }) => {
             <Typography>Status: {selectedItem?.isAvailable ? 'Available' : 'Unavailable'}</Typography>
           </Box>
 
-          {selectedItem?.customization && Object.keys(selectedItem.customization).length > 0 && (
-            <Box>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>Customization Options</Typography>
-              {Object.entries(selectedItem.customization).map(([type, options]) => (
-                <Box key={type} sx={{ mb: 1 }}>
-                  <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>{type}:</Typography>
-                  {options.map((option, idx) => (
-                    <Typography key={idx} variant="body2" color="text.secondary" sx={{ ml: 2 }}>
-                      • {option.name} (${option.price})
+          {/* Food Type Information */}
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>Food Type</Typography>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Chip
+                label="Halal"
+                color={selectedItem?.foodType?.halal ? 'success' : 'default'}
+                variant={selectedItem?.foodType?.halal ? 'filled' : 'outlined'}
+                size="small"
+              />
+              <Chip
+                label="Kosher"
+                color={selectedItem?.foodType?.kosher ? 'success' : 'default'}
+                variant={selectedItem?.foodType?.kosher ? 'filled' : 'outlined'}
+                size="small"
+              />
+              <Chip
+                label="Vegan"
+                color={selectedItem?.foodType?.vegan ? 'success' : 'default'}
+                variant={selectedItem?.foodType?.vegan ? 'filled' : 'outlined'}
+                size="small"
+              />
+            </Box>
+          </Box>
+
+          {/* Allergens */}
+          {selectedItem?.allergens?.length > 0 && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>Allergens</Typography>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                {selectedItem.allergens.map((allergen, idx) => (
+                  <Chip
+                    key={idx}
+                    label={allergen}
+                    color="warning"
+                    size="small"
+                    variant="outlined"
+                  />
+                ))}
+              </Box>
+            </Box>
+          )}
+
+          {/* Nutritional Information */}
+          {Object.keys(selectedItem?.nutritionalInfo || {}).length > 0 && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>Nutritional Information</Typography>
+              <Grid container spacing={2}>
+                {Object.entries(selectedItem.nutritionalInfo).map(([key, value]) => (
+                  <Grid item xs={6} sm={4} key={key}>
+                    <Typography variant="body2" color="text.secondary" sx={{ textTransform: 'capitalize' }}>
+                      {key}: {value}
                     </Typography>
-                  ))}
-                </Box>
-              ))}
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          )}
+
+          {/* Customization Options */}
+          {selectedItem?.customization && Object.keys(selectedItem.customization).length > 0 && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>Customization Options</Typography>
+              <Grid container spacing={2}>
+                {Object.entries(selectedItem.customization).map(([type, options]) => (
+                  <Grid item xs={12} sm={6} key={type}>
+                    <Typography variant="body2" sx={{ 
+                      textTransform: 'capitalize',
+                      fontWeight: 'bold',
+                      mb: 1
+                    }}>{type}</Typography>
+                    {options.map((option, idx) => (
+                      <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                        <Typography variant="body2" color="text.secondary">{option.name}</Typography>
+                        <Typography variant="body2" color="primary">
+                          ${typeof option.price === 'number' ? option.price.toFixed(2) : parseFloat(option.price || 0).toFixed(2)}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Grid>
+                ))}
+              </Grid>
             </Box>
           )}
         </DialogContent>

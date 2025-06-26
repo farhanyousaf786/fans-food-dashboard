@@ -5,7 +5,8 @@ import {
   TextField, Select, MenuItem, FormControl, InputLabel,
   Switch, Button, Box, Typography,
   IconButton, Stack, Divider, CircularProgress,
-  Checkbox, FormGroup, FormControlLabel
+  Checkbox, FormGroup, FormControlLabel, Grid,
+  Chip, Autocomplete
 } from '@mui/material';
 import {
   AccessTime, CloudUpload, Delete, Save,
@@ -14,7 +15,17 @@ import {
 import './AddMenuDialog.css';
 
 const categories = [
-  'Appetizers', 'Main Course', 'Sides', 'Beverages', 'Desserts', 'Specials'
+  'Breakfast',
+  'Lunch',
+  'Dinner',
+  'Snacks & Starters',
+  'Drinks & Beverages',
+  'Desserts',
+  'Soups & Salads',
+  'Fast Food',
+  'Healthy Options',
+  'Kids Menu',
+  'Combos & Meal Deals'
 ];
 
 const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, shopData }) => {
@@ -70,7 +81,12 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, shopData }
 
   const handleOptionChange = (type, index, field, value) => {
     const updated = { ...menuItem.customization };
-    updated[type][index][field] = value;
+    // Convert price to number
+    if (field === 'price') {
+      updated[type][index][field] = parseFloat(value) || 0;
+    } else {
+      updated[type][index][field] = value;
+    }
     onChange({ target: { name: 'customization', value: updated } });
   };
 
@@ -179,7 +195,140 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, shopData }
               InputProps={{ endAdornment: <AccessTime sx={{ color: '#888' }} /> }}
             />
 
-            {/* --- Customization Section (Toppings, Extras, etc.) — you can keep your current logic here --- */}
+            {/* Allergens Section */}
+            <Box sx={{ mt: 3, border: '1px solid #ddd', borderRadius: '8px', p: 2, bgcolor: '#fff' }}>
+              <Typography variant="subtitle1" fontWeight="500" gutterBottom>Allergens</Typography>
+              <Autocomplete
+                multiple
+                freeSolo
+                options={[]}
+                value={menuItem.allergens || []}
+                onChange={(event, newValue) => {
+                  onChange({ target: { name: 'allergens', value: newValue } });
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    variant="outlined"
+                    placeholder="Type allergen and press Enter"
+                    helperText="Type any allergen and press Enter to add it"
+                  />
+                )}
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => (
+                    <Chip
+                      label={option}
+                      {...getTagProps({ index })}
+                      color="warning"
+                      variant="outlined"
+                    />
+                  ))
+                }
+              />
+            </Box>
+
+            {/* Nutritional Information */}
+            <Box sx={{ mt: 3, border: '1px solid #ddd', borderRadius: '8px', p: 2, bgcolor: '#fff' }}>
+              <Typography variant="subtitle1" fontWeight="500" gutterBottom>Nutritional Information</Typography>
+              <Box sx={{ mb: 1 }}>
+                <Autocomplete
+                  multiple
+                  freeSolo
+                  options={[]}
+                  value={Object.entries(menuItem.nutritionalInfo || {}).map(([key, value]) => `${key}: ${value}`)}
+                  onChange={(event, newValue) => {
+                    const nutritionalInfo = {};
+                    newValue.forEach(item => {
+                      const [key, value] = item.split(':').map(s => s.trim());
+                      if (key && value) {
+                        nutritionalInfo[key.toLowerCase()] = value;
+                      }
+                    });
+                    onChange({
+                      target: {
+                        name: 'nutritionalInfo',
+                        value: nutritionalInfo
+                      }
+                    });
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      variant="outlined"
+                      placeholder="Type info like 'Calories: 500' and press Enter"
+                      helperText="Format: Name: Value (e.g., 'Protein: 20g')"
+                    />
+                  )}
+                  renderTags={(value, getTagProps) =>
+                    value.map((option, index) => (
+                      <Chip
+                        label={option}
+                        {...getTagProps({ index })}
+                        color="info"
+                        variant="outlined"
+                      />
+                    ))
+                  }
+                />
+              </Box>
+            </Box>
+
+            {/* Customization Options */}
+            <Box sx={{ mt: 3, border: '1px solid #ddd', borderRadius: '8px', p: 2, bgcolor: '#fff' }}>
+              <Typography variant="subtitle1" fontWeight="500" gutterBottom>Customization Options</Typography>
+              {Object.entries(menuItem.customization).map(([type, options]) => (
+                <Box key={type} sx={{ mb: 3 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Typography variant="subtitle2" sx={{ textTransform: 'capitalize' }}>{type}</Typography>
+                    <Button
+                      size="small"
+                      startIcon={<AddCircleOutline />}
+                      onClick={() => handleAddOption(type)}
+                    >
+                      Add {type.slice(0, -1)}
+                    </Button>
+                  </Box>
+                  <Stack spacing={2}>
+                    {options.map((option, index) => (
+                      <Box key={index} sx={{
+                        display: 'flex',
+                        gap: 2,
+                        alignItems: 'center',
+                        p: 1,
+                        border: '1px solid #eee',
+                        borderRadius: '4px'
+                      }}>
+                        <TextField
+                          size="small"
+                          label="Name"
+                          value={option.name}
+                          onChange={(e) => handleOptionChange(type, index, 'name', e.target.value)}
+                          sx={{ flex: 1 }}
+                        />
+                        <TextField
+                          size="small"
+                          label="Price"
+                          type="number"
+                          value={option.price}
+                          onChange={(e) => handleOptionChange(type, index, 'price', e.target.value)}
+                          sx={{ width: '100px' }}
+                          InputProps={{
+                            startAdornment: <Typography>$</Typography>
+                          }}
+                        />
+                        <IconButton
+                          size="small"
+                          onClick={() => handleRemoveOption(type, index)}
+                          color="error"
+                        >
+                          <RemoveCircleOutline />
+                        </IconButton>
+                      </Box>
+                    ))}
+                  </Stack>
+                </Box>
+              ))}
+            </Box>
 
             {/* Image Upload Section */}
             <Box sx={{ border: '1px solid #ddd', borderRadius: '8px', p: 2, bgcolor: '#fff' }}>
