@@ -117,7 +117,23 @@ const Auth = () => {
 
         } catch (error) {
             console.error('Auth error:', error);
-            setError(error.message);
+            // More detailed error logging
+            if (error.code) {
+                console.error('Error code:', error.code);
+            }
+            if (error.customData) {
+                console.error('Error custom data:', error.customData);
+            }
+            // Set a more user-friendly error message
+            if (error.code === 'auth/invalid-credential') {
+                setError('Invalid email or password. Please check your credentials and try again.');
+            } else if (error.code === 'auth/user-not-found') {
+                setError('No user found with this email. Please check your email or sign up.');
+            } else if (error.code === 'auth/wrong-password') {
+                setError('Incorrect password. Please try again.');
+            } else {
+                setError(error.message || 'An error occurred during authentication');
+            }
         }
     };
 
