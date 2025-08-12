@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../../config/firebase';
 import { signOut } from 'firebase/auth';
-import { collection, getDocs, addDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, doc, updateDoc, getDoc } from 'firebase/firestore';
 import {
   Card,
   CardContent,
@@ -46,13 +46,23 @@ const ShopPanel = () => {
         const stadiumList = stadiumSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setStadiums(stadiumList);
 
-        // Get shops from root collection
+        // Get shops from root collection - only shops owned by current user
         const shopsCollection = collection(db, 'shops');
         const shopsSnapshot = await getDocs(shopsCollection);
         const allShops = shopsSnapshot.docs.map(doc => 
           Shop.fromFirestore(doc.data(), doc.id)
         );
-        setShops(allShops);
+        
+        // Filter shops to show only those owned by current user
+        const userShops = allShops.filter(shop => 
+          shop.admins && shop.admins.includes(auth.currentUser.uid)
+        );
+        
+        console.log('🏪 SHOP PANEL: Total shops in database:', allShops.length);
+        console.log('🏪 SHOP PANEL: User owns shops:', userShops.length);
+        console.log('🏪 SHOP PANEL: User shop IDs:', userShops.map(shop => shop.docId));
+        
+        setShops(userShops);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -105,6 +115,26 @@ const ShopPanel = () => {
       // Update the shop instance and document with its own ID
       shop.docId = shopDocRef.id;
       await updateDoc(shopDocRef, { docId: shopDocRef.id });
+
+      // Add shop ID to user's shopsId array
+      const userDocRef = doc(db, 'users', auth.currentUser.uid);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const currentShopsId = userData.shopsId || [];
+        
+        // Add new shop ID to user's shops array
+        const updatedShopsId = [...currentShopsId, shopDocRef.id];
+        
+        await updateDoc(userDocRef, {
+          shopsId: updatedShopsId,
+          updatedAt: new Date()
+        });
+        
+        console.log('✅ SHOP CREATION: Shop ID added to user record:', shopDocRef.id);
+        console.log('🏪 SHOP CREATION: User now has shops:', updatedShopsId);
+      }
 
       handleCloseDialog();
 

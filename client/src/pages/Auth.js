@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth, db } from "../config/firebase";
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, db, getFCMToken, generateDeviceId } from "../config/firebase";
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { motion } from 'framer-motion';
 import { FiMail, FiLock, FiUser, FiKey } from 'react-icons/fi';
 import User from '../models/User';
+import logo from '../assets/logo.png';
 import '../styles/Auth.css';
 
 const Auth = () => {
@@ -36,8 +37,11 @@ const Auth = () => {
                 setError('Name is required');
                 return false;
             }
-            if (formData.code !== 'fansfood786') {
-                setError('Invalid registration code');
+            // Role-specific registration code validation
+            const requiredCode = formData.role === 'admin' ? 'fanmunchadmin' : 
+                               formData.role === 'delivery' ? 'have this ' : 'fanmunchshop';
+            if (formData.code !== requiredCode) {
+                setError(`Invalid registration code for ${formData.role}`);
                 return false;
             }
         }
@@ -54,6 +58,22 @@ const Auth = () => {
 
         try {
             let userCredential;
+            
+            // Get or generate device ID
+            let deviceId = localStorage.getItem('deviceId');
+            if (!deviceId) {
+                deviceId = generateDeviceId();
+                localStorage.setItem('deviceId', deviceId);
+                console.log('🆔 Generated new device ID:', deviceId);
+            } else {
+                console.log('🆔 Using existing device ID:', deviceId);
+            }
+
+            // Get FCM token
+            console.log('🔔 Attempting to get FCM token...');
+            const fcmToken = await getFCMToken();
+            console.log('🔔 FCM Token received:', fcmToken ? 'Success' : 'Failed', fcmToken?.substring(0, 20) + '...');
+
             if (isSignUp) {
                 // Sign up
                 userCredential = await createUserWithEmailAndPassword(
@@ -67,10 +87,21 @@ const Auth = () => {
                     formData.name,
                     formData.email,
                     formData.role,
-                    formData.code
+                    formData.code,
+                    userCredential.user.uid
                 );
 
+                // Add FCM token if available
+                if (fcmToken) {
+                    console.log('📝 SIGN UP: Adding FCM token to new user');
+                    user.addFCMToken(deviceId, fcmToken);
+                    console.log('📝 SIGN UP: FCM tokens after adding:', user.fcmTokens);
+                } else {
+                    console.log('⚠️ SIGN UP: No FCM token available');
+                }
+
                 await setDoc(doc(db, 'users', userCredential.user.uid), user.toFirestore());
+                console.log('✅ SIGN UP: User document created in Firestore');
                 localStorage.setItem('user', JSON.stringify(user));
             } else {
                 // Sign in
@@ -83,6 +114,22 @@ const Auth = () => {
                 
                 const userData = userDoc.data();
                 const user = User.fromFirestore(userData, userCredential.user.uid);
+                console.log('🔍 SIGN IN: Current FCM tokens before update:', user.fcmTokens);
+                
+                // Update FCM token for this device
+                if (fcmToken) {
+                    console.log('📝 SIGN IN: Adding/updating FCM token for device:', deviceId);
+                    user.addFCMToken(deviceId, fcmToken);
+                    console.log('📝 SIGN IN: FCM tokens after adding:', user.fcmTokens);
+                    await updateDoc(doc(db, 'users', userCredential.user.uid), {
+                        fcmTokens: user.fcmTokens,
+                        updatedAt: user.updatedAt
+                    });
+                    console.log('✅ SIGN IN: FCM token updated in Firestore');
+                } else {
+                    console.log('⚠️ SIGN IN: No FCM token available');
+                }
+                
                 localStorage.setItem('user', JSON.stringify(user));
             }
 
@@ -106,13 +153,16 @@ const Auth = () => {
                         case 'shopowner':
                             navigate('/shop');
                             break;
+                        case 'delivery':
+                            navigate('/dashboard');
+                            break;
                         default:
                             navigate('/dashboard');
                     }
                 } else {
                     navigate('/dashboard');
                 }
-                window.location.reload(); // Force reload to update auth state
+                console.log('🔄 AUTH: Navigation completed (no reload to preserve console logs)');
             }, 500);
 
         } catch (error) {
@@ -168,8 +218,9 @@ const Auth = () => {
                     transition={{ type: "spring", stiffness: 300 }}
                 >
                     <img 
-                        src="https://firebasestorage.googleapis.com/v0/b/fans-food-stf.firebasestorage.app/o/static-images%2Ffans_food_logo_green.png?alt=media&token=8091953e-5fcc0-478a-af56-7db90a45d00e" 
-                        alt="Fans Food Logo"
+                        src={logo} 
+                        alt="FansFood Logo"
+                        style={{ maxWidth: '200px', height: 'auto' }}
                     />
                 </motion.div>
                 <motion.div 
@@ -275,6 +326,7 @@ const Auth = () => {
                                     >
                                         <option value="shopowner">Shop Owner</option>
                                         <option value="admin">Admin</option>
+                                        <option value="delivery">Delivery Person</option>
                                     </select>
                                 </div>
                             </>

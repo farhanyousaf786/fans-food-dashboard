@@ -14,20 +14,20 @@ import Stadium from './pages/stadium/Stadium';
 import Orders from './pages/orders/Orders';
 import Sidebar from './components/Sidebar';
 
-// Create theme instance
+// Create theme instance with new blue color scheme
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#4C9E48',
-      light: '#6abe66',
-      dark: '#356e32',
+      main: '#3D70FF',
+      light: '#5A84F8',
+      dark: '#3161EA',
       contrastText: '#ffffff',
     },
     secondary: {
       main: '#dc004e',
     },
     background: {
-      default: '#FFFFFF',
+      default: '#F5F5F5',
       paper: '#FFFFFF',
     },
   },
@@ -61,16 +61,32 @@ const DashboardLayout = ({ children }) => {
 
 const PrivateRoute = ({ children, requiredRole }) => {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user'));
+  const userString = localStorage.getItem('user');
+  
+  console.log('🔐 PRIVATE ROUTE: Checking authentication...');
+  console.log('🔐 PRIVATE ROUTE: User string from localStorage:', userString);
+  
+  let user = null;
+  try {
+    user = userString ? JSON.parse(userString) : null;
+    console.log('🔐 PRIVATE ROUTE: Parsed user:', user);
+  } catch (error) {
+    console.error('🔐 PRIVATE ROUTE: Error parsing user data:', error);
+    localStorage.removeItem('user'); // Clear corrupted data
+    return <Navigate to="/auth" />;
+  }
 
   if (!user) {
+    console.log('🔐 PRIVATE ROUTE: No user found, redirecting to auth');
     return <Navigate to="/auth" />;
   }
 
   if (requiredRole && user.role !== requiredRole) {
+    console.log('🔐 PRIVATE ROUTE: Role mismatch. Required:', requiredRole, 'User role:', user.role);
     return <Navigate to="/dashboard" />;
   }
 
+  console.log('🔐 PRIVATE ROUTE: Authentication successful for user:', user.email);
   return children;
 };
 

@@ -257,7 +257,7 @@ const Dashboard = () => {
       title: "Total Orders",
       value: stats.totalOrders,
       icon: <OrdersIcon />,
-      color: "#4C9E48",
+      color: "#3D70FF",
       lightColor: "#e8f5e9",
     },
     {
@@ -333,8 +333,8 @@ const Dashboard = () => {
               startIcon={<Add />}
               onClick={handleAddMenu}
               sx={{
-                bgcolor: "#4C9E48",
-                "&:hover": { bgcolor: "#3d8b3d" },
+                bgcolor: "#3D70FF",
+                "&:hover": { bgcolor: "#3161EA" },
                 px: 3,
                 py: 1,
                 borderRadius: 2,

@@ -37,17 +37,28 @@ const Header = () => {
                 position: 'fixed',
                 top: 0,
                 right: 0,
-                left: 240, // Width of sidebar
+                left: 0, // Full width across screen
                 height: '70px',
                 backgroundColor: '#fff',
                 boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                zIndex: 1000,
+                zIndex: 1200, // Higher than sidebar
                 display: 'flex',
                 alignItems: 'center',
                 px: 3,
                 justifyContent: 'space-between'
             }}
         >
+            <Typography 
+                variant="h5" 
+                sx={{ 
+                    fontWeight: 'bold',
+                    color: theme.palette.primary.main,
+                    fontSize: '1.5rem',
+                    letterSpacing: '0.5px'
+                }}
+            >
+                Fan Munch Dashboard
+            </Typography>
             
             <Box sx={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Avatar

@@ -1,24 +1,30 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import {
-  Box,
+  Drawer,
   List,
   ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Drawer,
-  Badge,
+  Box,
+  Typography,
+  Button
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
+  Store as StoreIcon,
+  Person as PersonIcon,
+  Settings as SettingsIcon,
+  Stadium as StadiumIcon,
   ShoppingCart as OrdersIcon,
-  Person as ProfileIcon,
-  Logout as LogoutIcon,
+  Logout as LogoutIcon
 } from '@mui/icons-material';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { db, auth } from '../config/firebase';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
+import { auth, db, getFCMToken } from '../config/firebase';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import User from '../models/User';
+import logo from '../assets/logo.png';
 
 const drawerWidth = 240;
 
@@ -26,13 +32,48 @@ const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-
   const handleLogout = async () => {
     try {
+      console.log('🚪 LOGOUT: Starting logout process...');
+      
+      // Get current user and device info
+      const currentUser = auth.currentUser;
+      const deviceId = localStorage.getItem('deviceId');
+      console.log('🆔 LOGOUT: Current user ID:', currentUser?.uid);
+      console.log('🆔 LOGOUT: Device ID:', deviceId);
+      
+      if (currentUser && deviceId) {
+        // Remove FCM token for this device
+        console.log('🔍 LOGOUT: Fetching user document from Firestore...');
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const user = User.fromFirestore(userData, currentUser.uid);
+          console.log('🔍 LOGOUT: Current FCM tokens before removal:', user.fcmTokens);
+          
+          // Remove FCM token for current device
+          console.log('🗑️ LOGOUT: Removing FCM token for device:', deviceId);
+          user.removeFCMToken(deviceId);
+          console.log('🗑️ LOGOUT: FCM tokens after removal:', user.fcmTokens);
+          
+          // Update user document
+          await updateDoc(doc(db, 'users', currentUser.uid), {
+            fcmTokens: user.fcmTokens,
+            updatedAt: user.updatedAt
+          });
+          console.log('✅ LOGOUT: FCM token removed from Firestore');
+        } else {
+          console.log('⚠️ LOGOUT: User document not found in Firestore');
+        }
+      } else {
+        console.log('⚠️ LOGOUT: No current user or device ID found');
+      }
+      
       await signOut(auth);
       localStorage.removeItem('user');
+      console.log('✅ LOGOUT: Firebase sign out completed');
+      console.log('🔄 LOGOUT: Navigating to auth page (no reload to preserve console logs)');
       navigate('/');
-      window.location.reload();
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -41,7 +82,7 @@ const Sidebar = () => {
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
     { text: 'Orders', icon: <OrdersIcon />, path: '/orders' },
-    { text: 'Profile', icon: <ProfileIcon />, path: '/profile' },
+    { text: 'Profile', icon: <PersonIcon />, path: '/profile' },
   ];
 
   return (
@@ -53,8 +94,10 @@ const Sidebar = () => {
         '& .MuiDrawer-paper': {
           width: drawerWidth,
           boxSizing: 'border-box',
-          backgroundColor: '#4C9E48', 
-          borderRight: 'none'
+          backgroundColor: '#3D70FF', 
+          borderRight: 'none',
+          top: '70px', // Start below header
+          height: 'calc(100vh - 70px)' // Adjust height
         },
       }}
     >
@@ -68,25 +111,27 @@ const Sidebar = () => {
             mt: 2
           }}
         >
-          <Box
-            sx={{
-              width: '120px',
-              height: '120px',
+          <Box sx={{ pt: 1.5, pb: 3, px: 3, display: 'flex', justifyContent: 'center' }}>
+            <Box sx={{
+              width: '100px',
+              height: '100px',
+              backgroundColor: 'white',
+              borderRadius: '50%',
               display: 'flex',
-              justifyContent: 'center',
               alignItems: 'center',
-              padding: '20px'
-            }}
-          >
-            <img 
-              src="https://firebasestorage.googleapis.com/v0/b/fans-food-stf.firebasestorage.app/o/static-images%2Ffans_food_logo_green.png?alt=media&token=8091953e-fcc0-478a-af56-7db90a45d00e" 
-              alt="Fans Food Logo"
-              style={{ 
-                width: '240px',
-                height: '100%',
-                objectFit: 'contain'
-              }}
-            />
+              justifyContent: 'center',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.2)'
+            }}>
+              <img 
+                src={logo} 
+                alt="FansFood Logo" 
+                style={{ 
+                  width: '70px', 
+                  height: '70px', 
+                  objectFit: 'contain'
+                }} 
+              />
+            </Box>
           </Box>
         </Box>
         <List>
@@ -100,19 +145,19 @@ const Sidebar = () => {
                   color: 'white',
                   '&.Mui-selected': {
                     backgroundColor: '#fff',
-                    color: '#4C9E48',
+                    color: '#3D70FF',
                     '&:hover': {
                       backgroundColor: '#fff',
                     },
                   },
                   '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  }
+                    backgroundColor: 'rgba(255,255,255,0.1)',
+                  },
                 }}
               >
                 <ListItemIcon
                   sx={{
-                    color: location.pathname === item.path ? '#4C9E48' : 'white',
+                    color: location.pathname === item.path ? '#3D70FF' : 'white',
                   }}
                 >
                   {item.icon}
@@ -127,8 +172,8 @@ const Sidebar = () => {
               sx={{
                 color: 'white',
                 '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)'
-                }
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                },
               }}
             >
               <ListItemIcon sx={{ color: 'white' }}>

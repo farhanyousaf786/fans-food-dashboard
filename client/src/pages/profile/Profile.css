@@ -1,0 +1,180 @@
+/* Profile Page Styles */
+.profile-container {
+  padding: 24px;
+  max-width: 800px;
+}
+
+.profile-title {
+  margin-bottom: 24px;
+  font-weight: bold;
+  font-size: 2rem;
+}
+
+.profile-card {
+  padding: 24px;
+  margin-bottom: 32px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.profile-info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.profile-icon {
+  margin-right: 16px;
+  color: #3D70FF;
+}
+
+.profile-name {
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.profile-email {
+  font-size: 1rem;
+}
+
+.profile-role-chip {
+  border: 1px solid #3D70FF;
+  color: #3D70FF;
+  background-color: transparent;
+}
+
+.admin-section-title {
+  margin-bottom: 24px;
+  font-weight: bold;
+  font-size: 1.5rem;
+}
+
+.no-shops-message {
+  margin-bottom: 24px;
+  color: #666;
+}
+
+.shops-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.shop-card {
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  flex: 1;
+  min-width: 300px;
+  max-width: 400px;
+}
+
+.shop-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.shop-name {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.add-admin-btn {
+  border: 1px solid #3D70FF;
+  color: #3D70FF;
+}
+
+.add-admin-btn:hover {
+  background-color: #3D70FF;
+  color: white;
+}
+
+.shop-location {
+  margin-bottom: 12px;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.admins-title {
+  margin-bottom: 8px;
+  font-weight: bold;
+  font-size: 0.95rem;
+}
+
+.admin-list {
+  padding: 0;
+}
+
+.admin-item {
+  padding-left: 0;
+}
+
+.admin-name {
+  font-size: 0.9rem;
+}
+
+.admin-you-label {
+  color: #666;
+  font-style: italic;
+}
+
+.remove-admin-btn {
+  color: #dc004e;
+}
+
+.remove-admin-btn:hover {
+  background-color: rgba(220, 0, 78, 0.1);
+}
+
+.loading-container {
+  padding: 24px;
+}
+
+.dialog-description {
+  margin-bottom: 16px;
+}
+
+.shop-select {
+  margin-top: 16px;
+}
+
+.dialog-actions {
+  padding: 16px 24px;
+}
+
+.cancel-btn {
+  color: #666;
+}
+
+.add-btn {
+  background-color: #3D70FF;
+  color: white;
+}
+
+.add-btn:hover {
+  background-color: #3161EA;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .profile-container {
+    padding: 16px;
+  }
+  
+  .shop-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .profile-title {
+    font-size: 1.75rem;
+  }
+  
+  .admin-section-title {
+    font-size: 1.25rem;
+  }
+}
