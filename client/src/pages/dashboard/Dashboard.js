@@ -57,6 +57,7 @@ const Dashboard = () => {
     images: [],
     isAvailable: true,
     preparationTime: 15,
+    selectedShops: [], // Array of shop IDs for multi-shop support
     customization: {
       toppings: [],
       extras: [],
@@ -145,6 +146,7 @@ const Dashboard = () => {
       images: [],
       isAvailable: true,
       preparationTime: 15,
+      selectedShops: [],
       customization: {
         toppings: [],
         extras: [],
@@ -211,7 +213,11 @@ const Dashboard = () => {
         }
       }
 
-      // Create MenuItem instance
+      // Create MenuItem instance with shopIds array
+      const shopIds = newMenuItem.selectedShops && newMenuItem.selectedShops.length > 0 
+        ? newMenuItem.selectedShops 
+        : [shopData.id]; // Default to current shop if no shops selected
+        
       const menuItem = new MenuItem(
         newMenuItem.name,
         newMenuItem.description,
@@ -220,7 +226,7 @@ const Dashboard = () => {
         imageUrls,
         newMenuItem.isAvailable,
         parseInt(newMenuItem.preparationTime),
-        shopData.id,
+        shopIds,
         shopData.stadiumId
       );
 

@@ -12,6 +12,8 @@ import {
   AccessTime, CloudUpload, Delete, Save,
   AddCircleOutline, RemoveCircleOutline
 } from '@mui/icons-material';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../../../../config/firebase';
 import './AddMenuDialog.css';
 
 const categories = [
@@ -31,6 +33,7 @@ const categories = [
 const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, shopData }) => {
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [stadiumShops, setStadiumShops] = useState([]);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -43,6 +46,65 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, shopData }
       });
     }
   }, []);
+
+  // Fetch all shops in the same stadium
+  useEffect(() => {
+    const fetchStadiumShops = async () => {
+      if (!shopData?.stadiumId) return;
+      
+      try {
+        const shopsRef = collection(db, 'shops');
+        const q = query(shopsRef, where('stadiumId', '==', shopData.stadiumId));
+        const querySnapshot = await getDocs(q);
+        
+        const shops = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          name: doc.data().name,
+          location: doc.data().location,
+          floor: doc.data().floor,
+          gate: doc.data().gate
+        }));
+        
+        setStadiumShops(shops);
+        
+        // Auto-select current shop if no shops are selected
+        if (!menuItem.selectedShops || menuItem.selectedShops.length === 0) {
+          onChange({
+            target: {
+              name: 'selectedShops',
+              value: [shopData.id]
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching stadium shops:', error);
+      }
+    };
+
+    if (open) {
+      fetchStadiumShops();
+    }
+  }, [open, shopData?.stadiumId, shopData?.id]);
+
+  const handleShopSelection = (shopId) => {
+    const currentSelection = menuItem.selectedShops || [];
+    let newSelection;
+    
+    if (currentSelection.includes(shopId)) {
+      // Remove shop from selection
+      newSelection = currentSelection.filter(id => id !== shopId);
+    } else {
+      // Add shop to selection
+      newSelection = [...currentSelection, shopId];
+    }
+    
+    onChange({
+      target: {
+        name: 'selectedShops',
+        value: newSelection
+      }
+    });
+  };
 
   const handleImageUpload = (event) => {
     if (!event.target.files?.length) return;
@@ -150,6 +212,71 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, shopData }
                 {categories.map(cat => <MenuItem key={cat} value={cat}>{cat}</MenuItem>)}
               </Select>
             </FormControl>
+
+            {/* Shop Selection Section */}
+            <Box sx={{ border: '1px solid #ddd', borderRadius: '8px', p: 2, bgcolor: '#fff' }}>
+              <Typography variant="subtitle1" fontWeight="500" gutterBottom>
+                Available in Shops
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Select which shops in {shopData?.stadiumName || 'this stadium'} will offer this menu item
+              </Typography>
+              
+              {stadiumShops.length > 0 ? (
+                <Grid container spacing={1}>
+                  {stadiumShops.map((shop) => (
+                    <Grid item xs={12} sm={6} md={4} key={shop.id}>
+                      <Box
+                        sx={{
+                          border: '1px solid',
+                          borderColor: (menuItem.selectedShops || []).includes(shop.id) ? '#3D70FF' : '#ddd',
+                          borderRadius: '8px',
+                          p: 2,
+                          cursor: 'pointer',
+                          bgcolor: (menuItem.selectedShops || []).includes(shop.id) ? '#f0f4ff' : '#fff',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            borderColor: '#3D70FF',
+                            bgcolor: '#f0f4ff'
+                          }
+                        }}
+                        onClick={() => handleShopSelection(shop.id)}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                          <Checkbox
+                            checked={(menuItem.selectedShops || []).includes(shop.id)}
+                            onChange={() => handleShopSelection(shop.id)}
+                            sx={{ p: 0, mr: 1 }}
+                            color="primary"
+                          />
+                          <Typography variant="subtitle2" fontWeight="500">
+                            {shop.name}
+                          </Typography>
+                        </Box>
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                          📍 {shop.location}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                          🚪 Gate {shop.gate}, Floor {shop.floor}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  ))}
+                </Grid>
+              ) : (
+                <Box sx={{ textAlign: 'center', py: 2 }}>
+                  <Typography color="text.secondary">Loading shops...</Typography>
+                </Box>
+              )}
+              
+              {menuItem.selectedShops && menuItem.selectedShops.length > 0 && (
+                <Box sx={{ mt: 2, p: 1, bgcolor: '#e8f5e8', borderRadius: '4px' }}>
+                  <Typography variant="body2" color="success.main">
+                    ✅ Selected {menuItem.selectedShops.length} shop{menuItem.selectedShops.length !== 1 ? 's' : ''}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <Typography>Available for Order</Typography>

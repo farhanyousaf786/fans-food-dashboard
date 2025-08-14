@@ -9,7 +9,7 @@ class MenuItem {
         images = [],
         isAvailable = true,
         preparationTime = 15,
-        shopId,
+        shopIds = [],
         stadiumId,
         docId = null,
         customization = {
@@ -33,7 +33,7 @@ class MenuItem {
         this.images = images;
         this.isAvailable = isAvailable;
         this.preparationTime = preparationTime;
-        this.shopId = shopId;
+        this.shopIds = Array.isArray(shopIds) ? shopIds : [shopIds].filter(Boolean);
         this.stadiumId = stadiumId;
         this.docId = docId;
         this.customization = customization;
@@ -53,7 +53,7 @@ class MenuItem {
             images: this.images,
             isAvailable: this.isAvailable,
             preparationTime: this.preparationTime,
-            shopId: this.shopId,
+            shopIds: this.shopIds,
             stadiumId: this.stadiumId,
             customization: this.customization,
             allergens: this.allergens,
@@ -74,7 +74,7 @@ class MenuItem {
             data.images || [],
             data.isAvailable,
             data.preparationTime,
-            data.shopId,
+            data.shopIds || data.shopId ? (Array.isArray(data.shopIds) ? data.shopIds : [data.shopId]) : [],
             data.stadiumId,
             data.docId,
             data.customization || {

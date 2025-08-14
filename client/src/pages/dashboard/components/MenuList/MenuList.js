@@ -26,7 +26,7 @@ import {
   Circle,
   Warning
 } from '@mui/icons-material';
-import { collection, query, onSnapshot, doc, deleteDoc, updateDoc, where } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, deleteDoc, updateDoc, where, getDocs } from 'firebase/firestore';
 import { ref, deleteObject, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../../../config/firebase';
 import MenuItemModel from '../../../../models/MenuItem';
@@ -43,11 +43,13 @@ const MenuList = ({ shopData }) => {
   const [readMoreDialogOpen, setReadMoreDialogOpen] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [stadiumShops, setStadiumShops] = useState([]);
 
   useEffect(() => {
     if (!shopData?.id) return;
     const menuItemsRef = collection(db, 'menuItems');
-    const q = query(menuItemsRef, where('shopId', '==', shopData.id));
+    // Query for menu items that include this shop in their shopIds array
+    const q = query(menuItemsRef, where('shopIds', 'array-contains', shopData.id));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const items = snapshot.docs.map(doc => 
@@ -59,6 +61,45 @@ const MenuList = ({ shopData }) => {
 
     return () => unsubscribe();
   }, [shopData]);
+
+  // Fetch all shops in the stadium for display purposes
+  useEffect(() => {
+    const fetchStadiumShops = async () => {
+      if (!shopData?.stadiumId) return;
+      
+      try {
+        const shopsRef = collection(db, 'shops');
+        const q = query(shopsRef, where('stadiumId', '==', shopData.stadiumId));
+        const querySnapshot = await getDocs(q);
+        
+        const shops = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          name: doc.data().name,
+          location: doc.data().location,
+          floor: doc.data().floor,
+          gate: doc.data().gate
+        }));
+        
+        setStadiumShops(shops);
+      } catch (error) {
+        console.error('Error fetching stadium shops:', error);
+      }
+    };
+
+    fetchStadiumShops();
+  }, [shopData?.stadiumId]);
+
+  // Helper function to get shop names from shop IDs
+  const getShopNames = (shopIds) => {
+    if (!shopIds || !Array.isArray(shopIds) || stadiumShops.length === 0) {
+      return [];
+    }
+    
+    return shopIds.map(shopId => {
+      const shop = stadiumShops.find(s => s.id === shopId);
+      return shop ? shop.name : `Shop ${shopId.slice(-4)}`;
+    }).filter(Boolean);
+  };
 
   const handleMenuClick = (event, item) => {
     setAnchorEl(event.currentTarget);
@@ -264,6 +305,45 @@ const MenuList = ({ shopData }) => {
                     </IconButton>
                   </Box>
                 </Box>
+
+                {/* Shop Availability Section */}
+                {item.shopIds && item.shopIds.length > 0 && (
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', mb: 0.5, display: 'block' }}>
+                      Available in:
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {getShopNames(item.shopIds).slice(0, 2).map((shopName, index) => (
+                        <Chip
+                          key={index}
+                          label={shopName}
+                          size="small"
+                          variant="outlined"
+                          sx={{ 
+                            height: 20, 
+                            fontSize: '0.65rem',
+                            bgcolor: shopName === shopData?.name ? '#e3f2fd' : 'transparent',
+                            borderColor: shopName === shopData?.name ? '#2196f3' : '#ddd',
+                            color: shopName === shopData?.name ? '#1976d2' : 'text.secondary'
+                          }}
+                        />
+                      ))}
+                      {getShopNames(item.shopIds).length > 2 && (
+                        <Chip
+                          label={`+${getShopNames(item.shopIds).length - 2} more`}
+                          size="small"
+                          variant="outlined"
+                          sx={{ 
+                            height: 20, 
+                            fontSize: '0.65rem',
+                            color: 'text.secondary',
+                            borderColor: '#ddd'
+                          }}
+                        />
+                      )}
+                    </Box>
+                  </Box>
+                )}
                
                 <Box sx={{ mt: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography variant="h6" color="primary" sx={{ fontSize: '1.1rem' }}>${parseFloat(item.price).toFixed(2)}</Typography>
