@@ -132,27 +132,53 @@ const MenuList = ({ shopData }) => {
 
   const handleConfirmDelete = async () => {
     try {
-      if (!selectedItem?.id || !shopData?.id || !shopData?.stadiumId) {
-        throw new Error('Missing required data');
+      console.log('🗑️ DELETE: Starting delete process...');
+      console.log('🗑️ DELETE: Selected item:', selectedItem);
+      console.log('🗑️ DELETE: Shop data:', shopData);
+      
+      // Check if we have the required data
+      if (!selectedItem?.id && !selectedItem?.docId) {
+        console.error('🗑️ DELETE: Missing selectedItem id/docId');
+        throw new Error('Missing menu item ID');
+      }
+      
+      if (!shopData?.id) {
+        console.error('🗑️ DELETE: Missing shopData id');
+        throw new Error('Missing shop data');
       }
 
+      // Use either docId or id for the document reference
+      const itemId = selectedItem.docId || selectedItem.id;
+      console.log('🗑️ DELETE: Using item ID:', itemId);
+
+      // Delete associated images from storage
       if (selectedItem.images?.length > 0) {
+        console.log('🗑️ DELETE: Deleting images...');
         for (const imageUrl of selectedItem.images) {
           if (imageUrl.startsWith('https://firebasestorage.googleapis.com')) {
-            const imageRef = ref(storage, imageUrl);
-            await deleteObject(imageRef);
+            try {
+              const imageRef = ref(storage, imageUrl);
+              await deleteObject(imageRef);
+              console.log('🗑️ DELETE: Image deleted:', imageUrl);
+            } catch (imageError) {
+              console.warn('🗑️ DELETE: Failed to delete image:', imageUrl, imageError);
+            }
           }
         }
       }
 
-      const menuItemRef = doc(db, 'menuItems', selectedItem.docId);
+      // Delete the menu item document from the root menuItems collection
+      const menuItemRef = doc(db, 'menuItems', itemId);
       await deleteDoc(menuItemRef);
+      
+      console.log('✅ DELETE: Menu item deleted successfully');
       setSuccess('Menu item deleted successfully!');
       setTimeout(() => setSuccess(''), 3000);
       setDeleteDialogOpen(false);
       setSelectedItem(null);
+      handleMenuClose();
     } catch (error) {
-      console.error('Error deleting menu item:', error);
+      console.error('❌ DELETE: Error deleting menu item:', error);
       setError(error.message || 'Failed to delete menu item');
       setTimeout(() => setError(''), 3000);
     }
