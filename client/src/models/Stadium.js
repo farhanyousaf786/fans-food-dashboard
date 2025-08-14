@@ -1,10 +1,12 @@
 class Stadium {
-    constructor(name, location, capacity, imageUrl, about) {
+    constructor(name, location, capacity, imageUrl, about, latitude = null, longitude = null) {
         this.name = name;
         this.location = location;
         this.capacity = capacity;
         this.imageUrl = imageUrl;
         this.about = about;
+        this.latitude = latitude;
+        this.longitude = longitude;
         this.createdAt = new Date().toISOString();
         this.updatedAt = new Date().toISOString();
     }
@@ -17,7 +19,9 @@ class Stadium {
             data.location,
             data.capacity,
             data.imageUrl,
-            data.about
+            data.about,
+            data.latitude,
+            data.longitude
         );
         stadium.id = id;
         stadium.createdAt = data.createdAt;
@@ -33,6 +37,8 @@ class Stadium {
             capacity: this.capacity,
             imageUrl: this.imageUrl,
             about: this.about,
+            latitude: this.latitude,
+            longitude: this.longitude,
             createdAt: this.createdAt,
             updatedAt: new Date().toISOString()
         };

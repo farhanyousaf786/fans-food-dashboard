@@ -1,0 +1,58 @@
+.address-input-container {
+  position: relative;
+  width: 100%;
+}
+
+.suggestions-paper {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  max-height: 300px;
+  overflow-y: auto;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.suggestions-list {
+  padding: 0;
+}
+
+.suggestion-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s ease;
+}
+
+.suggestion-item:hover {
+  background-color: #f5f5f5;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item .MuiListItemText-primary {
+  font-weight: 500;
+  color: #333;
+}
+
+.suggestion-item .MuiListItemText-secondary {
+  color: #666;
+  font-size: 0.875rem;
+}
+
+/* Loading state */
+.address-input-container .MuiCircularProgress-root {
+  color: #3D70FF;
+}
+
+/* Focus and error states */
+.address-input-container .MuiTextField-root .Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #3D70FF;
+}
+
+.address-input-container .MuiTextField-root .Mui-error .MuiOutlinedInput-notchedOutline {
+  border-color: #dc004e;
+}

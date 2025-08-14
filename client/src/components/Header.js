@@ -15,13 +15,19 @@ const Header = () => {
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged(async (user) => {
             if (user) {
-                // Get user data from Firestore
-                const userDoc = await getDoc(doc(db, 'users', user.uid));
+                // Get user data from role-based collections
+                // Try admins collection first
+                let userDoc = await getDoc(doc(db, 'admins', user.uid));
+                
+                // If not found in admins, check shopowners collection
+                if (!userDoc.exists()) {
+                    userDoc = await getDoc(doc(db, 'shopowners', user.uid));
+                }
+                
                 if (userDoc.exists()) {
                     const userData = userDoc.data();
                     // Get user's name from Firestore
                     setUserName(userData.name || 'User');
-                    setUserName(userData.name || '');
                     // Use Firebase auth photo or set to empty for default avatar
                     setUserImage(user.photoURL || '');
                 }

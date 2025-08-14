@@ -1,5 +1,5 @@
 class Shop {
-    constructor(name, location, floor, gate, description, admins, stadiumId, stadiumName, docId = null) {
+    constructor(name, location, floor, gate, description, admins, stadiumId, stadiumName, latitude = null, longitude = null, docId = null) {
         this.name = name;
         this.location = location;
         this.floor = floor;
@@ -8,6 +8,8 @@ class Shop {
         this.admins = admins || []; // Array of admin user IDs
         this.stadiumId = stadiumId;
         this.stadiumName = stadiumName;
+        this.latitude = latitude;
+        this.longitude = longitude;
         this.docId = docId;
         this.createdAt = new Date();
         this.updatedAt = new Date();
@@ -23,6 +25,8 @@ class Shop {
             description: this.description,
             admins: this.admins,
             stadiumId: this.stadiumId,
+            latitude: this.latitude,
+            longitude: this.longitude,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,
             stadiumName: this.stadiumName,
@@ -41,7 +45,9 @@ class Shop {
             data.admins,
             data.stadiumId,
             data.stadiumName,
-            data.docId
+            data.latitude,
+            data.longitude,
+            id
         );
         shop.id = id;
         shop.createdAt = data.createdAt?.toDate() || new Date();

@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db, storage } from '../../config/firebase';
 import { signOut } from 'firebase/auth';
-import { collection, getDocs, addDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import Stadium from '../../models/Stadium';
-import { Grid, Card, CardContent, CardMedia, Typography, Button, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
+import { Grid, Card, CardContent, CardMedia, Typography, Button, IconButton, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import StadiumForm from '../../components/StadiumForm';
 import './AdminPanel.css';
+
 const AdminPanel = () => {
     const navigate = useNavigate();
 
@@ -24,15 +26,11 @@ const AdminPanel = () => {
     const [stadiums, setStadiums] = useState([]);
     const [loading, setLoading] = useState(true);
     const [openAddDialog, setOpenAddDialog] = useState(false);
-    const [newStadium, setNewStadium] = useState({
-        name: '',
-        location: '',
-        capacity: '',
-        imageUrl: '',
-        about: ''
-    });
-    const [selectedImage, setSelectedImage] = useState(null);
     const [uploading, setUploading] = useState(false);
+    const [openEditDialog, setOpenEditDialog] = useState(false);
+    const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+    const [editingStadium, setEditingStadium] = useState(null);
+    const [stadiumToDelete, setStadiumToDelete] = useState(null);
 
     useEffect(() => {
         const fetchStadiums = async () => {
@@ -53,26 +51,160 @@ const AdminPanel = () => {
         fetchStadiums();
     }, []);
 
+    const handleEditStadium = (stadium) => {
+        setEditingStadium(stadium);
+        setOpenEditDialog(true);
+    };
+
+    const handleUpdateStadium = async (formData) => {
+        if (!editingStadium) return;
+        
+        try {
+            setUploading(true);
+            let imageUrl = editingStadium.imageUrl;
+            
+            if (formData.selectedImage) {
+                // Upload new image to Firebase Storage
+                const storageRef = ref(storage, `stadiums/${Date.now()}_${formData.selectedImage.name}`);
+                await uploadBytes(storageRef, formData.selectedImage);
+                imageUrl = await getDownloadURL(storageRef);
+            }
+
+            const stadiumRef = doc(db, 'stadiums', editingStadium.id);
+            const updatedStadium = {
+                name: formData.name,
+                location: formData.location,
+                capacity: formData.capacity,
+                imageUrl: imageUrl,
+                about: formData.about,
+                latitude: formData.latitude,
+                longitude: formData.longitude
+            };
+            
+            await updateDoc(stadiumRef, updatedStadium);
+            
+            // Update local state
+            setStadiums(prev => prev.map(stadium => {
+                if (stadium.id === editingStadium.id) {
+                    const updatedStadiumObj = new Stadium(
+                        updatedStadium.name,
+                        updatedStadium.location,
+                        updatedStadium.capacity,
+                        updatedStadium.imageUrl,
+                        updatedStadium.about,
+                        updatedStadium.latitude,
+                        updatedStadium.longitude
+                    );
+                    updatedStadiumObj.id = editingStadium.id;
+                    updatedStadiumObj.createdAt = stadium.createdAt;
+                    updatedStadiumObj.updatedAt = new Date().toISOString();
+                    return updatedStadiumObj;
+                }
+                return stadium;
+            }));
+            
+            // Reset and close dialog
+            setEditingStadium(null);
+            setUploading(false);
+            setOpenEditDialog(false);
+            
+            console.log('✅ Stadium updated successfully with coordinates:', formData.latitude, formData.longitude);
+        } catch (error) {
+            console.error('❌ Error updating stadium:', error);
+            setUploading(false);
+        }
+    };
+
+    const handleOpenDeleteDialog = (stadium) => {
+        setStadiumToDelete(stadium);
+        setOpenDeleteDialog(true);
+    };
+
+    const handleDeleteStadium = async () => {
+        if (!stadiumToDelete) return;
+        
+        try {
+            await deleteDoc(doc(db, 'stadiums', stadiumToDelete.id));
+            setStadiums(prev => prev.filter(stadium => stadium.id !== stadiumToDelete.id));
+            setOpenDeleteDialog(false);
+            setStadiumToDelete(null);
+            console.log('✅ Stadium deleted successfully');
+        } catch (error) {
+            console.error('❌ Error deleting stadium:', error);
+        }
+    };
+
+    const handleCloseEditDialog = () => {
+        setOpenEditDialog(false);
+        setEditingStadium(null);
+    };
+
+    const handleCloseDeleteDialog = () => {
+        setOpenDeleteDialog(false);
+        setStadiumToDelete(null);
+    };
+
+    const handleCreateStadium = async (formData) => {
+        try {
+            setUploading(true);
+            let imageUrl = '';
+            
+            if (formData.selectedImage) {
+                // Upload image to Firebase Storage
+                const storageRef = ref(storage, `stadiums/${Date.now()}_${formData.selectedImage.name}`);
+                await uploadBytes(storageRef, formData.selectedImage);
+                imageUrl = await getDownloadURL(storageRef);
+            }
+
+            const stadiumsRef = collection(db, 'stadiums');
+            const newStadiumObj = new Stadium(
+                formData.name,
+                formData.location,
+                formData.capacity,
+                imageUrl,
+                formData.about,
+                formData.latitude,
+                formData.longitude
+            );
+            
+            const docRef = await addDoc(stadiumsRef, newStadiumObj.toFirestore());
+            
+            // Add to local state
+            newStadiumObj.id = docRef.id;
+            setStadiums(prev => [...prev, newStadiumObj]);
+            
+            setUploading(false);
+            setOpenAddDialog(false);
+            
+            console.log('✅ Stadium created successfully with coordinates:', formData.latitude, formData.longitude);
+        } catch (error) {
+            console.error('❌ Error adding stadium:', error);
+            setUploading(false);
+        }
+    };
+
     return (
         <div className="admin-container">
             <div className="header">
-                <h1>Stadium Management</h1>
-                <div className="header-buttons">
-                    <Button
-                        variant="contained"
-                        startIcon={<AddIcon />}
-                        onClick={() => setOpenAddDialog(true)}
-                        className="add-button"
-                    >
-                        Add Stadium
-                    </Button>
-                    <Button 
-                        onClick={handleLogout}
-                        variant="contained"
-                        className="logout-button"
-                    >
-                        Logout
-                    </Button>
+                <div className="header-content">
+                    <h1 className="page-title">Stadium Management</h1>
+                    <div className="header-actions">
+                        <Button 
+                            variant="contained"
+                            startIcon={<AddIcon />}
+                            onClick={() => setOpenAddDialog(true)}
+                            className="add-button"
+                        >
+                            Add Stadium
+                        </Button>
+                        <Button 
+                            onClick={handleLogout}
+                            variant="contained"
+                            className="logout-button"
+                        >
+                            Logout
+                        </Button>
+                    </div>
                 </div>
             </div>
 
@@ -107,12 +239,14 @@ const AdminPanel = () => {
                                         <IconButton 
                                             size="small" 
                                             className="edit-button"
+                                            onClick={() => handleEditStadium(stadium)}
                                         >
                                             <EditIcon fontSize="small" />
                                         </IconButton>
                                         <IconButton 
                                             size="small" 
                                             className="delete-button"
+                                            onClick={() => handleOpenDeleteDialog(stadium)}
                                         >
                                             <DeleteIcon fontSize="small" />
                                         </IconButton>
@@ -127,6 +261,12 @@ const AdminPanel = () => {
                                         <span>👥</span>
                                         {stadium.capacity.toLocaleString()} seats
                                     </Typography>
+                                    {stadium.latitude && stadium.longitude && (
+                                        <Typography className="stadium-coordinates">
+                                            <span>🌐</span>
+                                            {stadium.latitude.toFixed(4)}, {stadium.longitude.toFixed(4)}
+                                        </Typography>
+                                    )}
                                 </div>
                                 <Typography className="stadium-about">
                                     {stadium.about}
@@ -138,132 +278,45 @@ const AdminPanel = () => {
             )}
 
             {/* Add Stadium Dialog */}
-            <Dialog open={openAddDialog} onClose={() => setOpenAddDialog(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>Add New Stadium</DialogTitle>
+            <StadiumForm
+                open={openAddDialog}
+                onClose={() => setOpenAddDialog(false)}
+                onSubmit={handleCreateStadium}
+                title="Add New Stadium"
+                submitText="Add Stadium"
+                uploading={uploading}
+            />
+
+            {/* Edit Stadium Dialog */}
+            <StadiumForm
+                open={openEditDialog}
+                onClose={handleCloseEditDialog}
+                onSubmit={handleUpdateStadium}
+                title="Edit Stadium"
+                submitText="Update Stadium"
+                initialData={editingStadium}
+                uploading={uploading}
+            />
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={openDeleteDialog} onClose={handleCloseDeleteDialog} maxWidth="sm" fullWidth>
+                <DialogTitle>Delete Stadium</DialogTitle>
                 <DialogContent>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        label="Stadium Name"
-                        type="text"
-                        fullWidth
-                        value={newStadium.name}
-                        onChange={(e) => setNewStadium({ ...newStadium, name: e.target.value })}
-                    />
-                    <TextField
-                        margin="dense"
-                        label="Location"
-                        type="text"
-                        fullWidth
-                        value={newStadium.location}
-                        onChange={(e) => setNewStadium({ ...newStadium, location: e.target.value })}
-                    />
-                    <TextField
-                        margin="dense"
-                        label="Capacity"
-                        type="number"
-                        fullWidth
-                        value={newStadium.capacity}
-                        onChange={(e) => setNewStadium({ ...newStadium, capacity: e.target.value })}
-                    />
-                    <div style={{ marginTop: '16px', marginBottom: '8px' }}>
-                        <input
-                            accept="image/*"
-                            style={{ display: 'none' }}
-                            id="stadium-image-upload"
-                            type="file"
-                            onChange={(e) => {
-                                if (e.target.files[0]) {
-                                    setSelectedImage(e.target.files[0]);
-                                }
-                            }}
-                        />
-                        <label htmlFor="stadium-image-upload">
-                            <Button
-                                variant="outlined"
-                                component="span"
-                                fullWidth
-                                style={{ height: '56px' }}
-                            >
-                                {selectedImage ? selectedImage.name : 'Upload Stadium Image'}
-                            </Button>
-                        </label>
-                    </div>
-                    {selectedImage && (
-                        <div style={{ marginTop: '8px', marginBottom: '16px' }}>
-                            <img
-                                src={URL.createObjectURL(selectedImage)}
-                                alt="Stadium preview"
-                                style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '4px' }}
-                            />
-                        </div>
-                    )}
-                    <TextField
-                        margin="dense"
-                        label="About"
-                        type="text"
-                        fullWidth
-                        multiline
-                        rows={4}
-                        value={newStadium.about}
-                        onChange={(e) => setNewStadium({ ...newStadium, about: e.target.value })}
-                    />
+                    <Typography>
+                        Are you sure you want to delete the stadium "{stadiumToDelete?.name}"? This action cannot be undone.
+                    </Typography>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setOpenAddDialog(false)} color="inherit">
-                        Cancel
-                    </Button>
+                    <Button onClick={handleCloseDeleteDialog}>Cancel</Button>
                     <Button 
-                        onClick={async () => {
-                            try {
-                                setUploading(true);
-                                let imageUrl = '';
-                                
-                                if (selectedImage) {
-                                    // Upload image to Firebase Storage
-                                    const storageRef = ref(storage, `stadiums/${Date.now()}_${selectedImage.name}`);
-                                    await uploadBytes(storageRef, selectedImage);
-                                    imageUrl = await getDownloadURL(storageRef);
-                                }
-
-                                const stadiumsRef = collection(db, 'stadiums');
-                                const newStadiumObj = new Stadium(
-                                    newStadium.name,
-                                    newStadium.location,
-                                    parseInt(newStadium.capacity),
-                                    imageUrl,
-                                    newStadium.about
-                                );
-                                await addDoc(stadiumsRef, newStadiumObj.toFirestore());
-                                
-                                // Reset form and close dialog
-                                setNewStadium({
-                                    name: '',
-                                    location: '',
-                                    capacity: '',
-                                    imageUrl: '',
-                                    about: ''
-                                });
-                                setSelectedImage(null);
-                                setUploading(false);
-                                setOpenAddDialog(false);
-                                
-                                // Refresh stadiums list
-                                const stadiumsSnapshot = await getDocs(stadiumsRef);
-                                const stadiumsList = stadiumsSnapshot.docs.map(doc => 
-                                    Stadium.fromFirestore(doc, doc.id)
-                                );
-                                setStadiums(stadiumsList);
-                            } catch (error) {
-                                console.error('Error adding stadium:', error);
-                            }
-                        }} 
-                        color="primary"
-                        variant="contained"
-                        disabled={!newStadium.name || !newStadium.location || !newStadium.capacity || uploading}
-                        style={{ backgroundColor: uploading ? '#ccc' : '#15BE77' }}
+                        onClick={handleDeleteStadium} 
+                        variant="contained" 
+                        sx={{ 
+                            backgroundColor: '#dc004e',
+                            '&:hover': { backgroundColor: '#b8003d' }
+                        }}
                     >
-                        Add Stadium
+                        Delete
                     </Button>
                 </DialogActions>
             </Dialog>

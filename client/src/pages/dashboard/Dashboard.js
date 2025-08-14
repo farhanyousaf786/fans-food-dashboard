@@ -96,7 +96,7 @@ const Dashboard = () => {
           totalOrders: ordersSnap.size,
           revenue: totalRevenue,
           customers: customers.size,
-          growth: 12.5, // Example growth rate
+          growth: 0.00, // Example growth rate
         });
         setLoading(false);
       } catch (error) {

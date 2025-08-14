@@ -117,15 +117,9 @@ function App() {
           <Route path="/orders" element={<PrivateRoute><DashboardLayout><Orders /></DashboardLayout></PrivateRoute>} />
           <Route path="/admin" element={<PrivateRoute requiredRole="admin"><AdminPanel /></PrivateRoute>} />
           <Route path="/shop" element={<PrivateRoute requiredRole="shopowner"><ShopPanel /></PrivateRoute>} />
-          <Route path="/profile" element={
-            isAuthenticated ? <DashboardLayout><Profile /></DashboardLayout> : <Navigate to="/" />
-          } />
-          <Route path="/manage" element={
-            isAuthenticated ? <DashboardLayout><Manage /></DashboardLayout> : <Navigate to="/" />
-          } />
-          <Route path="/stadium" element={
-            isAuthenticated ? <DashboardLayout><Stadium /></DashboardLayout> : <Navigate to="/" />
-          } />
+          <Route path="/profile" element={<PrivateRoute><DashboardLayout><Profile /></DashboardLayout></PrivateRoute>} />
+          <Route path="/manage" element={<PrivateRoute><DashboardLayout><Manage /></DashboardLayout></PrivateRoute>} />
+          <Route path="/stadium" element={<PrivateRoute><DashboardLayout><Stadium /></DashboardLayout></PrivateRoute>} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>

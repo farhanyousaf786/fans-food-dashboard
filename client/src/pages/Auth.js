@@ -100,16 +100,27 @@ const Auth = () => {
                     console.log('⚠️ SIGN UP: No FCM token available');
                 }
 
-                await setDoc(doc(db, 'users', userCredential.user.uid), user.toFirestore());
-                console.log('✅ SIGN UP: User document created in Firestore');
+                // Store in role-based collection
+                const collection = formData.role === 'admin' ? 'admins' : 'shopowners';
+                await setDoc(doc(db, collection, userCredential.user.uid), user.toFirestore());
+                console.log(`✅ SIGN UP: ${formData.role} document created in ${collection} collection`);
                 localStorage.setItem('user', JSON.stringify(user));
             } else {
-                // Sign in
+                // Sign in - check both collections
                 userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
-                const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+                
+                // Try to find user in admins collection first
+                let userDoc = await getDoc(doc(db, 'admins', userCredential.user.uid));
+                let userRole = 'admin';
+                
+                // If not found in admins, check shopowners collection
+                if (!userDoc.exists()) {
+                    userDoc = await getDoc(doc(db, 'shopowners', userCredential.user.uid));
+                    userRole = 'shopowner';
+                }
                 
                 if (!userDoc.exists()) {
-                    throw new Error('User data not found');
+                    throw new Error('User data not found in any collection');
                 }
                 
                 const userData = userDoc.data();
@@ -121,11 +132,14 @@ const Auth = () => {
                     console.log('📝 SIGN IN: Adding/updating FCM token for device:', deviceId);
                     user.addFCMToken(deviceId, fcmToken);
                     console.log('📝 SIGN IN: FCM tokens after adding:', user.fcmTokens);
-                    await updateDoc(doc(db, 'users', userCredential.user.uid), {
+                    
+                    // Update in the correct role-based collection
+                    const collection = userRole === 'admin' ? 'admins' : 'shopowners';
+                    await updateDoc(doc(db, collection, userCredential.user.uid), {
                         fcmTokens: user.fcmTokens,
                         updatedAt: user.updatedAt
                     });
-                    console.log('✅ SIGN IN: FCM token updated in Firestore');
+                    console.log(`✅ SIGN IN: FCM token updated in ${collection} collection`);
                 } else {
                     console.log('⚠️ SIGN IN: No FCM token available');
                 }

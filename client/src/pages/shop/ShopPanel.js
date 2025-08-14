@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../../config/firebase';
 import { signOut } from 'firebase/auth';
-import { collection, getDocs, addDoc, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, doc, updateDoc, getDoc, deleteDoc } from 'firebase/firestore';
 import {
   Card,
   CardContent,
@@ -16,7 +16,7 @@ import {
   DialogActions,
   TextField
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import Shop from '../../models/Shop';
 import '../admin/AdminPanel.css';
 
@@ -27,12 +27,18 @@ const ShopPanel = () => {
   const [loading, setLoading] = useState(true);
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [selectedStadiumId, setSelectedStadiumId] = useState(null);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [shopToDelete, setShopToDelete] = useState(null);
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [editingShop, setEditingShop] = useState(null);
   const [newShop, setNewShop] = useState({
     name: '',
     location: '',
     floor: '',
     gate: '',
     description: '',
+    latitude: '',
+    longitude: '',
     admins: []
   });
 
@@ -49,9 +55,11 @@ const ShopPanel = () => {
         // Get shops from root collection - only shops owned by current user
         const shopsCollection = collection(db, 'shops');
         const shopsSnapshot = await getDocs(shopsCollection);
-        const allShops = shopsSnapshot.docs.map(doc => 
-          Shop.fromFirestore(doc.data(), doc.id)
-        );
+        const allShops = shopsSnapshot.docs.map(doc => {
+          const rawData = doc.data();
+          console.log('🔍 RAW SHOP DATA from Firestore:', doc.id, rawData);
+          return Shop.fromFirestore(rawData, doc.id);
+        });
         
         // Filter shops to show only those owned by current user
         const userShops = allShops.filter(shop => 
@@ -61,6 +69,7 @@ const ShopPanel = () => {
         console.log('🏪 SHOP PANEL: Total shops in database:', allShops.length);
         console.log('🏪 SHOP PANEL: User owns shops:', userShops.length);
         console.log('🏪 SHOP PANEL: User shop IDs:', userShops.map(shop => shop.docId));
+        console.log('🔍 PROCESSED SHOP DATA:', userShops);
         
         setShops(userShops);
       } catch (error) {
@@ -105,7 +114,9 @@ const ShopPanel = () => {
         newShop.description,
         [auth.currentUser.uid],
         selectedStadiumId,
-        stadiumName
+        stadiumName,
+        newShop.latitude ? parseFloat(newShop.latitude) : null,
+        newShop.longitude ? parseFloat(newShop.longitude) : null
       );
 
       // First create shop in root collection
@@ -116,8 +127,8 @@ const ShopPanel = () => {
       shop.docId = shopDocRef.id;
       await updateDoc(shopDocRef, { docId: shopDocRef.id });
 
-      // Add shop ID to user's shopsId array
-      const userDocRef = doc(db, 'users', auth.currentUser.uid);
+      // Add shop ID to user's shopsId array (shop owners are in shopowners collection)
+      const userDocRef = doc(db, 'shopowners', auth.currentUser.uid);
       const userDoc = await getDoc(userDocRef);
       
       if (userDoc.exists()) {
@@ -146,18 +157,123 @@ const ShopPanel = () => {
     }
   };
 
+  const handleDeleteShop = async () => {
+    if (!shopToDelete) return;
+
+    try {
+      console.log('🗑️ SHOP PANEL: Deleting shop:', shopToDelete.id);
+      
+      // Delete shop from Firestore
+      await deleteDoc(doc(db, 'shops', shopToDelete.id));
+      
+      // Remove shop from local state
+      setShops(prev => prev.filter(shop => shop.id !== shopToDelete.id));
+      
+      console.log('✅ SHOP PANEL: Shop deleted successfully');
+      handleCloseDeleteDialog();
+    } catch (error) {
+      console.error('❌ SHOP PANEL: Error deleting shop:', error);
+    }
+  };
+
+  const handleOpenDeleteDialog = (shop, event) => {
+    event.stopPropagation(); // Prevent card click navigation
+    setShopToDelete(shop);
+    setOpenDeleteDialog(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setOpenDeleteDialog(false);
+    setShopToDelete(null);
+  };
+
+  const handleEditShop = (shop, event) => {
+    event.stopPropagation(); // Prevent card click navigation
+    console.log('🔍 EDIT SHOP: Full shop object:', shop);
+    console.log('🔍 EDIT SHOP: Latitude value:', shop.latitude, 'Type:', typeof shop.latitude);
+    console.log('🔍 EDIT SHOP: Longitude value:', shop.longitude, 'Type:', typeof shop.longitude);
+    
+    setEditingShop(shop);
+    setNewShop({
+      name: shop.name || '',
+      location: shop.location || '',
+      floor: shop.floor || '',
+      gate: shop.gate || '',
+      description: shop.description || '',
+      latitude: shop.latitude !== undefined && shop.latitude !== null ? shop.latitude.toString() : '',
+      longitude: shop.longitude !== undefined && shop.longitude !== null ? shop.longitude.toString() : '',
+      admins: shop.admins || []
+    });
+    setOpenEditDialog(true);
+  };
+
+  const handleUpdateShop = async () => {
+    if (!editingShop) return;
+
+    try {
+      console.log('✏️ SHOP PANEL: Updating shop:', editingShop.id);
+      
+      const shopRef = doc(db, 'shops', editingShop.id);
+      const updatedShopData = {
+        name: newShop.name,
+        location: newShop.location,
+        floor: newShop.floor,
+        gate: newShop.gate,
+        description: newShop.description,
+        latitude: newShop.latitude ? parseFloat(newShop.latitude) : null,
+        longitude: newShop.longitude ? parseFloat(newShop.longitude) : null,
+        updatedAt: new Date()
+      };
+      
+      await updateDoc(shopRef, updatedShopData);
+      
+      // Update local state
+      setShops(prev => prev.map(shop => {
+        if (shop.id === editingShop.id) {
+          return {
+            ...shop,
+            ...updatedShopData
+          };
+        }
+        return shop;
+      }));
+      
+      console.log('✅ SHOP PANEL: Shop updated successfully');
+      handleCloseEditDialog();
+    } catch (error) {
+      console.error('❌ SHOP PANEL: Error updating shop:', error);
+    }
+  };
+
+  const handleCloseEditDialog = () => {
+    setOpenEditDialog(false);
+    setEditingShop(null);
+    setNewShop({
+      name: '',
+      location: '',
+      floor: '',
+      gate: '',
+      description: '',
+      latitude: '',
+      longitude: '',
+      admins: []
+    });
+  };
+
   return (
     <div className="admin-container">
       <div className="header">
-        <h1>Shop Panel</h1>
-        <div className="header-buttons">
-          <Button
-            onClick={handleLogout}
-            variant="contained"
-            className="logout-button"
-          >
-            Logout
-          </Button>
+        <div className="header-content">
+          <h1 className="page-title">Shop Panel</h1>
+          <div className="header-actions">
+            <Button
+              onClick={handleLogout}
+              variant="contained"
+              className="logout-button"
+            >
+              Logout
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -186,6 +302,32 @@ const ShopPanel = () => {
                   <CardContent className="stadium-content">
                     <div className="stadium-header">
                       <Typography variant="h6" className="stadium-title">{shop.name}</Typography>
+                      <div className="stadium-actions">
+                        <IconButton
+                          onClick={(e) => handleEditShop(shop, e)}
+                          sx={{ 
+                            color: '#3D70FF',
+                            '&:hover': { 
+                              backgroundColor: 'rgba(61, 112, 255, 0.1)' 
+                            }
+                          }}
+                          size="small"
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton
+                          onClick={(e) => handleOpenDeleteDialog(shop, e)}
+                          sx={{ 
+                            color: '#dc004e',
+                            '&:hover': { 
+                              backgroundColor: 'rgba(220, 0, 78, 0.1)' 
+                            }
+                          }}
+                          size="small"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </div>
                     </div>
                     <div className="stadium-info">
                       <Typography className="stadium-location"><span>🏟️</span>{shop.stadiumName}</Typography>
@@ -282,10 +424,192 @@ const ShopPanel = () => {
                 value={newShop.description}
                 onChange={(e) => setNewShop({ ...newShop, description: e.target.value })}
               />
+              
+              {/* Manual Coordinate Input Fields */}
+              <div style={{ display: 'flex', gap: '16px', marginTop: '16px' }}>
+                <TextField
+                  margin="dense"
+                  label="Latitude *"
+                  type="text"
+                  inputProps={{ 
+                    pattern: "[0-9.-]*",
+                    inputMode: "decimal"
+                  }}
+                  fullWidth
+                  required
+                  value={newShop.latitude}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Only allow numbers, decimal point, and minus sign
+                    if (/^-?\d*\.?\d*$/.test(value)) {
+                      setNewShop({ ...newShop, latitude: value });
+                    }
+                  }}
+                  placeholder="31.7683"
+                  helperText="Enter latitude coordinate (required)"
+                  error={!newShop.latitude && newShop.latitude !== ''}
+                />
+                <TextField
+                  margin="dense"
+                  label="Longitude *"
+                  type="text"
+                  inputProps={{ 
+                    pattern: "[0-9.-]*",
+                    inputMode: "decimal"
+                  }}
+                  fullWidth
+                  required
+                  value={newShop.longitude}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Only allow numbers, decimal point, and minus sign
+                    if (/^-?\d*\.?\d*$/.test(value)) {
+                      setNewShop({ ...newShop, longitude: value });
+                    }
+                  }}
+                  placeholder="35.2137"
+                  helperText="Enter longitude coordinate (required)"
+                  error={!newShop.longitude && newShop.longitude !== ''}
+                />
+              </div>
             </DialogContent>
             <DialogActions>
               <Button onClick={handleCloseDialog}>Cancel</Button>
-              <Button onClick={handleCreateShop} variant="contained" className="add-button">Create Shop</Button>
+              <Button 
+                onClick={handleCreateShop} 
+                variant="contained" 
+                className="add-button"
+                disabled={!newShop.name || !newShop.location || !newShop.floor || !newShop.gate || !newShop.latitude || !newShop.longitude}
+              >
+                Create Shop
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          {/* Delete Confirmation Dialog */}
+          <Dialog open={openDeleteDialog} onClose={handleCloseDeleteDialog} maxWidth="sm" fullWidth>
+            <DialogTitle>Delete Shop</DialogTitle>
+            <DialogContent>
+              <Typography>
+                Are you sure you want to delete the shop "{shopToDelete?.name}"? This action cannot be undone.
+              </Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseDeleteDialog}>Cancel</Button>
+              <Button 
+                onClick={handleDeleteShop} 
+                variant="contained" 
+                sx={{ 
+                  backgroundColor: '#dc004e',
+                  '&:hover': { backgroundColor: '#b8003d' }
+                }}
+              >
+                Delete
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          {/* Edit Shop Dialog */}
+          <Dialog open={openEditDialog} onClose={handleCloseEditDialog} maxWidth="md" fullWidth>
+            <DialogTitle>Edit Shop</DialogTitle>
+            <DialogContent>
+              <TextField
+                autoFocus
+                margin="dense"
+                label="Shop Name"
+                fullWidth
+                value={newShop.name}
+                onChange={(e) => setNewShop({ ...newShop, name: e.target.value })}
+              />
+              <TextField
+                margin="dense"
+                label="Location in Stadium"
+                fullWidth
+                value={newShop.location}
+                onChange={(e) => setNewShop({ ...newShop, location: e.target.value })}
+              />
+              <TextField
+                margin="dense"
+                label="Floor"
+                fullWidth
+                value={newShop.floor}
+                onChange={(e) => setNewShop({ ...newShop, floor: e.target.value })}
+              />
+              <TextField
+                margin="dense"
+                label="Gate Number"
+                fullWidth
+                value={newShop.gate}
+                onChange={(e) => setNewShop({ ...newShop, gate: e.target.value })}
+              />
+              <TextField
+                margin="dense"
+                label="Description"
+                fullWidth
+                multiline
+                rows={4}
+                value={newShop.description}
+                onChange={(e) => setNewShop({ ...newShop, description: e.target.value })}
+              />
+              
+              {/* Manual Coordinate Input Fields */}
+              <div style={{ display: 'flex', gap: '16px', marginTop: '16px' }}>
+                <TextField
+                  margin="dense"
+                  label="Latitude *"
+                  type="text"
+                  inputProps={{ 
+                    pattern: "[0-9.-]*",
+                    inputMode: "decimal"
+                  }}
+                  fullWidth
+                  required
+                  value={newShop.latitude}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Only allow numbers, decimal point, and minus sign
+                    if (/^-?\d*\.?\d*$/.test(value)) {
+                      setNewShop({ ...newShop, latitude: value });
+                    }
+                  }}
+                  placeholder="31.7683"
+                  helperText="Enter latitude coordinate (required)"
+                  error={!newShop.latitude && newShop.latitude !== ''}
+                />
+                <TextField
+                  margin="dense"
+                  label="Longitude *"
+                  type="text"
+                  inputProps={{ 
+                    pattern: "[0-9.-]*",
+                    inputMode: "decimal"
+                  }}
+                  fullWidth
+                  required
+                  value={newShop.longitude}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Only allow numbers, decimal point, and minus sign
+                    if (/^-?\d*\.?\d*$/.test(value)) {
+                      setNewShop({ ...newShop, longitude: value });
+                    }
+                  }}
+                  placeholder="35.2137"
+                  helperText="Enter longitude coordinate (required)"
+                  error={!newShop.longitude && newShop.longitude !== ''}
+                />
+              </div>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseEditDialog}>Cancel</Button>
+              <Button 
+                onClick={handleUpdateShop} 
+                variant="contained" 
+                className="add-button"
+                disabled={!newShop.name || !newShop.location || !newShop.floor || !newShop.gate || !newShop.latitude || !newShop.longitude}
+              >
+                Update Shop
+              </Button>
             </DialogActions>
           </Dialog>
         </>

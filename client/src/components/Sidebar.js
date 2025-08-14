@@ -43,9 +43,19 @@ const Sidebar = () => {
       console.log('🆔 LOGOUT: Device ID:', deviceId);
       
       if (currentUser && deviceId) {
-        // Remove FCM token for this device
+        // Remove FCM token for this device - check both collections
         console.log('🔍 LOGOUT: Fetching user document from Firestore...');
-        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        
+        // Try to find user in admins collection first
+        let userDoc = await getDoc(doc(db, 'admins', currentUser.uid));
+        let collection = 'admins';
+        
+        // If not found in admins, check shopowners collection
+        if (!userDoc.exists()) {
+          userDoc = await getDoc(doc(db, 'shopowners', currentUser.uid));
+          collection = 'shopowners';
+        }
+        
         if (userDoc.exists()) {
           const userData = userDoc.data();
           const user = User.fromFirestore(userData, currentUser.uid);
@@ -56,14 +66,14 @@ const Sidebar = () => {
           user.removeFCMToken(deviceId);
           console.log('🗑️ LOGOUT: FCM tokens after removal:', user.fcmTokens);
           
-          // Update user document
-          await updateDoc(doc(db, 'users', currentUser.uid), {
+          // Update user document in correct collection
+          await updateDoc(doc(db, collection, currentUser.uid), {
             fcmTokens: user.fcmTokens,
             updatedAt: user.updatedAt
           });
-          console.log('✅ LOGOUT: FCM token removed from Firestore');
+          console.log(`✅ LOGOUT: FCM token removed from ${collection} collection`);
         } else {
-          console.log('⚠️ LOGOUT: User document not found in Firestore');
+          console.log('⚠️ LOGOUT: User document not found in any collection');
         }
       } else {
         console.log('⚠️ LOGOUT: No current user or device ID found');

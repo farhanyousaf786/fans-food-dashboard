@@ -25,11 +25,11 @@ const ShopAdminManager = () => {
 
   const fetchAllShopOwners = async () => {
     try {
-      const usersCollection = collection(db, 'users');
-      const usersSnapshot = await getDocs(usersCollection);
-      const shopOwners = usersSnapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(user => user.role === 'shopowner');
+      // Fetch from shopowners collection directly
+      const shopOwnersCollection = collection(db, 'shopowners');
+      const shopOwnersSnapshot = await getDocs(shopOwnersCollection);
+      const shopOwners = shopOwnersSnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }));
       
       setAllShopOwners(shopOwners);
       console.log('🏪 SHOP ADMIN MANAGER: Found shop owners:', shopOwners.length);
