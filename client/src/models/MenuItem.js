@@ -24,7 +24,8 @@ class MenuItem {
             halal: false,
             kosher: false,
             vegan: false
-        }
+        },
+        currency = 'USD'
     ) {
         this.name = name;
         this.description = description;
@@ -40,6 +41,7 @@ class MenuItem {
         this.allergens = allergens;
         this.nutritionalInfo = nutritionalInfo;
         this.foodType = foodType;
+        this.currency = currency;
         this.createdAt = new Date();
         this.updatedAt = new Date();
     }
@@ -59,6 +61,7 @@ class MenuItem {
             allergens: this.allergens,
             nutritionalInfo: this.nutritionalInfo,
             foodType: this.foodType,
+            currency: this.currency,
             docId: this.docId,
             createdAt: this.createdAt instanceof Date ? Timestamp.fromDate(this.createdAt) : this.createdAt,
             updatedAt: this.updatedAt instanceof Date ? Timestamp.fromDate(this.updatedAt) : this.updatedAt
@@ -89,7 +92,8 @@ class MenuItem {
                 halal: false,
                 kosher: false,
                 vegan: false
-            }
+            },
+            data.currency || 'USD'
         );
         
         // Handle both Timestamp and string formats for createdAt/updatedAt

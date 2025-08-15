@@ -30,7 +30,7 @@ import { collection, query, onSnapshot, doc, deleteDoc, updateDoc, where, getDoc
 import { ref, deleteObject, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../../../config/firebase';
 import MenuItemModel from '../../../../models/MenuItem';
-import EditMenuDialog from './EditMenuDialog';
+import AddMenuDialog from '../AddMenuDialod/AddMenuDialog';
 import './MenuList.css';
 
 const MenuList = ({ shopData }) => {
@@ -44,6 +44,32 @@ const MenuList = ({ shopData }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [stadiumShops, setStadiumShops] = useState([]);
+  const [editMenuItem, setEditMenuItem] = useState({
+    name: "",
+    description: "",
+    price: "",
+    category: "",
+    images: [],
+    isAvailable: true,
+    preparationTime: 15,
+    selectedShops: [],
+    customization: {
+      toppings: [],
+      extras: [],
+      sauces: [],
+      sizes: [],
+    },
+    allergens: [],
+    nutritionalInfo: {},
+    foodType: {
+      halal: false,
+      kosher: false,
+      vegan: false
+    },
+    currency: 'USD',
+    offerActive: false,
+    discountPercentage: 10
+  });
 
   useEffect(() => {
     if (!shopData?.id) return;
@@ -113,6 +139,33 @@ const MenuList = ({ shopData }) => {
 
   const handleEdit = (item) => {
     setSelectedItem(item);
+    // Populate editMenuItem with the selected item's data
+    setEditMenuItem({
+      name: item.name || "",
+      description: item.description || "",
+      price: item.price?.toString() || "",
+      category: item.category || "",
+      images: item.images || [],
+      isAvailable: item.isAvailable !== undefined ? item.isAvailable : true,
+      preparationTime: item.preparationTime || 15,
+      selectedShops: item.shopIds || [],
+      customization: item.customization || {
+        toppings: [],
+        extras: [],
+        sauces: [],
+        sizes: [],
+      },
+      allergens: item.allergens || [],
+      nutritionalInfo: item.nutritionalInfo || {},
+      foodType: item.foodType || {
+        halal: false,
+        kosher: false,
+        vegan: false
+      },
+      currency: item.currency || 'USD',
+      offerActive: false,
+      discountPercentage: 10
+    });
     setEditDialogOpen(true);
   };
 
@@ -123,11 +176,24 @@ const MenuList = ({ shopData }) => {
 
   const handleUpdateMenuItem = async (updatedItem) => {
     try {
-      if (!selectedItem?.id || !shopData?.id || !shopData?.stadiumId) {
-        throw new Error('Missing required data');
+      console.log('🔄 UPDATE: Starting update process...');
+      console.log('🔄 UPDATE: selectedItem:', selectedItem);
+      console.log('🔄 UPDATE: shopData:', shopData);
+      console.log('🔄 UPDATE: updatedItem:', updatedItem);
+      
+      if (!selectedItem?.id && !selectedItem?.docId) {
+        console.error('🔄 UPDATE: Missing selectedItem id/docId');
+        throw new Error('Missing menu item ID');
+      }
+      
+      if (!shopData?.stadiumId) {
+        console.error('🔄 UPDATE: Missing shopData stadiumId');
+        throw new Error('Missing stadium ID');
       }
 
-      const menuItemRef = doc(db, 'stadiums', shopData.stadiumId, 'shops', shopData.id, 'menuItems', selectedItem.id);
+      // Use either docId or id for the document reference
+      const itemId = selectedItem.docId || selectedItem.id;
+      const menuItemRef = doc(db, 'menuItems', itemId);
 
       const imageUrls = [];
       if (updatedItem.images?.length > 0) {
@@ -146,24 +212,35 @@ const MenuList = ({ shopData }) => {
       const menuItem = new MenuItemModel(
         updatedItem.name,
         updatedItem.description,
-        updatedItem.price,
+        parseFloat(updatedItem.price),
         updatedItem.category,
         imageUrls.length > 0 ? imageUrls : updatedItem.images || [],
         updatedItem.isAvailable,
-        updatedItem.preparationTime,
-        shopData.id,
+        parseInt(updatedItem.preparationTime),
+        updatedItem.selectedShops || [], // Use selectedShops array for multi-shop support
         shopData.stadiumId,
-        selectedItem.docId
+        itemId,
+        updatedItem.customization || {
+          toppings: [],
+          extras: [],
+          sauces: [],
+          sizes: []
+        },
+        updatedItem.allergens || [],
+        updatedItem.nutritionalInfo || {},
+        updatedItem.foodType || {
+          halal: false,
+          kosher: false,
+          vegan: false
+        },
+        updatedItem.currency || 'USD'
       );
-      menuItem.customization = updatedItem.customization;
-      menuItem.allergens = updatedItem.allergens;
-      menuItem.nutritionalInfo = updatedItem.nutritionalInfo;
-      menuItem.foodType = updatedItem.foodType;
 
       await updateDoc(menuItemRef, menuItem.toFirestore());
       setSuccess('Menu item updated successfully!');
       setTimeout(() => setSuccess(''), 3000);
       setEditDialogOpen(false);
+      setSelectedItem(null);
     } catch (error) {
       console.error('Error updating menu item:', error);
       setError(error.message || 'Failed to update menu item');
@@ -264,12 +341,12 @@ const MenuList = ({ shopData }) => {
       <Grid container spacing={3}>
         {menuItems.map((item) => (
           <Grid item xs={12} sm={6} md={4} key={item.id}>
-            <Card sx={{ display: 'flex', height: 220, overflow: 'hidden' }}>
+            <Card sx={{ display: 'flex', height: 180, overflow: 'hidden' }}>
               <CardMedia
                 component="img"
                 image={item.images?.[0] || '/placeholder.jpg'}
                 alt={item.name}
-                sx={{ width: 220, height: 220, objectFit: 'cover' }}
+                sx={{ width: 140, height: 180, objectFit: 'cover' }}
               />
               <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, p: 2 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
@@ -346,7 +423,9 @@ const MenuList = ({ shopData }) => {
                 )}
                
                 <Box sx={{ mt: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="h6" color="primary" sx={{ fontSize: '1.1rem' }}>${parseFloat(item.price).toFixed(2)}</Typography>
+                  <Typography variant="h6" color="primary" sx={{ fontSize: '1.1rem' }}>
+                    {item.currency === 'NIS' ? '₪' : '$'}{parseFloat(item.price).toFixed(2)}
+                  </Typography>
                   <Box sx={{ display: 'flex', gap: 0.5 }}>
                     <Chip
                       icon={<Circle sx={{ fontSize: 10 }} />}
@@ -376,12 +455,18 @@ const MenuList = ({ shopData }) => {
         <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}><Delete sx={{ mr: 1, fontSize: 20 }} />Delete Item</MenuItem>
       </Menu>
 
-      <EditMenuDialog
+      <AddMenuDialog
         open={editDialogOpen}
-        onClose={() => setEditDialogOpen(false)}
+        onClose={() => {
+          setEditDialogOpen(false);
+          setSelectedItem(null);
+        }}
         onSubmit={handleUpdateMenuItem}
-        menuItem={selectedItem}
+        menuItem={editMenuItem}
+        setMenuItem={setEditMenuItem}
         shopData={shopData}
+        stadiumShops={stadiumShops}
+        isEditing={true}
       />
 
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
@@ -414,7 +499,7 @@ const MenuList = ({ shopData }) => {
 
           <Box sx={{ mb: 2 }}>
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>Price Details</Typography>
-            <Typography>Price: ${(selectedItem?.price || 0).toFixed(2)}</Typography>
+            <Typography>Price: {selectedItem?.currency === 'NIS' ? '₪' : '$'}{(selectedItem?.price || 0).toFixed(2)}</Typography>
           </Box>
 
           <Box sx={{ mb: 2 }}>

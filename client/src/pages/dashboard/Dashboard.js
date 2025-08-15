@@ -71,6 +71,7 @@ const Dashboard = () => {
       kosher: false,
       vegan: false
     },
+    currency: 'USD',
     offerActive: false,
     discountPercentage: 10
   });
@@ -227,13 +228,23 @@ const Dashboard = () => {
         newMenuItem.isAvailable,
         parseInt(newMenuItem.preparationTime),
         shopIds,
-        shopData.stadiumId
+        shopData.stadiumId,
+        null, // docId
+        newMenuItem.customization || {
+          toppings: [],
+          extras: [],
+          sauces: [],
+          sizes: []
+        },
+        newMenuItem.allergens || [],
+        newMenuItem.nutritionalInfo || {},
+        newMenuItem.foodType || {
+          halal: false,
+          kosher: false,
+          vegan: false
+        },
+        newMenuItem.currency || 'USD'
       );
-
-      menuItem.customization = newMenuItem.customization;
-      menuItem.allergens = newMenuItem.allergens;
-      menuItem.nutritionalInfo = newMenuItem.nutritionalInfo;
-      menuItem.foodType = newMenuItem.foodType;
 
       if (newMenuItem.offerActive) {
         // Save in offers collection
