@@ -1,1 +1,1 @@
-web: cd server && npm start
+web: serve -s client/build -l $PORT
