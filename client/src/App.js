@@ -13,6 +13,7 @@ import Manage from './pages/manage/Manage';
 import Stadium from './pages/stadium/Stadium';
 import Orders from './pages/orders/Orders';
 import Sidebar from './components/Sidebar';
+import AddCategory from './pages/categories/AddCategory';
 
 // Create theme instance with new blue color scheme
 const theme = createTheme({
@@ -120,6 +121,7 @@ function App() {
           <Route path="/profile" element={<PrivateRoute><DashboardLayout><Profile /></DashboardLayout></PrivateRoute>} />
           <Route path="/manage" element={<PrivateRoute><DashboardLayout><Manage /></DashboardLayout></PrivateRoute>} />
           <Route path="/stadium" element={<PrivateRoute><DashboardLayout><Stadium /></DashboardLayout></PrivateRoute>} />
+          <Route path="/add-category" element={<PrivateRoute><DashboardLayout><AddCategory /></DashboardLayout></PrivateRoute>} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>

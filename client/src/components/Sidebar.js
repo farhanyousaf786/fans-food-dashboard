@@ -19,6 +19,7 @@ import {
   ShoppingCart as OrdersIcon,
   Logout as LogoutIcon
 } from '@mui/icons-material';
+import { Category as CategoryIcon } from '@mui/icons-material';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth, db, getFCMToken } from '../config/firebase';
@@ -93,6 +94,7 @@ const Sidebar = () => {
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
     { text: 'Orders', icon: <OrdersIcon />, path: '/orders' },
     { text: 'Profile', icon: <PersonIcon />, path: '/profile' },
+    { text: 'Add Category', icon: <CategoryIcon />, path: '/add-category' },
   ];
 
   return (
