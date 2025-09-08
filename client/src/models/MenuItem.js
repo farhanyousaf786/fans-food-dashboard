@@ -3,9 +3,11 @@ import { Timestamp } from 'firebase/firestore';
 class MenuItem {
     constructor(
         name,
+        nameMap = {},
         description,
+        descriptionMap = {},
         price,
-        category,
+        category, // categoryId string
         images = [],
         isAvailable = true,
         preparationTime = 15,
@@ -28,9 +30,11 @@ class MenuItem {
         currency = 'USD'
     ) {
         this.name = name;
+        this.nameMap = nameMap || {};
         this.description = description;
+        this.descriptionMap = descriptionMap || {};
         this.price = price;
-        this.category = category;
+        this.category = category; // store categoryId
         this.images = images;
         this.isAvailable = isAvailable;
         this.preparationTime = preparationTime;
@@ -49,9 +53,11 @@ class MenuItem {
     toFirestore() {
         return {
             name: this.name,
+            nameMap: this.nameMap,
             description: this.description,
+            descriptionMap: this.descriptionMap,
             price: this.price,
-            category: this.category,
+            category: this.category, // categoryId
             images: this.images,
             isAvailable: this.isAvailable,
             preparationTime: this.preparationTime,
@@ -70,10 +76,12 @@ class MenuItem {
 
     static fromFirestore(data) {
         const menuItem = new MenuItem(
-            data.name,
-            data.description,
+            data.name || data?.nameMap?.en || '',
+            data.nameMap || {},
+            data.description || data?.descriptionMap?.en || '',
+            data.descriptionMap || {},
             data.price,
-            data.category,
+            data.category, // categoryId
             data.images || [],
             data.isAvailable,
             data.preparationTime,

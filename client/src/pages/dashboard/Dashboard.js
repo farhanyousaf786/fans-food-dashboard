@@ -51,7 +51,9 @@ const Dashboard = () => {
   });
   const [newMenuItem, setNewMenuItem] = useState({
     name: "",
+    nameMap: { en: '', he: '' },
     description: "",
+    descriptionMap: { en: '', he: '' },
     price: "",
     category: "",
     images: [],
@@ -141,7 +143,9 @@ const Dashboard = () => {
     setOpenDialog(false);
     setNewMenuItem({
       name: "",
+      nameMap: { en: '', he: '' },
       description: "",
+      descriptionMap: { en: '', he: '' },
       price: "",
       category: "",
       images: [],
@@ -177,6 +181,24 @@ const Dashboard = () => {
           [key]: checked
         }
       }));
+    } else if (name.startsWith('nameMap.')) {
+      const lang = name.split('.')[1];
+      setNewMenuItem((prev) => ({
+        ...prev,
+        nameMap: {
+          ...(prev.nameMap || {}),
+          [lang]: value
+        }
+      }));
+    } else if (name.startsWith('descriptionMap.')) {
+      const lang = name.split('.')[1];
+      setNewMenuItem((prev) => ({
+        ...prev,
+        descriptionMap: {
+          ...(prev.descriptionMap || {}),
+          [lang]: value
+        }
+      }));
     } else if (name === "customization") {
       // Handle customization updates
       setNewMenuItem((prev) => ({
@@ -192,16 +214,19 @@ const Dashboard = () => {
     }
   };
 
-  const handleCreateMenuItem = async () => {
+  const handleCreateMenuItem = async (payloadFromDialog) => {
     try {
       if (!shopData?.id || !shopData?.stadiumId) {
         throw new Error('Missing shop data');
       }
 
+      // Use payload passed from AddMenuDialog when available
+      const formData = payloadFromDialog || newMenuItem;
+
       // First upload all images and get their URLs
       const imageUrls = [];
-      if (newMenuItem.images?.length > 0) {
-        for (const image of newMenuItem.images) {
+      if (formData.images?.length > 0) {
+        for (const image of formData.images) {
           if (image.file) {
             const storageRef = ref(
               storage,
@@ -215,35 +240,39 @@ const Dashboard = () => {
       }
 
       // Create MenuItem instance with shopIds array
-      const shopIds = newMenuItem.selectedShops && newMenuItem.selectedShops.length > 0 
-        ? newMenuItem.selectedShops 
+      const shopIds = formData.selectedShops && formData.selectedShops.length > 0 
+        ? formData.selectedShops 
         : [shopData.id]; // Default to current shop if no shops selected
         
+      const flatName = (formData?.nameMap && formData.nameMap.en) ? formData.nameMap.en : (formData.name || '');
+      const flatDescription = (formData?.descriptionMap && formData.descriptionMap.en) ? formData.descriptionMap.en : (formData.description || '');
       const menuItem = new MenuItem(
-        newMenuItem.name,
-        newMenuItem.description,
-        parseFloat(newMenuItem.price),
-        newMenuItem.category,
+        flatName,
+        formData.nameMap || {},
+        flatDescription,
+        formData.descriptionMap || {},
+        parseFloat(formData.price),
+        formData.category, // categoryId
         imageUrls,
-        newMenuItem.isAvailable,
-        parseInt(newMenuItem.preparationTime),
+        formData.isAvailable,
+        parseInt(formData.preparationTime),
         shopIds,
         shopData.stadiumId,
         null, // docId
-        newMenuItem.customization || {
+        formData.customization || {
           toppings: [],
           extras: [],
           sauces: [],
           sizes: []
         },
-        newMenuItem.allergens || [],
-        newMenuItem.nutritionalInfo || {},
-        newMenuItem.foodType || {
+        formData.allergens || [],
+        formData.nutritionalInfo || {},
+        formData.foodType || {
           halal: false,
           kosher: false,
           vegan: false
         },
-        newMenuItem.currency || 'USD'
+        formData.currency || 'USD'
       );
 
       if (newMenuItem.offerActive) {

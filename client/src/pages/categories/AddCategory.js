@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { Box, Paper, Typography, TextField, Button, Stack, Snackbar, Alert, Divider } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { Box, Paper, Typography, TextField, Button, Stack, Snackbar, Alert, Divider, List, ListItem, ListItemText, IconButton, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Edit as EditIcon } from '@mui/icons-material';
 import { db } from '../../config/firebase';
-import { collection, doc, setDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, onSnapshot, query, orderBy, updateDoc } from 'firebase/firestore';
 
 const AddCategory = () => {
   const [icon, setIcon] = useState('');
@@ -9,11 +10,60 @@ const AddCategory = () => {
   const [nameHe, setNameHe] = useState('');
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
+  const [categories, setCategories] = useState([]);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [editIcon, setEditIcon] = useState('');
+  const [editNameEn, setEditNameEn] = useState('');
+  const [editNameHe, setEditNameHe] = useState('');
 
   const reset = () => {
     setIcon('');
     setNameEn('');
     setNameHe('');
+  };
+
+  useEffect(() => {
+    // Live fetch categories ordered by English name
+    const q = query(collection(db, 'categories'), orderBy('nameMap.en'));
+    const unsub = onSnapshot(q, (snap) => {
+      const list = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
+      setCategories(list);
+    }, (err) => {
+      console.error('Error loading categories:', err);
+    });
+    return () => unsub();
+  }, []);
+
+  const openEdit = (cat) => {
+    setEditing(cat);
+    setEditIcon(cat.icon || '');
+    setEditNameEn(cat?.nameMap?.en || '');
+    setEditNameHe(cat?.nameMap?.he || '');
+    setEditOpen(true);
+  };
+
+  const handleUpdate = async () => {
+    if (!editing?.id) return;
+    try {
+      setLoading(true);
+      await updateDoc(doc(db, 'categories', editing.id), {
+        icon: (editIcon || '').trim(),
+        nameMap: {
+          en: (editNameEn || '').trim(),
+          he: (editNameHe || '').trim(),
+        },
+        docId: editing.docId || editing.id,
+      });
+      setToast({ open: true, message: 'Category updated.', severity: 'success' });
+      setEditOpen(false);
+      setEditing(null);
+    } catch (err) {
+      console.error('Error updating category:', err);
+      setToast({ open: true, message: err.message || 'Failed to update category', severity: 'error' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -97,6 +147,63 @@ const AddCategory = () => {
           </Stack>
         </Box>
       </Paper>
+
+      {/* Categories List */}
+      <Paper elevation={1} sx={{ p: 2, mt: 3 }}>
+        <Typography variant="h6" gutterBottom>
+          All Categories
+        </Typography>
+        {categories.length === 0 ? (
+          <Typography color="text.secondary">No categories yet.</Typography>
+        ) : (
+          <List>
+            {categories.map((cat) => (
+              <ListItem
+                key={cat.id}
+                secondaryAction={
+                  <IconButton edge="end" aria-label="edit" onClick={() => openEdit(cat)}>
+                    <EditIcon />
+                  </IconButton>
+                }
+              >
+                <ListItemText
+                  primary={`${cat.icon || ''} ${cat?.nameMap?.en || ''}`.trim()}
+                  secondary={cat?.nameMap?.he || ''}
+                />
+              </ListItem>
+            ))}
+          </List>
+        )}
+      </Paper>
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Edit Category</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField
+              label="Icon"
+              value={editIcon}
+              onChange={(e) => setEditIcon(e.target.value)}
+              inputProps={{ maxLength: 4 }}
+            />
+            <TextField
+              label="Name (English)"
+              value={editNameEn}
+              onChange={(e) => setEditNameEn(e.target.value)}
+            />
+            <TextField
+              label="Name (Hebrew)"
+              value={editNameHe}
+              onChange={(e) => setEditNameHe(e.target.value)}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditOpen(false)}>Cancel</Button>
+          <Button variant="contained" onClick={handleUpdate} disabled={loading}>Save</Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar
         open={toast.open}

@@ -46,7 +46,9 @@ const MenuList = ({ shopData }) => {
   const [stadiumShops, setStadiumShops] = useState([]);
   const [editMenuItem, setEditMenuItem] = useState({
     name: "",
+    nameMap: { en: '', he: '' },
     description: "",
+    descriptionMap: { en: '', he: '' },
     price: "",
     category: "",
     images: [],
@@ -142,7 +144,9 @@ const MenuList = ({ shopData }) => {
     // Populate editMenuItem with the selected item's data
     setEditMenuItem({
       name: item.name || "",
+      nameMap: item.nameMap || { en: item.name || '' },
       description: item.description || "",
+      descriptionMap: item.descriptionMap || {},
       price: item.price?.toString() || "",
       category: item.category || "",
       images: item.images || [],
@@ -209,11 +213,15 @@ const MenuList = ({ shopData }) => {
         }
       }
 
+      const flatName = (updatedItem?.nameMap && updatedItem.nameMap.en) ? updatedItem.nameMap.en : (updatedItem.name || '');
+      const flatDescription = (updatedItem?.descriptionMap && updatedItem.descriptionMap.en) ? updatedItem.descriptionMap.en : (updatedItem.description || '');
       const menuItem = new MenuItemModel(
-        updatedItem.name,
-        updatedItem.description,
+        flatName,
+        updatedItem.nameMap || {},
+        flatDescription,
+        updatedItem.descriptionMap || {},
         parseFloat(updatedItem.price),
-        updatedItem.category,
+        updatedItem.category, // categoryId
         imageUrls.length > 0 ? imageUrls : updatedItem.images || [],
         updatedItem.isAvailable,
         parseInt(updatedItem.preparationTime),

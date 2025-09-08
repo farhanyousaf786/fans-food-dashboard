@@ -16,22 +16,14 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../../../config/firebase';
 import './AddMenuDialog.css';
 
-const categories = [
-  'Breakfast',
-  'Lunch',
-  'Dinner',
-  'Snacks & Starters',
-  'Drinks & Beverages',
-  'Desserts',
-  'Soups & Salads',
-  'Fast Food',
-  'Healthy Options',
-  'Kids Menu',
-  'Combos & Meal Deals'
-];
+// Categories will now be fetched from Firestore `categories` collection
 
 const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuItem, shopData, stadiumShops: propStadiumShops, isEditing = false }) => {
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [languages, setLanguages] = useState(['en', 'he']);
+  const [newLangCode, setNewLangCode] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   const [stadiumShops, setStadiumShops] = useState(propStadiumShops || []);
   const fileInputRef = useRef(null);
@@ -75,7 +67,44 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
         }
       });
     }
+    // Initialize languages list from existing nameMap
+    const nameKeys = Object.keys(menuItem?.nameMap || {});
+    const descKeys = Object.keys(menuItem?.descriptionMap || {});
+    const existing = Array.from(new Set([...nameKeys, ...descKeys]));
+    if (existing.length > 0) {
+      setLanguages(Array.from(new Set(['en', 'he', ...existing])));
+    }
   }, []);
+
+  // Fetch categories from Firestore when dialog opens
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setCategoriesLoading(true);
+        const snap = await getDocs(collection(db, 'categories'));
+        const list = snap.docs.map((d) => {
+          const data = d.data() || {};
+          return {
+            id: d.id,
+            icon: data.icon || '',
+            nameEn: data?.nameMap?.en || '',
+            nameHe: data?.nameMap?.he || ''
+          };
+        });
+        // sort by English name
+        list.sort((a, b) => a.nameEn.localeCompare(b.nameEn));
+        setCategories(list);
+      } catch (err) {
+        console.error('Error loading categories from Firestore:', err);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+
+    if (open) {
+      fetchCategories();
+    }
+  }, [open]);
 
   // Fetch all shops in the same stadium (only if not provided via props)
   useEffect(() => {
@@ -188,8 +217,16 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
     }
     setLoading(true);
     try {
-      // Pass the menuItem data to the onSubmit function
-      await onSubmit(menuItem);
+      // Ensure backward compatibility: set flat name from English if present
+      const toSubmit = {
+        ...menuItem,
+        name: (menuItem?.nameMap && menuItem.nameMap.en) ? menuItem.nameMap.en : (menuItem.name || ''),
+        description: (menuItem?.descriptionMap && menuItem.descriptionMap.en)
+          ? menuItem.descriptionMap.en
+          : (menuItem.description || '')
+      };
+      // Pass the data to the onSubmit function
+      await onSubmit(toSubmit);
       setShowSuccess(true);
       setTimeout(() => {
         setShowSuccess(false);
@@ -230,7 +267,69 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
         <Divider />
         <DialogContent className="modern-content" sx={{ overflowY: 'auto', flexGrow: 1, pb: 3 }}>
           <Stack spacing={3}>
-            <TextField fullWidth label="Item Name" name="name" required value={menuItem.name} onChange={handleChange} />
+            {/* Multilingual Item Names */}
+            <Box sx={{ border: '1px solid #ddd', borderRadius: '8px', p: 2, bgcolor: '#fff' }}>
+              <Typography variant="subtitle1" fontWeight="500" gutterBottom>
+                Item Names (Multilingual)
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Provide the item name in one or more languages. English (en) and Hebrew (he) shown by default.
+              </Typography>
+              <Stack spacing={2}>
+                {languages.map((code) => (
+                  <Box key={code} sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <TextField
+                      fullWidth
+                      label={`Name (${code.toUpperCase()})`}
+                      name={`nameMap.${code}`}
+                      value={menuItem?.nameMap?.[code] || ''}
+                      onChange={handleChange}
+                    />
+                    {code !== 'en' && code !== 'he' && (
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        onClick={() => {
+                          // remove language from list and clear its value
+                          setLanguages((prev) => prev.filter((c) => c !== code));
+                          const nm = { ...(menuItem.nameMap || {}) };
+                          delete nm[code];
+                          handleChange({ target: { name: 'nameMap', value: nm } });
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </Box>
+                ))}
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                  <TextField
+                    label="Add language code (e.g., ar, fr)"
+                    value={newLangCode}
+                    onChange={(e) => setNewLangCode(e.target.value.toLowerCase())}
+                    sx={{ maxWidth: 260 }}
+                  />
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      const code = (newLangCode || '').trim().toLowerCase();
+                      if (!code) return;
+                      if (!/^[a-z]{2,5}(-[a-z]{2})?$/i.test(code)) return; // basic code validation
+                      if (!languages.includes(code)) {
+                        setLanguages((prev) => [...prev, code]);
+                        // seed empty value for new language
+                        const nm = { ...(menuItem.nameMap || {}) };
+                        nm[code] = '';
+                        handleChange({ target: { name: 'nameMap', value: nm } });
+                      }
+                      setNewLangCode('');
+                    }}
+                  >
+                    Add Language
+                  </Button>
+                </Box>
+              </Stack>
+            </Box>
             
             {/* Price with Currency Selection */}
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
@@ -269,13 +368,46 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
                 </Select>
               </FormControl>
             </Box>
-            <TextField fullWidth multiline rows={3} label="Description" name="description"
-              value={menuItem.description} onChange={handleChange}
-            />
+            {/* Multilingual Descriptions */}
+            <Box sx={{ border: '1px solid #ddd', borderRadius: '8px', p: 2, bgcolor: '#fff' }}>
+              <Typography variant="subtitle1" fontWeight="500" gutterBottom>
+                Descriptions (Multilingual)
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Provide the item description in one or more languages.
+              </Typography>
+              <Stack spacing={2}>
+                {languages.map((code) => (
+                  <TextField
+                    key={code}
+                    fullWidth
+                    multiline
+                    rows={3}
+                    label={`Description (${code.toUpperCase()})`}
+                    name={`descriptionMap.${code}`}
+                    value={menuItem?.descriptionMap?.[code] || ''}
+                    onChange={handleChange}
+                  />
+                ))}
+              </Stack>
+            </Box>
             <FormControl fullWidth>
               <InputLabel>Category</InputLabel>
-              <Select name="category" value={menuItem.category} onChange={handleChange} label="Category">
-                {categories.map(cat => <MenuItem key={cat} value={cat}>{cat}</MenuItem>)}
+              <Select name="category" value={menuItem.category || ''} onChange={handleChange} label="Category">
+                {categoriesLoading && (
+                  <MenuItem value="" disabled>Loading categories...</MenuItem>
+                )}
+                {!categoriesLoading && categories.length === 0 && (
+                  <MenuItem value="" disabled>No categories found</MenuItem>
+                )}
+                {!categoriesLoading && categories.map((cat) => (
+                  <MenuItem key={cat.id} value={cat.id}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <span>{cat.icon}</span>
+                      <span>{cat.nameEn}</span>
+                    </Box>
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
 
