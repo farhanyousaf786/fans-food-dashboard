@@ -1,0 +1,103 @@
+.delivery-users {
+  margin-top: 32px;
+}
+
+.delivery-users__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.delivery-users__grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+}
+
+/* 12-col layout responsive */
+@media (max-width: 599px) {
+  .delivery-users__item { grid-column: span 12; }
+}
+@media (min-width: 600px) and (max-width: 899px) {
+  .delivery-users__item { grid-column: span 6; }
+}
+@media (min-width: 900px) {
+  .delivery-users__item { grid-column: span 4; }
+}
+
+.delivery-user-card {
+  border: 1px solid var(--mui-palette-divider, #e0e0e0);
+  border-radius: 12px;
+  background: #fff;
+  transition: box-shadow .2s ease, transform .2s ease;
+}
+.delivery-user-card:hover {
+  box-shadow: 0 6px 20px rgba(0,0,0,.08);
+  transform: translateY(-2px);
+}
+
+.delivery-user-card__content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+}
+
+.delivery-user-card__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #e8f0fe;
+  color: #1a73e8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.delivery-user-card__main {
+  flex: 1;
+  min-width: 0;
+}
+.delivery-user-card__name {
+  font-weight: 600;
+  font-size: 14px;
+  margin: 0;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.delivery-user-card__email {
+  color: #6b7280;
+  font-size: 12px;
+  margin: 2px 0 0;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.delivery-user-card__meta {
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.delivery-user-card__chip {
+  border: 1px solid #d1d5db;
+  color: #374151;
+  background: #fff;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.delivery-user-card__chip--active {
+  border-color: #34d399;
+  color: #059669;
+}
+.delivery-user-card__switch {
+  min-width: 56px;
+  display: flex;
+  justify-content: center;
+}

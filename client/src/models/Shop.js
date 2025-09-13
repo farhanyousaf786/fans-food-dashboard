@@ -11,6 +11,8 @@ class Shop {
         this.latitude = latitude;
         this.longitude = longitude;
         this.docId = docId;
+        // Shop availability flag (open/closed). Default to true for backwards compatibility
+        this.shopAvailability = true;
         this.createdAt = new Date();
         this.updatedAt = new Date();
     }
@@ -30,7 +32,8 @@ class Shop {
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,
             stadiumName: this.stadiumName,
-            docId: this.docId
+            docId: this.docId,
+            shopAvailability: this.shopAvailability
         };
     }
 
@@ -52,6 +55,7 @@ class Shop {
         shop.id = id;
         shop.createdAt = data.createdAt?.toDate() || new Date();
         shop.updatedAt = data.updatedAt?.toDate() || new Date();
+        shop.shopAvailability = (typeof data.shopAvailability === 'boolean') ? data.shopAvailability : true;
         return shop;
     }
 }

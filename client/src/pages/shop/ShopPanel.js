@@ -14,7 +14,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField
+  TextField,
+  Switch,
+  FormControlLabel,
+  Tooltip
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import Shop from '../../models/Shop';
@@ -187,6 +190,23 @@ const ShopPanel = () => {
     setShopToDelete(null);
   };
 
+  // Toggle shop availability (open/closed)
+  const handleToggleAvailability = async (shop, e) => {
+    e.stopPropagation();
+    const newValue = !shop.shopAvailability;
+    // Optimistic UI update
+    setShops(prev => prev.map(s => s.id === shop.id ? { ...s, shopAvailability: newValue } : s));
+
+    try {
+      const shopRef = doc(db, 'shops', shop.id);
+      await updateDoc(shopRef, { shopAvailability: newValue, updatedAt: new Date() });
+    } catch (error) {
+      console.error('❌ SHOP PANEL: Error updating availability:', error);
+      // Revert on failure
+      setShops(prev => prev.map(s => s.id === shop.id ? { ...s, shopAvailability: !newValue } : s));
+    }
+  };
+
   const handleEditShop = (shop, event) => {
     event.stopPropagation(); // Prevent card click navigation
     console.log('🔍 EDIT SHOP: Full shop object:', shop);
@@ -303,6 +323,19 @@ const ShopPanel = () => {
                     <div className="stadium-header">
                       <Typography variant="h6" className="stadium-title">{shop.name}</Typography>
                       <div className="stadium-actions">
+                        <Tooltip title={shop.shopAvailability ? 'Shop is Open' : 'Shop is Closed'}>
+                          <FormControlLabel
+                            onClick={(e) => e.stopPropagation()}
+                            control={
+                              <Switch
+                                checked={!!shop.shopAvailability}
+                                onChange={(e) => handleToggleAvailability(shop, e)}
+                                color="success"
+                              />
+                            }
+                            label={shop.shopAvailability ? 'Open' : 'Closed'}
+                          />
+                        </Tooltip>
                         <IconButton
                           onClick={(e) => handleEditShop(shop, e)}
                           sx={{ 

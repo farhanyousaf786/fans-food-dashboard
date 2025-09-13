@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Menu, MenuItem, CircularProgress, Grid, Container, ButtonGroup, Button } from '@mui/material';
-import { AccessTime, LocalDining, LocalShipping } from '@mui/icons-material';
-import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { AccessTime, LocalDining, LocalShipping, Delete } from '@mui/icons-material';
+import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import Order from '../../models/Order';
 import OrderCard from './components/OrderCard';
@@ -18,6 +18,7 @@ const Orders = () => {
   const [sortBy, setSortBy] = useState('date');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [shopData, setShopData] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Get shop data from localStorage
   useEffect(() => {
@@ -75,6 +76,23 @@ const Orders = () => {
       handleMenuClose();
     } catch (e) {
       console.error('Error updating order status:', e);
+    }
+  };
+
+  const handleDeleteOrder = async () => {
+    if (!selectedOrder) return;
+    try {
+      // Simple confirm prompt
+      const confirmed = window.confirm(`Delete order #${selectedOrder.orderId?.slice(0,6) || selectedOrder.id}? This cannot be undone.`);
+      if (!confirmed) return;
+      setDeleting(true);
+      const orderRef = doc(db, 'orders', selectedOrder.id);
+      await deleteDoc(orderRef);
+      handleMenuClose();
+    } catch (e) {
+      console.error('Error deleting order:', e);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -236,6 +254,9 @@ const Orders = () => {
         <MenuItem onClick={() => handleStatusChange(2)}><LocalShipping fontSize="small" sx={{ mr: 1 }} /> Delivering</MenuItem>
         <MenuItem onClick={() => handleStatusChange(3)}><LocalShipping fontSize="small" sx={{ mr: 1 }} /> Delivered</MenuItem>
         <MenuItem onClick={() => handleStatusChange(4)}><LocalShipping fontSize="small" sx={{ mr: 1 }} /> Cancelled</MenuItem>
+        <MenuItem onClick={handleDeleteOrder} sx={{ color: 'error.main' }}>
+          <Delete fontSize="small" sx={{ mr: 1 }} /> {deleting ? 'Deleting...' : 'Delete Order'}
+        </MenuItem>
       </Menu>
     </Container>
   );

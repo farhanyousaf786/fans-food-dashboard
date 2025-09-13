@@ -74,7 +74,7 @@ class MenuItem {
         };
     }
 
-    static fromFirestore(data) {
+    static fromFirestore(data, id) {
         const menuItem = new MenuItem(
             data.name || data?.nameMap?.en || '',
             data.nameMap || {},
@@ -87,7 +87,7 @@ class MenuItem {
             data.preparationTime,
             data.shopIds || data.shopId ? (Array.isArray(data.shopIds) ? data.shopIds : [data.shopId]) : [],
             data.stadiumId,
-            data.docId,
+            data.docId || id,
             data.customization || {
                 toppings: [],
                 extras: [],
@@ -103,6 +103,9 @@ class MenuItem {
             },
             data.currency || 'USD'
         );
+        // Also store the Firestore document ID on the instance for convenience
+        if (id) menuItem.id = id;
+        if (!menuItem.docId) menuItem.docId = id;
         
         // Handle both Timestamp and string formats for createdAt/updatedAt
         menuItem.createdAt = this.parseFirestoreDate(data.createdAt);
