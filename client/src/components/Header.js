@@ -1,16 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, Avatar, useTheme } from '@mui/material';
+import React, { useState, useEffect, useContext } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
+import { Box, Typography, Avatar, useTheme, IconButton } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../config/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import PersonIcon from '@mui/icons-material/Person';
+import LanguageSelector from './LanguageSelector';
 
 const Header = () => {
     const theme = useTheme();
     const navigate = useNavigate();
+    const { language } = useLanguage();
     const [userRole, setUserRole] = useState('');
     const [userName, setUserName] = useState('');
     const [userImage, setUserImage] = useState('');
+    const isRTL = language === 'he';
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -66,51 +70,58 @@ const Header = () => {
                 Fan Munch Dashboard
             </Typography>
             
-            <Box sx={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Avatar
-                src={userImage}
-                sx={{
-                    width: 40,
-                    height: 40,
-                    bgcolor: userImage ? 'transparent' : theme.palette.primary.main,
-                    transition: 'all 0.2s',
-                    border: '2px solid transparent'
-                }}
-            >
-                {!userImage && <PersonIcon />}
-            </Avatar>
-                {userName && (
-
-                    <>
-                        <Typography 
-                            sx={{ 
-                                color: theme.palette.primary.main,
-                                fontWeight: 600,
-                                fontSize: '0.9rem',
-                                display: 'flex',
-                                alignItems: 'center'
-                            }}
-                        >
-                            {userName}
-                        </Typography>
-                        <Box 
-                            onClick={() => navigate('/profile')}
-                            sx={{
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                '&:hover': {
-                                    '& .MuiAvatar-root': {
-                                        border: `2px solid ${theme.palette.primary.main}`,
-                                        transform: 'scale(1.05)',
-                                    }
-                                }
-                            }}
-                        >
-                            
+            <Box sx={{ 
+                marginLeft: isRTL ? 0 : 'auto',
+                marginRight: isRTL ? 'auto' : 0,
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 2,
+                flexDirection: isRTL ? 'row-reverse' : 'row'
+            }}>
+                <LanguageSelector />
+                
+                <Box sx={{ display: 'flex', flexDirection: isRTL ? 'row-reverse' : 'row', alignItems: 'center', gap: 1 }}>
+                    <Avatar
+                        src={userImage}
+                        sx={{
+                            width: 40,
+                            height: 40,
+                            bgcolor: userImage ? 'transparent' : theme.palette.primary.main,
+                            transition: 'all 0.2s',
+                            border: '2px solid transparent',
+                            cursor: 'pointer',
+                            order: isRTL ? 1 : 'unset',
+                            '&:hover': {
+                                border: `2px solid ${theme.palette.primary.main}`,
+                                transform: 'scale(1.05)',
+                            }
+                        }}
+                        onClick={() => navigate('/profile')}
+                    >
+                        {!userImage && <PersonIcon />}
+                    </Avatar>
+                    {userName && (
+                        <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 1,
+                            marginRight: isRTL ? 1 : 0,
+                            marginLeft: isRTL ? 0 : 1
+                        }}>
+                            <Typography 
+                                sx={{ 
+                                    color: theme.palette.primary.main,
+                                    fontWeight: 600,
+                                    fontSize: '0.9rem',
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}
+                            >
+                                {userName}
+                            </Typography>
                         </Box>
-                    </>
-                )}
+                    )}
+                </Box>
             </Box>
         </Box>
     );

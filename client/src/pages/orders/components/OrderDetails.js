@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogTitle,
@@ -14,7 +15,6 @@ import {
 } from '@mui/material';
 import { 
   Close, 
-  LocationOn, 
   AccessTime, 
   ShoppingCart, 
   Payment,
@@ -24,14 +24,18 @@ import Order from '../../../models/Order';
 
 const OrderDetails = ({ order, open, onClose, restaurantName }) => {
   const theme = useTheme();
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === 'he';
+  
   if (!order) return null;
 
   const formatDate = (date) => {
-    return new Date(date).toLocaleString('en-US', {
+    return new Date(date).toLocaleString(isRTL ? 'he-IL' : 'en-US', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      hour12: false
     });
   };
 
@@ -59,7 +63,7 @@ const OrderDetails = ({ order, open, onClose, restaurantName }) => {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <ShoppingCart />
           <Typography variant="h6" component="span">
-            Order Details
+            {t('orders.orderDetails')}
           </Typography>
         </Box>
         <IconButton
@@ -82,9 +86,9 @@ const OrderDetails = ({ order, open, onClose, restaurantName }) => {
           borderRadius: 2
         }}>
           <Chip 
-            label={Order.getStatusText(order.status)}
+            label={t(`orderStatus.${order.status}`)}
             color="primary"
-            sx={{ fontWeight: 600 }}
+            sx={{ fontWeight: 600, minWidth: 100 }}
           />
           <Typography sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary' }}>
             <AccessTime fontSize="small" />

@@ -1,0 +1,89 @@
+{
+  "common": {
+    "totalAmount": "Total Amount",
+    "viewDetails": "View Details",
+    "orderItems": "Order Items",
+    "seatInformation": "Seat Information",
+    "section": "Section",
+    "row": "Row",
+    "seat": "Seat",
+    "viewSeatMap": "View Seat Map",
+    "items": "Items",
+    "close": "Close",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "all": "All",
+    "date": "Date",
+    "total": "Total",
+    "status": "Status",
+    "available": "Available",
+    "unavailable": "Unavailable",
+    "price": "Price",
+    "currency": "Currency",
+    "description": "Description",
+    "category": "Category",
+    "loading": "Loading...",
+    "customer": "Customer"
+  },
+  "orders": {
+    "filters": {
+      "status": "Status",
+      "sortBy": "Sort By",
+      "startDate": "Start Date",
+      "endDate": "End Date"
+    },
+    "noOrders": "No orders found",
+    "orderNumber": "Order #{{number}}",
+    "orderTotal": "Total: {{amount}}",
+    "orderDate": "{{date}} at {{time}}",
+    "itemsCount": "{{count}} items",
+    "viewOrder": "View Order",
+    "orderDetails": "Order Details"
+  },
+  "menu": {
+    "addItem": "Add Menu Item",
+    "editItem": "Edit Menu Item",
+    "itemName": "Item Name",
+    "itemDescription": "Description",
+    "itemPrice": "Price",
+    "itemCategory": "Category",
+    "itemImage": "Image",
+    "itemAvailable": "Available",
+    "addLanguage": "Add Language",
+    "languageCode": "Language Code (e.g., en, he)",
+    "addDescription": "Add Description"
+  },
+  "categories": {
+    "addCategory": "Add Category",
+    "editCategory": "Edit Category",
+    "categoryName": "Category Name",
+    "categoryIcon": "Icon (emoji or short text)",
+    "nameEn": "Name (English)",
+    "nameHe": "Name (Hebrew)",
+    "noCategories": "No categories found"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "orders": "Orders",
+    "analysis": "Analysis",
+    "profile": "Profile",
+    "addCategory": "Add Category"
+  },
+  "orderStatus": {
+    "pending": "Pending",
+    "preparing": "Preparing",
+    "delivering": "Delivering",
+    "delivered": "Delivered",
+    "cancelled": "Cancelled"
+  },
+  "paymentMethod": {
+    "cash": "Cash",
+    "card": "Card"
+  }
+}

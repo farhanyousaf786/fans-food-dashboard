@@ -47,7 +47,6 @@ const Dashboard = () => {
     totalOrders: 0,
     revenue: 0,
     customers: 0,
-    growth: 0,
   });
   const [newMenuItem, setNewMenuItem] = useState({
     name: "",
@@ -100,7 +99,6 @@ const Dashboard = () => {
           totalOrders: ordersSnap.size,
           revenue: totalRevenue,
           customers: customers.size,
-          growth: 0.00, // Example growth rate
         });
         setLoading(false);
       } catch (error) {
@@ -308,7 +306,7 @@ const Dashboard = () => {
     },
     {
       title: "Revenue",
-      value: `$${stats.revenue.toFixed(2)}`,
+      value: `₪${stats.revenue.toFixed(2)}`,
       icon: <MoneyIcon />,
       color: "#2196f3",
       lightColor: "#e3f2fd",
@@ -320,13 +318,7 @@ const Dashboard = () => {
       color: "#ff9800",
       lightColor: "#fff3e0",
     },
-    {
-      title: "Growth",
-      value: `${stats.growth}%`,
-      icon: <TrendingUpIcon />,
-      color: "#e91e63",
-      lightColor: "#fce4ec",
-    },
+    
   ];
 
   if (loading) {

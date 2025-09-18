@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import {
   Drawer,
   List,
@@ -17,7 +19,8 @@ import {
   Settings as SettingsIcon,
   Stadium as StadiumIcon,
   ShoppingCart as OrdersIcon,
-  Logout as LogoutIcon
+  Logout as LogoutIcon,
+  BarChart as AnalysisIcon
 } from '@mui/icons-material';
 import { Category as CategoryIcon } from '@mui/icons-material';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
@@ -32,6 +35,9 @@ const drawerWidth = 240;
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { language } = useLanguage();
+  const { t } = useTranslation();
+  const isRTL = language === 'he';
 
   const handleLogout = async () => {
     try {
@@ -83,18 +89,22 @@ const Sidebar = () => {
       await signOut(auth);
       localStorage.removeItem('user');
       console.log('✅ LOGOUT: Firebase sign out completed');
-      console.log('🔄 LOGOUT: Navigating to auth page (no reload to preserve console logs)');
+      console.log('🔄 LOGOUT: Navigating to home page');
+      // Navigate to root first
       navigate('/');
+      // Then force a full page reload to ensure clean state
+      window.location.reload();
     } catch (error) {
       console.error('Logout error:', error);
     }
   };
 
   const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-    { text: 'Orders', icon: <OrdersIcon />, path: '/orders' },
-    { text: 'Profile', icon: <PersonIcon />, path: '/profile' },
-    { text: 'Add Category', icon: <CategoryIcon />, path: '/add-category' },
+    { text: t('sidebar.dashboard'), icon: <DashboardIcon />, path: '/dashboard' },
+    { text: t('sidebar.orders'), icon: <OrdersIcon />, path: '/orders' },
+    { text: t('sidebar.analysis'), icon: <AnalysisIcon />, path: '/analysis' },
+    { text: t('sidebar.profile'), icon: <PersonIcon />, path: '/profile' },
+    { text: t('sidebar.addCategory'), icon: <CategoryIcon />, path: '/add-category' },
   ];
 
   return (
@@ -106,12 +116,16 @@ const Sidebar = () => {
         '& .MuiDrawer-paper': {
           width: drawerWidth,
           boxSizing: 'border-box',
-          backgroundColor: '#3D70FF', 
-          borderRight: 'none',
-          top: '70px', // Start below header
-          height: 'calc(100vh - 70px)' // Adjust height
+          backgroundColor: '#3D70FF',
+          border: 'none',
+          top: '70px',
+          height: 'calc(100vh - 70px)',
+          right: isRTL ? 0 : 'auto',
+          left: isRTL ? 'auto' : 0,
+          transition: 'right 0.3s, left 0.3s'
         },
       }}
+      anchor={isRTL ? 'right' : 'left'}
     >
       <Box sx={{ overflow: 'auto', mt: 8 }}>
         <Box 

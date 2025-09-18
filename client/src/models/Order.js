@@ -32,26 +32,28 @@ class Order {
     toFirestore() {
         return {
             cart: this.cart,
-            subtotal: this.subtotal,
-            deliveryFee: this.deliveryFee,
-            discount: this.discount,
-            total: this.total,
+            subtotal: parseFloat(this.subtotal || 0).toFixed(2),
+            deliveryFee: parseFloat(this.deliveryFee || 0).toFixed(2),
+            discount: parseFloat(this.discount || 0).toFixed(2),
+            total: parseFloat(this.total || 0).toFixed(2),
+            tipAmount: parseFloat(this.tipAmount || 0).toFixed(2),  // Ensure tip is properly formatted
             status: this.status,
             stadiumId: this.stadiumId,
             shopId: this.shopId,
             orderId: this.orderId,
+            paymentMethod: this.paymentMethod || 0,
             userInfo: {
-                userEmail: this.userInfo.userEmail || '',
-                userName: this.userInfo.userName || '',
-                userPhoneNo: this.userInfo.userPhoneNo || '',
-                userId: this.userInfo.userId || ''
+                userEmail: this.userInfo?.userEmail || '',
+                userName: this.userInfo?.userName || '',
+                userPhoneNo: this.userInfo?.userPhoneNo || '',
+                userId: this.userInfo?.userId || ''
             },
             seatInfo: {
-                roofNo: this.seatInfo.roofNo || '',
-                row: this.seatInfo.row || '',
-                seatNo: this.seatInfo.seatNo || '',
-                section: this.seatInfo.section || '',
-                seatDetails: this.seatInfo.seatDetails || ''
+                roofNo: this.seatInfo?.roofNo || '',
+                row: this.seatInfo?.row || '',
+                seatNo: this.seatInfo?.seatNo || '',
+                section: this.seatInfo?.section || '',
+                seatDetails: this.seatInfo?.seatDetails || ''
             },
             createdAt: this.createdAt,
             updatedAt: this.updatedAt
@@ -74,10 +76,13 @@ class Order {
             data.shopId || '',
             data.orderId || '',
             data.userInfo || {},
-            data.seatInfo || {}
+            data.seatInfo || {},
+            data.paymentMethod || 0
         );
         order.createdAt = createdAt;
         order.updatedAt = updatedAt;
+        // Ensure tipAmount is parsed as float with 2 decimal places
+        order.tipAmount = parseFloat((data.tipAmount || 0).toFixed(2));
         return order;
     }
 

@@ -1,0 +1,89 @@
+{
+  "common": {
+    "totalAmount": "סכום כולל",
+    "viewDetails": "צפה בפרטים",
+    "orderItems": "פריטים בהזמנה",
+    "seatInformation": "פרטי מושב",
+    "section": "אזור",
+    "row": "שורה",
+    "seat": "מושב",
+    "viewSeatMap": "צפה במפת הישיבה",
+    "items": "פריטים",
+    "close": "סגור",
+    "save": "שמור",
+    "cancel": "בטל",
+    "edit": "ערוך",
+    "delete": "מחק",
+    "add": "הוסף",
+    "search": "חיפוש",
+    "filter": "סינון",
+    "sort": "מיון",
+    "all": "הכל",
+    "date": "תאריך",
+    "total": "סה״כ",
+    "status": "סטטוס",
+    "available": "זמין",
+    "unavailable": "לא זמין",
+    "price": "מחיר",
+    "currency": "מטבע",
+    "description": "תיאור",
+    "category": "קטגוריה",
+    "loading": "טוען...",
+    "customer": "לקוח"
+  },
+  "orders": {
+    "filters": {
+      "status": "סטטוס",
+      "sortBy": "מיין לפי",
+      "startDate": "תאריך התחלה",
+      "endDate": "תאריך סיום"
+    },
+    "noOrders": "לא נמצאו הזמנות",
+    "orderNumber": "הזמנה מס׳ {{number}}",
+    "orderTotal": "סה״כ: {{amount}}",
+    "orderDate": "{{date}} בשעה {{time}}",
+    "itemsCount": "{{count}} פריטים",
+    "viewOrder": "צפה בהזמנה",
+    "orderDetails": "פרטי הזמנה"
+  },
+  "menu": {
+    "addItem": "הוסף פריט לתפריט",
+    "editItem": "ערוך פריט בתפריט",
+    "itemName": "שם הפריט",
+    "itemDescription": "תיאור",
+    "itemPrice": "מחיר",
+    "itemCategory": "קטגוריה",
+    "itemImage": "תמונה",
+    "itemAvailable": "זמין",
+    "addLanguage": "הוסף שפה",
+    "languageCode": "קוד שפה (למשל: en, he)",
+    "addDescription": "הוסף תיאור"
+  },
+  "categories": {
+    "addCategory": "הוסף קטגוריה",
+    "editCategory": "ערוך קטגוריה",
+    "categoryName": "שם הקטגוריה",
+    "categoryIcon": "אייקון (אימוג׳י או טקסט קצר)",
+    "nameEn": "שם (אנגלית)",
+    "nameHe": "שם (עברית)",
+    "noCategories": "לא נמצאו קטגוריות"
+  },
+  "sidebar": {
+    "dashboard": "לוח בקרה",
+    "orders": "הזמנות",
+    "analysis": "ניתוח נתונים",
+    "profile": "פרופיל",
+    "addCategory": "הוסף קטגוריה"
+  },
+  "orderStatus": {
+    "pending": "ממתין",
+    "preparing": "בהכנה",
+    "delivering": "בדרך",
+    "delivered": "הושלם",
+    "cancelled": "בוטל"
+  },
+  "paymentMethod": {
+    "cash": "מזומן",
+    "card": "כרטיס אשראי"
+  }
+}
