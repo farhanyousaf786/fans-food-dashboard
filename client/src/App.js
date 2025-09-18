@@ -60,17 +60,23 @@ const getTheme = (direction = 'ltr') => {
 };
 
 const DashboardLayout = ({ children }) => {
+  const location = window.location.pathname;
+  const isShopRoute = location === '/shop';
+  
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       <Header />
-      <Sidebar />
+      {!isShopRoute && <Sidebar />}
       <Box 
         component="main" 
         sx={{ 
           flexGrow: 1, 
           p: 3, 
           mt: '70px',  // Match header height
-          backgroundColor: '#f8f9fa'
+          backgroundColor: '#f8f9fa',
+          marginLeft: isShopRoute ? 0 : '240px', // Adjust margin when sidebar is hidden
+          transition: 'margin 0.3s ease',
+          width: isShopRoute ? '100%' : 'calc(100% - 240px)'
         }}
       >
         {children}
