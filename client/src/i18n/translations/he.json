@@ -1,5 +1,9 @@
 {
   "common": {
+    "deleteConfirm": "האם אתה בטוח שברצונך למחוק",
+    "cannotBeUndone": "לא ניתן לבטל פעולה זו",
+    "unknownUser": "משתמש לא ידוע",
+    "unknownDate": "תאריך לא ידוע",
     "totalAmount": "סכום כולל",
     "viewDetails": "צפה בפרטים",
     "orderItems": "פריטים בהזמנה",
@@ -44,7 +48,32 @@
     "orderDate": "{{date}} בשעה {{time}}",
     "itemsCount": "{{count}} פריטים",
     "viewOrder": "צפה בהזמנה",
-    "orderDetails": "פרטי הזמנה"
+    "orderDetails": "פרטי הזמנה",
+    "export": {
+      "title": "ייצא לאקסל",
+      "filename": "ייצוא_הזמנות",
+      "orderId": "מזהה הזמנה",
+      "userName": "שם הלקוח",
+      "totalAmount": "סכום כולל",
+      "totalStripeFee": "עמלת Stripe סה\"כ",
+      "fanMunchStripeFee": "עמלת Stripe של FanMunch",
+      "vendorStripeFee": "עמלת Stripe של הספק",
+      "totalAfterStripe": "סה\"כ לאחר ניכוי עמלות",
+      "subtotal": "סה\"כ ביניים",
+      "deliveryFee": "עלות משלוח (ברוטו)",
+      "tipAmount": "סכום טיפ (ברוטו)",
+      "fanMunchGross": "הכנסה ברוטו של FanMunch",
+      "fanMunchPercent": "אחוז הכנסה של FanMunch",
+      "fanMunchNet": "הכנסה נטו של FanMunch",
+      "vendorGross": "הכנסה ברוטה של הספק",
+      "vendorPercent": "אחוז הכנסה של הספק",
+      "vendorNet": "הכנסה נטו של הספק",
+      "seatInfo": "פרטי מושב",
+      "section": "אזור",
+      "row": "שורה",
+      "seat": "מושב",
+      "noSeatInfo": "אין פרטי מושב"
+    }
   },
   "menu": {
     "addItem": "הוסף פריט לתפריט",

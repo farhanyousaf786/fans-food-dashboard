@@ -1,5 +1,9 @@
 {
   "common": {
+    "deleteConfirm": "Are you sure you want to delete",
+    "cannotBeUndone": "This action cannot be undone",
+    "unknownUser": "Unknown User",
+    "unknownDate": "Unknown Date",
     "totalAmount": "Total Amount",
     "viewDetails": "View Details",
     "orderItems": "Order Items",
@@ -32,19 +36,50 @@
     "customer": "Customer"
   },
   "orders": {
-    "filters": {
-      "status": "Status",
-      "sortBy": "Sort By",
-      "startDate": "Start Date",
-      "endDate": "End Date"
-    },
     "noOrders": "No orders found",
     "orderNumber": "Order #{{number}}",
     "orderTotal": "Total: {{amount}}",
     "orderDate": "{{date}} at {{time}}",
     "itemsCount": "{{count}} items",
     "viewOrder": "View Order",
-    "orderDetails": "Order Details"
+    "orderDetails": "Order Details",
+    "filters": {
+      "status": "Status",
+      "sortBy": "Sort By",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "all": "All Orders",
+      "pending": "Pending",
+      "preparing": "Preparing",
+      "delivering": "Delivering",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    },
+    "export": {
+      "title": "Export to Excel",
+      "filename": "orders_export",
+      "orderId": "Order ID",
+      "userName": "Customer Name",
+      "totalAmount": "Total Amount",
+      "totalStripeFee": "Total Stripe Fee",
+      "fanMunchStripeFee": "FanMunch Stripe Fee",
+      "vendorStripeFee": "Vendor Stripe Fee",
+      "totalAfterStripe": "Total After Stripe",
+      "subtotal": "Subtotal",
+      "deliveryFee": "Delivery Fee (Gross)",
+      "tipAmount": "Tip Amount (Gross)",
+      "fanMunchGross": "FanMunch Gross Revenue",
+      "fanMunchPercent": "FanMunch Revenue %",
+      "fanMunchNet": "FanMunch Net Revenue",
+      "vendorGross": "Vendor Gross Revenue",
+      "vendorPercent": "Vendor Revenue %",
+      "vendorNet": "Vendor Net Revenue",
+      "seatInfo": "Seat Information",
+      "section": "Section",
+      "row": "Row",
+      "seat": "Seat",
+      "noSeatInfo": "No seat information"
+    }
   },
   "menu": {
     "addItem": "Add Menu Item",

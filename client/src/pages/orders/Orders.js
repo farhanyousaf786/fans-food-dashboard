@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Typography, Menu, MenuItem, CircularProgress, Grid, Container, ButtonGroup, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { AccessTime, LocalDining, LocalShipping, Delete, GetApp, DateRange } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -15,6 +16,9 @@ import OrderFilters from './components/OrderFilters';
 import './Orders.css';
 
 const Orders = () => {
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === 'he';
+  
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -92,8 +96,9 @@ const Orders = () => {
   const handleDeleteOrder = async () => {
     if (!selectedOrder) return;
     try {
-      // Simple confirm prompt
-      const confirmed = window.confirm(`Delete order #${selectedOrder.orderId?.slice(0,6) || selectedOrder.id}? This cannot be undone.`);
+      const confirmed = window.confirm(
+        `${t('common.deleteConfirm', { item: `#${selectedOrder.orderId?.slice(0,6) || selectedOrder.id}` })} ${t('common.cannotBeUndone')}`
+      );
       if (!confirmed) return;
       setDeleting(true);
       const orderRef = doc(db, 'orders', selectedOrder.id);
@@ -167,25 +172,27 @@ const Orders = () => {
       
       // Create order data with all items combined
       const orderData = {
-        'Order ID': order.orderId || order.id,
-        'User Name': order.userInfo?.userName || 'Unknown User',
-        'Date': order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'Unknown Date',
-        'Total Amount': `₪${total.toFixed(2)}`,
-        'Total Stripe Fee': `₪${stripeFee.toFixed(2)}`,
-        'FanMunch Stripe Fee': `₪${fanMunchStripeFee.toFixed(2)}`,
-        'Vendor Stripe Fee': `₪${vendorStripeFee.toFixed(2)}`,
-        'Total After Stripe': `₪${totalAfterStripeFee.toFixed(2)}`,
-        'Subtotal': `₪${order.subtotal || 0}`,
-        'Delivery Fee (Gross)': `₪${deliveryFee.toFixed(2)}`,
-        'Tip Amount (Gross)': `₪${tipAmount.toFixed(2)}`,
-        'FanMunch Gross Revenue': `₪${fanMunchGrossRevenue.toFixed(2)}`,
-        'FanMunch Revenue %': `${(fanMunchPercentage * 100).toFixed(1)}%`,
-        'FanMunch Net Revenue': `₪${fanMunchRevenue.toFixed(2)}`,
-        'Vendor Gross Revenue': `₪${vendorGrossRevenue.toFixed(2)}`,
-        'Vendor Revenue %': `${(vendorPercentage * 100).toFixed(1)}%`,
-        'Vendor Net Revenue': `₪${vendorRevenue.toFixed(2)}`,
-        'Status': Order.getStatusText(order.status),
-        'Seat Info': order.seatInfo ? `Section ${order.seatInfo.section || ''}, Row ${order.seatInfo.row || ''}, Seat ${order.seatInfo.seatNo || ''}`.trim() : 'No seat info',
+        [t('orders.export.orderId')]: order.orderId || order.id,
+        [t('orders.export.userName')]: order.userInfo?.userName || t('common.unknownUser'),
+        [t('common.date')]: order.createdAt ? new Date(order.createdAt).toLocaleDateString(i18n.language) : t('common.unknownDate'),
+        [t('orders.export.totalAmount')]: `₪${total.toFixed(2)}`,
+        [t('orders.export.totalStripeFee')]: `₪${stripeFee.toFixed(2)}`,
+        [t('orders.export.fanMunchStripeFee')]: `₪${fanMunchStripeFee.toFixed(2)}`,
+        [t('orders.export.vendorStripeFee')]: `₪${vendorStripeFee.toFixed(2)}`,
+        [t('orders.export.totalAfterStripe')]: `₪${totalAfterStripeFee.toFixed(2)}`,
+        [t('orders.export.subtotal')]: `₪${order.subtotal || 0}`,
+        [t('orders.export.deliveryFee')]: `₪${deliveryFee.toFixed(2)}`,
+        [t('orders.export.tipAmount')]: `₪${tipAmount.toFixed(2)}`,
+        [t('orders.export.fanMunchGross')]: `₪${fanMunchGrossRevenue.toFixed(2)}`,
+        [t('orders.export.fanMunchPercent')]: `${(fanMunchPercentage * 100).toFixed(1)}%`,
+        [t('orders.export.fanMunchNet')]: `₪${fanMunchRevenue.toFixed(2)}`,
+        [t('orders.export.vendorGross')]: `₪${vendorGrossRevenue.toFixed(2)}`,
+        [t('orders.export.vendorPercent')]: `${(vendorPercentage * 100).toFixed(1)}%`,
+        [t('orders.export.vendorNet')]: `₪${vendorRevenue.toFixed(2)}`,
+        [t('common.status')]: t(`orderStatus.${order.status}`),
+        [t('orders.export.seatInfo')]: order.seatInfo ? 
+          `${t('orders.export.section')} ${order.seatInfo.section || ''}, ${t('orders.export.row')} ${order.seatInfo.row || ''}, ${t('orders.export.seat')} ${order.seatInfo.seatNo || ''}`.trim() 
+          : t('orders.export.noSeatInfo'),
       };
 
       // Add items information
@@ -214,12 +221,12 @@ const Orders = () => {
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(excelData);
     
-    // Add worksheet to workbook
-    XLSX.utils.book_append_sheet(wb, ws, 'Orders');
+    // Add worksheet to workbook with translated title
+    XLSX.utils.book_append_sheet(wb, ws, t('orders.title'));
     
     // Generate filename with current date
     const today = new Date().toISOString().split('T')[0];
-    const filename = `orders_export_${today}.xlsx`;
+    const filename = `${t('orders.export.filename')}_${today}.xlsx`;
     
     // Save file
     XLSX.writeFile(wb, filename);
@@ -253,7 +260,7 @@ const Orders = () => {
   }
 
   return (
-    <Container maxWidth="lg">
+    <Container maxWidth="lg" dir={isRTL ? 'rtl' : 'ltr'}>
       <Box sx={{ py: 4 }}>
         {/* Centered Filter Buttons */}
         <Box sx={{ 
@@ -276,7 +283,7 @@ const Orders = () => {
                 }
               }}
             >
-              All Orders
+              {t('orders.filters.all')}
             </Button>
             <Button 
               onClick={() => filterOrders('pending')}
@@ -288,7 +295,7 @@ const Orders = () => {
                 }
               }}
             >
-              Pending
+              {t('orders.filters.pending')}
             </Button>
             <Button 
               onClick={() => filterOrders('preparing')}
@@ -300,7 +307,7 @@ const Orders = () => {
                 }
               }}
             >
-              Preparing
+              {t('orders.filters.preparing')}
             </Button>
             <Button 
               onClick={() => filterOrders('delivering')}
@@ -312,7 +319,7 @@ const Orders = () => {
                 }
               }}
             >
-              Delivering
+              {t('orders.filters.delivering')}
             </Button>
             <Button 
               onClick={() => filterOrders('delivered')}
@@ -324,7 +331,7 @@ const Orders = () => {
                 }
               }}
             >
-              Delivered
+              {t('orders.filters.delivered')}
             </Button>
             <Button 
               onClick={() => filterOrders('cancelled')}
@@ -336,7 +343,7 @@ const Orders = () => {
                 }
               }}
             >
-              Cancelled
+              {t('orders.filters.cancelled')}
             </Button>
           </ButtonGroup>
           <Button
@@ -346,7 +353,7 @@ const Orders = () => {
             onClick={handleExportClick}
             sx={{ ml: 2 }}
           >
-            Export to Excel
+            {t('orders.export.title')}
           </Button>
         </Box>
 
