@@ -5,7 +5,7 @@ import { signOut } from 'firebase/auth';
 import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import Stadium from '../../models/Stadium';
-import { Grid, Card, CardContent, CardMedia, Typography, Button, IconButton, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Grid, Card, CardContent, CardMedia, Typography, Button, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Box } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import StadiumForm from '../../components/StadiumForm';
 import DeliveryUsers from './components/DeliveryUsers';
@@ -272,6 +272,14 @@ const AdminPanel = () => {
                                 <Typography className="stadium-about">
                                     {stadium.about}
                                 </Typography>
+                                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                                    <Button 
+                                        variant="outlined"
+                                        onClick={() => navigate(`/stadium/${stadium.id}`)}
+                                    >
+                                        View Details
+                                    </Button>
+                                </Box>
                             </CardContent>
                         </Card>
                     ))}

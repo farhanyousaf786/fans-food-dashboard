@@ -62,11 +62,14 @@ const getTheme = (direction = 'ltr') => {
 const DashboardLayout = ({ children }) => {
   const location = window.location.pathname;
   const isShopRoute = location === '/shop';
+  const isAdminRoute = location === '/admin';
+  const isStadiumRoute = location.startsWith('/stadium');
+  const hideSidebar = isShopRoute || isAdminRoute || isStadiumRoute;
   
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       <Header />
-      {!isShopRoute && <Sidebar />}
+      {!hideSidebar && <Sidebar />}
       <Box 
         component="main" 
         sx={{ 
@@ -74,9 +77,9 @@ const DashboardLayout = ({ children }) => {
           p: 3, 
           mt: '70px',  // Match header height
           backgroundColor: '#f8f9fa',
-          marginLeft: isShopRoute ? 0 : '240px', // Adjust margin when sidebar is hidden
+          marginLeft: hideSidebar ? 0 : '240px', // Adjust margin when sidebar is hidden
           transition: 'margin 0.3s ease',
-          width: isShopRoute ? '100%' : 'calc(100% - 240px)'
+          width: hideSidebar ? '100%' : 'calc(100% - 240px)'
         }}
       >
         {children}
@@ -161,7 +164,7 @@ function AppContent() {
           <Route path="/shop" element={<PrivateRoute requiredRole="shopowner"><DashboardLayout><ShopPanel /></DashboardLayout></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><DashboardLayout><Profile /></DashboardLayout></PrivateRoute>} />
           <Route path="/manage" element={<PrivateRoute><DashboardLayout><Manage /></DashboardLayout></PrivateRoute>} />
-          <Route path="/stadium" element={<PrivateRoute><DashboardLayout><Stadium /></DashboardLayout></PrivateRoute>} />
+          <Route path="/stadium/:id" element={<PrivateRoute><DashboardLayout><Stadium /></DashboardLayout></PrivateRoute>} />
           <Route path="/add-category" element={<PrivateRoute><DashboardLayout><AddCategory /></DashboardLayout></PrivateRoute>} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
