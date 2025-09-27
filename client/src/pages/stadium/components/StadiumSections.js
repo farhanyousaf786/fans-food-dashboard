@@ -25,6 +25,7 @@ import {
   Typography,
 } from '@mui/material';
 import Autocomplete from '@mui/material/Autocomplete';
+import './StadiumSections.css';
 
 const cardSx = {
   height: 260,
@@ -131,9 +132,9 @@ const StadiumSections = ({ stadiumId, shops }) => {
 
   return (
     <Box>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" className="section-header" sx={{ mb: 3, gap: 2 }}>
         <Typography variant="h6">Stadium Structure</Typography>
-        <Button variant="contained" onClick={() => setAddOpen(true)}>Add Section</Button>
+        <Button className="add-section-btn" variant="contained" onClick={() => setAddOpen(true)}>Add Section</Button>
       </Stack>
 
       {sections.length === 0 ? (
@@ -142,30 +143,32 @@ const StadiumSections = ({ stadiumId, shops }) => {
         <Grid container spacing={2}>
           {sections.map((s) => (
             <Grid item xs={12} md={6} lg={4} key={s.id} sx={{ display: 'flex' }}>
-              <Card sx={cardSx}>
-                <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flexGrow: 1, justifyContent: 'space-between' }}>
-                  <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Card sx={cardSx} className="section-card">
+                <CardContent className="section-card__content">
+                  <Stack direction="row" alignItems="center" justifyContent="space-between" className="section-card__header">
                     <Typography variant="subtitle1" sx={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {s.sectionName || 'Unnamed section'}
                     </Typography>
-                    {typeof s.sectionNo !== 'undefined' && <Chip label={`#${s.sectionNo}`} size="small" />}
+                    {typeof s.sectionNo !== 'undefined' && <Chip className="section-card__badge" label={`#${s.sectionNo}`} size="small" />}
                   </Stack>
                   <Typography variant="body2" color="text.secondary">
                     Rows: {s.rows ?? '-'} • Columns: {s.column ?? '-'}
                   </Typography>
                   <Divider sx={{ my: 1 }} />
-                  <Typography variant="body2" sx={{ mb: 0.5 }}>Shops</Typography>
-                  <Stack direction="row" flexWrap="wrap" gap={1} sx={{ flexGrow: 1, overflowY: 'auto', maxHeight: 80 }}>
+                  <Typography variant="body2" className="section-card__shops-title">Shops</Typography>
+                  <Box className="section-card__shops" sx={{ flexGrow: 1 }}>
                     {Array.isArray(s.shops) && s.shops.length > 0 ? (
-                      s.shops.map((shopId) => {
-                        const shop = shopOptions.find((x) => x.id === shopId);
-                        return <Chip key={shopId} label={shop ? shop.name : shopId} size="small" />;
-                      })
+                      <Stack direction="row" flexWrap="wrap" gap={1}>
+                        {s.shops.map((shopId) => {
+                          const shop = shopOptions.find((x) => x.id === shopId);
+                          return <Chip key={shopId} label={shop ? shop.name : shopId} size="small" />;
+                        })}
+                      </Stack>
                     ) : (
                       <Typography variant="body2" color="text.secondary">No shops linked</Typography>
                     )}
-                  </Stack>
-                  <Stack direction="row" justifyContent="flex-end" gap={1} sx={{ pt: 1 }}>
+                  </Box>
+                  <Stack direction="row" justifyContent="flex-end" gap={1} className="section-card__actions">
                     <Button size="small" variant="outlined" onClick={() => {
                       setCurrent(s);
                       setForm({
