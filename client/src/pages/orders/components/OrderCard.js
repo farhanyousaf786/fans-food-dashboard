@@ -26,7 +26,7 @@ const StyledCard = styled(Card)(({ theme }) => ({
   }
 }));
 
-const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatusColor }) => {
+const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatusColor, shopName }) => {
   const [openDialog, setOpenDialog] = React.useState(false);
   const theme = useTheme();
   const { t } = useTranslation();
@@ -53,6 +53,11 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
             <Typography variant="caption" className="order-id" color="text.secondary" dir="ltr" sx={{ display: 'block' }}>
               {t('orders.orderNumber', { number: order.orderId.slice(0, 6) })}
             </Typography>
+            {shopName && (
+              <Typography variant="caption" sx={{ display: 'block', color: 'success.main', fontWeight: 600, mt: 0.5 }}>
+                🏪 {shopName}
+              </Typography>
+            )}
           </Box>
           <IconButton size="small" onClick={(e) => onMenuClick(e, order)}>
             <MoreVert />

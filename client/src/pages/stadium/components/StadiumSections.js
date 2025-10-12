@@ -23,8 +23,11 @@ import {
   Stack,
   TextField,
   Typography,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 import Autocomplete from '@mui/material/Autocomplete';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import './StadiumSections.css';
 
 const cardSx = {
@@ -41,7 +44,7 @@ const StadiumSections = ({ stadiumId, shops }) => {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [current, setCurrent] = useState(null);
-  const [form, setForm] = useState({ sectionName: '', sectionNo: '', rows: '', column: '', shops: [] });
+  const [form, setForm] = useState({ sectionName: '', sectionNo: '', rows: '', column: '', shops: [], isActive: true });
 
   // Subscribe to sections
   useEffect(() => {
@@ -59,11 +62,23 @@ const StadiumSections = ({ stadiumId, shops }) => {
 
   const shopOptions = useMemo(() => shops || [], [shops]);
 
-  const resetForm = () => setForm({ sectionName: '', sectionNo: '', rows: '', column: '', shops: [] });
+  const resetForm = () => setForm({ sectionName: '', sectionNo: '', rows: '', column: '', shops: [], isActive: true });
 
   const [dragIndex, setDragIndex] = useState(null);
-  const handleDragStart = (index) => setDragIndex(index);
-  const handleDragOver = (e) => e.preventDefault();
+  const [dragOverIndex, setDragOverIndex] = useState(null);
+  const handleDragStart = (index, e) => {
+    setDragIndex(index);
+    if (e?.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+    }
+  };
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+  const handleDragLeave = (index) => {
+    if (dragOverIndex === index) setDragOverIndex(null);
+  };
   const handleDrop = (index) => {
     if (dragIndex === null || dragIndex === index) return;
     setForm((prev) => {
@@ -73,6 +88,7 @@ const StadiumSections = ({ stadiumId, shops }) => {
       return { ...prev, shops: arr };
     });
     setDragIndex(null);
+    setDragOverIndex(null);
   };
 
   const handleSave = async () => {
@@ -84,6 +100,7 @@ const StadiumSections = ({ stadiumId, shops }) => {
         rows: Number(form.rows) || 0,
         column: Number(form.column) || 0,
         shops: Array.isArray(form.shops) ? form.shops : [],
+        isActive: form.isActive !== undefined ? form.isActive : true,
         createdAt: new Date(),
       };
       const docRef = await addDoc(ref, payload);
@@ -105,6 +122,7 @@ const StadiumSections = ({ stadiumId, shops }) => {
         rows: Number(form.rows) || 0,
         column: Number(form.column) || 0,
         shops: Array.isArray(form.shops) ? form.shops : [],
+        isActive: form.isActive !== undefined ? form.isActive : true,
         updatedAt: new Date(),
         // Ensure identifiers are persisted and in sync
         docId: current.id,
@@ -130,6 +148,17 @@ const StadiumSections = ({ stadiumId, shops }) => {
     }
   };
 
+  const handleToggleActive = async (section, e) => {
+    e.stopPropagation();
+    const newValue = !section.isActive;
+    try {
+      const ref = doc(db, 'stadiums', stadiumId, 'sections', section.id);
+      await updateDoc(ref, { isActive: newValue, updatedAt: new Date() });
+    } catch (error) {
+      console.error('Error updating section status:', error);
+    }
+  };
+
   return (
     <Box>
       <Stack direction="row" alignItems="center" justifyContent="space-between" className="section-header" sx={{ mb: 3, gap: 2 }}>
@@ -149,7 +178,21 @@ const StadiumSections = ({ stadiumId, shops }) => {
                     <Typography variant="subtitle1" sx={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {s.sectionName || 'Unnamed section'}
                     </Typography>
-                    {typeof s.sectionNo !== 'undefined' && <Chip className="section-card__badge" label={`#${s.sectionNo}`} size="small" />}
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={!!s.isActive}
+                            onChange={(e) => handleToggleActive(s, e)}
+                            size="small"
+                            color="success"
+                          />
+                        }
+                        label={s.isActive ? 'Active' : 'Inactive'}
+                        sx={{ m: 0 }}
+                      />
+                      {typeof s.sectionNo !== 'undefined' && <Chip className="section-card__badge" label={`#${s.sectionNo}`} size="small" />}
+                    </Stack>
                   </Stack>
                   <Typography variant="body2" color="text.secondary">
                     Rows: {s.rows ?? '-'} • Columns: {s.column ?? '-'}
@@ -177,6 +220,7 @@ const StadiumSections = ({ stadiumId, shops }) => {
                         rows: s.rows ?? '',
                         column: s.column ?? '',
                         shops: Array.isArray(s.shops) ? s.shops : [],
+                        isActive: s.isActive !== undefined ? s.isActive : true,
                       });
                       setEditOpen(true);
                     }}>Edit</Button>
@@ -208,6 +252,17 @@ const StadiumSections = ({ stadiumId, shops }) => {
             renderInput={(params) => <TextField {...params} label="Shops" margin="dense" placeholder="Select shops for this section" />}
             sx={{ mt: 1 }}
           />
+          <FormControlLabel
+            control={
+              <Switch
+                checked={form.isActive}
+                onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+                color="success"
+              />
+            }
+            label="Section Active"
+            sx={{ mt: 1 }}
+          />
           {form.shops.length > 0 && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="body2" sx={{ mb: 1, fontWeight: 600 }}>Order of Shops (drag to reorder)</Typography>
@@ -217,17 +272,14 @@ const StadiumSections = ({ stadiumId, shops }) => {
                   return (
                     <Box
                       key={shopId}
+                      className={`dnd-item${dragIndex===idx? ' dragging':''}${dragOverIndex===idx? ' over':''}`}
                       draggable
-                      onDragStart={() => handleDragStart(idx)}
-                      onDragOver={handleDragOver}
+                      onDragStart={(e) => handleDragStart(idx, e)}
+                      onDragOver={(e) => handleDragOver(e, idx)}
+                      onDragLeave={() => handleDragLeave(idx)}
                       onDrop={() => handleDrop(idx)}
-                      sx={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        cursor: 'grab',
-                      }}
                     >
+                      <DragIndicatorIcon fontSize="small" className="dnd-handle" />
                       <Chip label={shop ? shop.name : shopId} />
                     </Box>
                   );
@@ -261,6 +313,17 @@ const StadiumSections = ({ stadiumId, shops }) => {
             renderInput={(params) => <TextField {...params} label="Shops" margin="dense" placeholder="Select shops for this section" />}
             sx={{ mt: 1 }}
           />
+          <FormControlLabel
+            control={
+              <Switch
+                checked={form.isActive}
+                onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+                color="success"
+              />
+            }
+            label="Section Active"
+            sx={{ mt: 1 }}
+          />
           {form.shops.length > 0 && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="body2" sx={{ mb: 1, fontWeight: 600 }}>Order of Shops (drag to reorder)</Typography>
@@ -270,17 +333,14 @@ const StadiumSections = ({ stadiumId, shops }) => {
                   return (
                     <Box
                       key={shopId}
+                      className={`dnd-item${dragIndex===idx? ' dragging':''}${dragOverIndex===idx? ' over':''}`}
                       draggable
-                      onDragStart={() => handleDragStart(idx)}
-                      onDragOver={(e) => e.preventDefault()}
+                      onDragStart={(e) => handleDragStart(idx, e)}
+                      onDragOver={(e) => handleDragOver(e, idx)}
+                      onDragLeave={() => handleDragLeave(idx)}
                       onDrop={() => handleDrop(idx)}
-                      sx={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        cursor: 'grab',
-                      }}
                     >
+                      <DragIndicatorIcon fontSize="small" className="dnd-handle" />
                       <Chip label={shop ? shop.name : shopId} />
                     </Box>
                   );

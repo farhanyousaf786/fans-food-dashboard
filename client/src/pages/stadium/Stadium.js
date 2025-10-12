@@ -61,33 +61,7 @@ const Stadium = () => {
       </Stack>
 
       <Grid container spacing={3}>
-        <Grid item xs={12} md={5}>
-          <Card sx={{ borderRadius: 2, overflow: 'hidden' }}>
-            {stadium.imageUrl && (
-              <CardMedia component="img" height="200" image={stadium.imageUrl} alt={stadium.name} />
-            )}
-            <CardContent>
-              <Typography variant="h6" sx={{ mb: 1 }}>Details</Typography>
-              <Divider sx={{ mb: 2 }} />
-              <Stack spacing={1.2}>
-                <Typography color="text.secondary">📍 {stadium.location}</Typography>
-                {typeof stadium.capacity !== 'undefined' && (
-                  <Typography color="text.secondary">👥 {Number(stadium.capacity).toLocaleString()} seats</Typography>
-                )}
-                {(stadium.latitude && stadium.longitude) && (
-                  <Typography color="text.secondary">🌐 {Number(stadium.latitude).toFixed(4)}, {Number(stadium.longitude).toFixed(4)}</Typography>
-                )}
-              </Stack>
-              {stadium.about && (
-                <Typography sx={{ mt: 2 }}>
-                  {stadium.about}
-                </Typography>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} md={7}>
+        <Grid item xs={12}>
           <Card sx={{ borderRadius: 2 }}>
             <CardContent>
               <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>

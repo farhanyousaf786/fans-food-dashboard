@@ -330,8 +330,8 @@ const Dashboard = () => {
   }
 
   return (
-    <Box sx={{ mt: 4 }}>
-      <Box sx={{ mb: 6, px: 2 }}>
+    <Box sx={{ pt: 3, pl: 0, pr: 3 }}>
+      <Box sx={{ mb: 6, pl: 2 }}>
         <Box
           sx={{
             display: "flex",

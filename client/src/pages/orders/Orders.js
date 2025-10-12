@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Typography, Menu, MenuItem, CircularProgress, Grid, Container, ButtonGroup, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Box, Typography, Menu, MenuItem, CircularProgress, Grid, Container, ButtonGroup, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Select, FormControl, InputLabel } from '@mui/material';
 import { AccessTime, LocalDining, LocalShipping, Delete, GetApp, DateRange } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import 'date-fns';
-import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import * as XLSX from 'xlsx';
 import { db } from '../../config/firebase';
 import Order from '../../models/Order';
@@ -28,10 +28,17 @@ const Orders = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [shopData, setShopData] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [allShops, setAllShops] = useState([]);
+  const [selectedShopFilter, setSelectedShopFilter] = useState('all');
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [dateRange, setDateRange] = useState({
     startDate: null,
     endDate: null
+  });
+  const [dateFilterDialogOpen, setDateFilterDialogOpen] = useState(false);
+  const [selectedDateRange, setSelectedDateRange] = useState({
+    startDate: new Date(new Date().setHours(0, 0, 0, 0)), // Today at midnight
+    endDate: new Date(new Date().setHours(23, 59, 59, 999)) // Today at end of day
   });
 
   // Get shop data from localStorage
@@ -42,13 +49,31 @@ const Orders = () => {
     }
   }, []);
 
+  // Fetch all shops for the dropdown
   useEffect(() => {
-    const savedShopId = JSON.parse(localStorage.getItem('currentShopData'))?.id;
-    if (!savedShopId) return;
+    const fetchShops = async () => {
+      try {
+        const shopsRef = collection(db, 'shops');
+        const shopsSnap = await getDocs(shopsRef);
+        const shopsList = shopsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setAllShops(shopsList);
+      } catch (error) {
+        console.error('Error fetching shops:', error);
+      }
+    };
+    fetchShops();
+  }, []);
 
+  useEffect(() => {
     const ordersRef = collection(db, 'orders');
-    // Filter orders by shop ID
-    const q = query(ordersRef, where('shopId', '==', savedShopId));
+    let q;
+
+    // Build query with shop filter
+    if (selectedShopFilter === 'all') {
+      q = query(ordersRef);
+    } else {
+      q = query(ordersRef, where('shopId', '==', selectedShopFilter));
+    }
 
     setLoading(true);
 
@@ -58,12 +83,20 @@ const Orders = () => {
         const order = Order.fromFirestore(data);
         return { id: doc.id, ...order };
       });
-      setOrders(ordersList);
+      
+      // Filter by date range on client side
+      const filteredOrders = ordersList.filter(order => {
+        if (!order.createdAt) return false;
+        const orderDate = new Date(order.createdAt);
+        return orderDate >= selectedDateRange.startDate && orderDate <= selectedDateRange.endDate;
+      });
+      
+      setOrders(filteredOrders);
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [selectedShopFilter, selectedDateRange]);
 
 
 
@@ -262,6 +295,78 @@ const Orders = () => {
   return (
     <Container maxWidth="lg" dir={isRTL ? 'rtl' : 'ltr'}>
       <Box sx={{ py: 4 }}>
+        {/* Filters Row */}
+        <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* Shop Filter Dropdown */}
+          <FormControl sx={{ minWidth: 250 }}>
+            <InputLabel>Filter by Shop</InputLabel>
+            <Select
+              value={selectedShopFilter}
+              label="Filter by Shop"
+              onChange={(e) => setSelectedShopFilter(e.target.value)}
+            >
+              <MenuItem value="all">All Shops</MenuItem>
+              {allShops.map((shop) => (
+                <MenuItem key={shop.id} value={shop.id}>
+                  {shop.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* Date Range Quick Filters */}
+          <ButtonGroup variant="outlined" size="medium">
+            <Button 
+              onClick={() => {
+                const today = new Date();
+                setSelectedDateRange({
+                  startDate: new Date(today.setHours(0, 0, 0, 0)),
+                  endDate: new Date(today.setHours(23, 59, 59, 999))
+                });
+              }}
+            >
+              Today
+            </Button>
+            <Button 
+              onClick={() => {
+                const today = new Date();
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                setSelectedDateRange({
+                  startDate: new Date(yesterday.setHours(0, 0, 0, 0)),
+                  endDate: new Date(yesterday.setHours(23, 59, 59, 999))
+                });
+              }}
+            >
+              Yesterday
+            </Button>
+            <Button 
+              onClick={() => {
+                const today = new Date();
+                const weekAgo = new Date(today);
+                weekAgo.setDate(weekAgo.getDate() - 7);
+                setSelectedDateRange({
+                  startDate: new Date(weekAgo.setHours(0, 0, 0, 0)),
+                  endDate: new Date(today.setHours(23, 59, 59, 999))
+                });
+              }}
+            >
+              Last 7 Days
+            </Button>
+            <Button 
+              onClick={() => setDateFilterDialogOpen(true)}
+              startIcon={<DateRange />}
+            >
+              Custom Range
+            </Button>
+          </ButtonGroup>
+
+          {/* Current Date Range Display */}
+          <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
+            Showing: {selectedDateRange.startDate.toLocaleDateString()} - {selectedDateRange.endDate.toLocaleDateString()}
+          </Typography>
+        </Box>
+
         {/* Centered Filter Buttons */}
         <Box sx={{ 
           display: 'flex', 
@@ -368,16 +473,20 @@ const Orders = () => {
                 default: return new Date(b.createdAt) - new Date(a.createdAt);
               }
             })
-            .map((order) => (
-              <Grid item xs={12} sm={6} md={4} key={order.id}>
-                <OrderCard
-                  order={order}
-                  onViewDetails={openDialog}
-                  onMenuClick={handleMenuClick}
-                  getStatusColor={getStatusColor}
-                />
-              </Grid>
-            ))}
+            .map((order) => {
+              const shop = allShops.find(s => s.id === order.shopId);
+              return (
+                <Grid item xs={12} sm={6} md={4} key={order.id}>
+                  <OrderCard
+                    order={order}
+                    onViewDetails={openDialog}
+                    onMenuClick={handleMenuClick}
+                    getStatusColor={getStatusColor}
+                    shopName={shop?.name}
+                  />
+                </Grid>
+              );
+            })}
         </Grid>
 
         <OrderDetails
@@ -397,6 +506,48 @@ const Orders = () => {
           </MenuItem>
         </Menu>
 
+        {/* Custom Date Range Filter Dialog */}
+        <Dialog open={dateFilterDialogOpen} onClose={() => setDateFilterDialogOpen(false)}>
+          <DialogTitle>Select Date Range</DialogTitle>
+          <DialogContent>
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 300, mt: 2 }}>
+                <DatePicker
+                  label="Start Date"
+                  value={selectedDateRange.startDate}
+                  onChange={(newValue) => {
+                    if (newValue) {
+                      setSelectedDateRange(prev => ({ 
+                        ...prev, 
+                        startDate: new Date(newValue.setHours(0, 0, 0, 0))
+                      }));
+                    }
+                  }}
+                  slotProps={{ textField: { fullWidth: true } }}
+                />
+                <DatePicker
+                  label="End Date"
+                  value={selectedDateRange.endDate}
+                  onChange={(newValue) => {
+                    if (newValue) {
+                      setSelectedDateRange(prev => ({ 
+                        ...prev, 
+                        endDate: new Date(newValue.setHours(23, 59, 59, 999))
+                      }));
+                    }
+                  }}
+                  minDate={selectedDateRange.startDate}
+                  slotProps={{ textField: { fullWidth: true } }}
+                />
+              </Box>
+            </LocalizationProvider>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDateFilterDialogOpen(false)}>Close</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Export Dialog */}
         <Dialog open={exportDialogOpen} onClose={handleExportClose}>
           <DialogTitle>Export Orders</DialogTitle>
           <DialogContent>

@@ -79,3 +79,24 @@
   display: inline-flex;
   margin-right: 8px; /* spacing between chips when nowrap */
 }
+
+/* Drag & Drop styling inside dialogs */
+.dnd-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px dashed transparent;
+  cursor: grab;
+}
+.dnd-item .dnd-handle {
+  color: #9aa5b1;
+}
+.dnd-item.over {
+  border-color: #3D70FF;
+  background: #eef2ff;
+}
+.dnd-item.dragging {
+  opacity: 0.6;
+}

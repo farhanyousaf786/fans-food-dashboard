@@ -60,6 +60,8 @@ const getTheme = (direction = 'ltr') => {
 };
 
 const DashboardLayout = ({ children }) => {
+  const { language } = useLanguage();
+  const isRTL = language === 'he';
   const location = window.location.pathname;
   const isShopRoute = location === '/shop';
   const isAdminRoute = location === '/admin';
@@ -73,13 +75,12 @@ const DashboardLayout = ({ children }) => {
       <Box 
         component="main" 
         sx={{ 
-          flexGrow: 1, 
-          p: 3, 
-          mt: '70px',  // Match header height
+          flexGrow: 1,
+          p: 0,
+          mt: '70px',
           backgroundColor: '#f8f9fa',
-          marginLeft: hideSidebar ? 0 : '240px', // Adjust margin when sidebar is hidden
-          transition: 'margin 0.3s ease',
-          width: hideSidebar ? '100%' : 'calc(100% - 240px)'
+          width: '100%',
+          overflow: 'auto'
         }}
       >
         {children}
