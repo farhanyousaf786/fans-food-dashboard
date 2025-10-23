@@ -96,8 +96,9 @@
   border-color: #34d399;
   color: #059669;
 }
-.delivery-user-card__switch {
-  min-width: 56px;
+.delivery-user-card__actions {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }

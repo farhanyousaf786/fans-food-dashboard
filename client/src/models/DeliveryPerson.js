@@ -73,6 +73,10 @@ class DeliveryPerson {
     if (id) model.id = id;
     if (!model.docId) model.docId = id;
 
+    // Add stadium and section assignments
+    model.stadiumId = data.stadiumId || null;
+    model.sectionIds = data.sectionIds || [];
+
     return model;
   }
 

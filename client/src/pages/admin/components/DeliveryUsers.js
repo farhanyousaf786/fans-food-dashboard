@@ -10,14 +10,18 @@ import {
   Switch,
   FormControlLabel,
   Chip,
+  Button,
 } from '@mui/material';
 import { collection, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../../config/firebase';
 import DeliveryPerson from '../../../models/DeliveryPerson';
+import AssignSectionsDialog from './AssignSectionsDialog';
 import './DeliveryUsers.css';
 
 const DeliveryUsers = () => {
   const [users, setUsers] = useState([]);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   useEffect(() => {
     const ref = collection(db, 'deliveryUsers');
@@ -46,6 +50,16 @@ const DeliveryUsers = () => {
     }
   };
 
+  const handleOpenAssignDialog = (user) => {
+    setSelectedUser(user);
+    setAssignDialogOpen(true);
+  };
+
+  const handleCloseAssignDialog = () => {
+    setAssignDialogOpen(false);
+    setSelectedUser(null);
+  };
+
   return (
     <div className="delivery-users">
       <div className="delivery-users__header">
@@ -70,9 +84,33 @@ const DeliveryUsers = () => {
                   <div className="delivery-user-card__meta">
                     <span className={`delivery-user-card__chip ${u.isActive ? 'delivery-user-card__chip--active' : ''}`}>{u.isActive ? 'Active' : 'Inactive'}</span>
                     {u.phone && <span className="delivery-user-card__chip">{u.phone}</span>}
+                    {u.sectionIds && u.sectionIds.length > 0 && (
+                      <span className="delivery-user-card__chip" style={{ backgroundColor: '#e3f2fd', color: '#1976d2', borderColor: '#1976d2' }}>
+                        📍 {u.sectionIds.length} section{u.sectionIds.length > 1 ? 's' : ''}
+                      </span>
+                    )}
                   </div>
                 </div>
-                <div className="delivery-user-card__switch">
+                <div className="delivery-user-card__actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  {u.stadiumId && u.sectionIds && u.sectionIds.length > 0 && (
+                    <Button
+                      size="small"
+                      variant="text"
+                      color="info"
+                      onClick={() => handleOpenAssignDialog(u)}
+                      sx={{ fontSize: '0.7rem', py: 0.5, px: 1, minWidth: 'auto' }}
+                    >
+                      Details
+                    </Button>
+                  )}
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => handleOpenAssignDialog(u)}
+                    sx={{ fontSize: '0.75rem', py: 0.5, px: 1 }}
+                  >
+                    {u.stadiumId && u.sectionIds && u.sectionIds.length > 0 ? 'Edit' : 'Assign'}
+                  </Button>
                   <Switch
                     checked={!!u.isActive}
                     onChange={() => handleToggle(u)}
@@ -85,6 +123,13 @@ const DeliveryUsers = () => {
           </div>
         ))}
       </div>
+
+      {/* Assign Sections Dialog */}
+      <AssignSectionsDialog
+        open={assignDialogOpen}
+        onClose={handleCloseAssignDialog}
+        user={selectedUser}
+      />
     </div>
   );
 };
