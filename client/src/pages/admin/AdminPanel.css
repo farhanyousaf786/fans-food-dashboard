@@ -1,14 +1,4 @@
-/* Removed duplicate - using .stadiums-grid instead */
-  
-  .stadium-card {
-    display: flex;
-    flex-direction: column;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    overflow: hidden;
-    background: #fff;
-    transition: transform 0.2s ease-in-out;
-  }
+/* Clean stadium card styles */
   
   .stadium-card:hover {
     transform: translateY(-4px);
@@ -97,10 +87,15 @@
   }
 
   .stadiums-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: 24px;
     padding: 0 8px;
+  }
+  
+  .stadiums-grid .stadium-card {
+    flex: 0 0 calc(33.333% - 16px);
+    min-width: 280px;
   }
 
   .stadium-card {
@@ -112,6 +107,7 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
     display: flex;
     flex-direction: column;
+    position: relative;
   }
 
   .stadium-card:hover {

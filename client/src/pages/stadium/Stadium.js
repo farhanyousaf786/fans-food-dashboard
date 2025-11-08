@@ -4,6 +4,7 @@ import { db } from '../../config/firebase';
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { Box, Typography, Card, CardContent, CardMedia, Grid, Chip, Button, Divider, Stack } from '@mui/material';
 import StadiumSections from './components/StadiumSections';
+import DeliveryUsers from '../admin/components/DeliveryUsers';
 
 const Stadium = () => {
   const { id } = useParams();
@@ -95,6 +96,16 @@ const Stadium = () => {
         {/* Stadium Structure Section extracted into component */}
         <Grid item xs={12}>
           <StadiumSections stadiumId={id} shops={shops} />
+        </Grid>
+
+        {/* Delivery Users Section */}
+        <Grid item xs={12}>
+          <Card sx={{ borderRadius: 2 }}>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 2 }}>Delivery Personnel for this Stadium</Typography>
+              <DeliveryUsers stadiumId={id} showAll={true} />
+            </CardContent>
+          </Card>
         </Grid>
       </Grid>
     </Box>

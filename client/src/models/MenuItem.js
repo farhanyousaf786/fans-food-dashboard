@@ -27,7 +27,9 @@ class MenuItem {
             kosher: false,
             vegan: false
         },
-        currency = 'USD'
+        currency = 'USD',
+        isCombo = false,
+        comboItemIds = []
     ) {
         this.name = name;
         this.nameMap = nameMap || {};
@@ -46,6 +48,8 @@ class MenuItem {
         this.nutritionalInfo = nutritionalInfo;
         this.foodType = foodType;
         this.currency = currency;
+        this.isCombo = isCombo;
+        this.comboItemIds = comboItemIds || [];
         this.createdAt = new Date();
         this.updatedAt = new Date();
     }
@@ -68,6 +72,8 @@ class MenuItem {
             nutritionalInfo: this.nutritionalInfo,
             foodType: this.foodType,
             currency: this.currency,
+            isCombo: this.isCombo,
+            comboItemIds: this.comboItemIds,
             docId: this.docId,
             createdAt: this.createdAt instanceof Date ? Timestamp.fromDate(this.createdAt) : this.createdAt,
             updatedAt: this.updatedAt instanceof Date ? Timestamp.fromDate(this.updatedAt) : this.updatedAt
@@ -101,7 +107,9 @@ class MenuItem {
                 kosher: false,
                 vegan: false
             },
-            data.currency || 'USD'
+            data.currency || 'USD',
+            data.isCombo || false,
+            data.comboItemIds || []
         );
         // Also store the Firestore document ID on the instance for convenience
         if (id) menuItem.id = id;

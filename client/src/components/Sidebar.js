@@ -20,7 +20,8 @@ import {
   Stadium as StadiumIcon,
   ShoppingCart as OrdersIcon,
   Logout as LogoutIcon,
-  BarChart as AnalysisIcon
+  BarChart as AnalysisIcon,
+  People as PeopleIcon
 } from '@mui/icons-material';
 import { Category as CategoryIcon } from '@mui/icons-material';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
@@ -38,6 +39,18 @@ const Sidebar = () => {
   const { language } = useLanguage();
   const { t } = useTranslation();
   const isRTL = language === 'he';
+  
+  // Get current user role from localStorage
+  const getCurrentUserRole = () => {
+    try {
+      const userData = JSON.parse(localStorage.getItem('user'));
+      return userData?.role || null;
+    } catch {
+      return null;
+    }
+  };
+  
+  const userRole = getCurrentUserRole();
 
   const handleLogout = async () => {
     try {
@@ -99,13 +112,24 @@ const Sidebar = () => {
     }
   };
 
-  const menuItems = [
+  // Base menu items for all users
+  const baseMenuItems = [
     { text: t('sidebar.dashboard'), icon: <DashboardIcon />, path: '/dashboard' },
     { text: t('sidebar.orders'), icon: <OrdersIcon />, path: '/orders' },
     { text: t('sidebar.analysis'), icon: <AnalysisIcon />, path: '/analysis' },
     { text: t('sidebar.profile'), icon: <PersonIcon />, path: '/profile' },
     { text: t('sidebar.addCategory'), icon: <CategoryIcon />, path: '/add-category' },
   ];
+
+  // Admin-only menu items
+  const adminMenuItems = [
+    { text: 'User Management', icon: <PeopleIcon />, path: '/user-management' },
+  ];
+
+  // Combine menu items based on user role
+  const menuItems = userRole === 'admin' 
+    ? [...baseMenuItems, ...adminMenuItems]
+    : baseMenuItems;
 
   return (
     <Drawer

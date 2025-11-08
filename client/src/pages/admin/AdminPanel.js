@@ -33,24 +33,27 @@ const AdminPanel = () => {
     const [editingStadium, setEditingStadium] = useState(null);
     const [stadiumToDelete, setStadiumToDelete] = useState(null);
 
-    useEffect(() => {
-        const fetchStadiums = async () => {
-            try {
-                const stadiumsCollection = collection(db, 'stadiums');
-                const stadiumsSnapshot = await getDocs(stadiumsCollection);
-                const stadiumsList = stadiumsSnapshot.docs.map(doc => 
-                    Stadium.fromFirestore(doc, doc.id)
-                );
-                setStadiums(stadiumsList);
-            } catch (error) {
-                console.error('Error fetching stadiums:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
+    const fetchStadiums = async () => {
+        try {
+            setLoading(true);
+            const stadiumsCollection = collection(db, 'stadiums');
+            const stadiumsSnapshot = await getDocs(stadiumsCollection);
+            const stadiumsList = stadiumsSnapshot.docs.map(doc => 
+                Stadium.fromFirestore(doc, doc.id)
+            );
+            setStadiums(stadiumsList);
+        } catch (error) {
+            console.error('Error fetching stadiums:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchStadiums();
     }, []);
+
+
 
     const handleEditStadium = (stadium) => {
         setEditingStadium(stadium);
@@ -218,76 +221,9 @@ const AdminPanel = () => {
                     </Typography>
                 </div>
             ) : (
-                <div className="stadiums-grid">
-                    {stadiums.map((stadium) => (
-                        <Card className="stadium-card" key={stadium.id}>
-                            <CardMedia
-                                component="img"
-                                className="stadium-image"
-                                image={stadium.imageUrl || 'https://via.placeholder.com/300x200'}
-                                alt={stadium.name}
-                            />
-                            <CardContent className="stadium-content">
-                                <div className="stadium-header">
-                                    <Typography 
-                                        variant="h6" 
-                                        component="h2"
-                                        className="stadium-title"
-                                    >
-                                        {stadium.name}
-                                    </Typography>
-                                    <div className="stadium-actions">
-                                        <IconButton 
-                                            size="small" 
-                                            className="edit-button"
-                                            onClick={() => handleEditStadium(stadium)}
-                                        >
-                                            <EditIcon fontSize="small" />
-                                        </IconButton>
-                                        <IconButton 
-                                            size="small" 
-                                            className="delete-button"
-                                            onClick={() => handleOpenDeleteDialog(stadium)}
-                                        >
-                                            <DeleteIcon fontSize="small" />
-                                        </IconButton>
-                                    </div>
-                                </div>
-                                <div className="stadium-info">
-                                    <Typography className="stadium-location">
-                                        <span>📍</span>
-                                        {stadium.location}
-                                    </Typography>
-                                    <Typography className="stadium-capacity">
-                                        <span>👥</span>
-                                        {stadium.capacity.toLocaleString()} seats
-                                    </Typography>
-                                    {stadium.latitude && stadium.longitude && (
-                                        <Typography className="stadium-coordinates">
-                                            <span>🌐</span>
-                                            {stadium.latitude.toFixed(4)}, {stadium.longitude.toFixed(4)}
-                                        </Typography>
-                                    )}
-                                </div>
-                                <Typography className="stadium-about">
-                                    {stadium.about}
-                                </Typography>
-                                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                                    <Button 
-                                        variant="outlined"
-                                        onClick={() => navigate(`/stadium/${stadium.id}`)}
-                                    >
-                                        View Details
-                                    </Button>
-                                </Box>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
+                <></>
             )}
 
-            {/* Delivery Users Section */}
-            <DeliveryUsers />
 
             {/* Add Stadium Dialog */}
             <StadiumForm
@@ -332,6 +268,134 @@ const AdminPanel = () => {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+        {loading ? (
+            <p className="loading-message">Loading stadiums...</p>
+        ) : stadiums.length === 0 ? (
+            <div className="empty-message">
+                <Typography variant="h6">
+                    No stadiums found. Add your first stadium!
+                </Typography>
+            </div>
+        ) : (
+            <div className="stadiums-grid">
+                {stadiums.map((stadium, index) => (
+                    <Card 
+                        className="stadium-card" 
+                        key={stadium.id}
+                        data-stadium-id={stadium.id}
+                        data-index={index}
+                    >
+                        <CardMedia
+                            component="img"
+                            className="stadium-image"
+                            image={stadium.imageUrl || 'https://via.placeholder.com/300x200'}
+                            alt={stadium.name}
+                        />
+                        <CardContent className="stadium-content">
+                            <div className="stadium-header">
+                                <Typography 
+                                    variant="h6" 
+                                    component="h2"
+                                    className="stadium-title"
+                                >
+                                    {stadium.name}
+                                </Typography>
+                                <div className="stadium-actions">
+                                    <IconButton 
+                                        size="small" 
+                                        className="edit-button"
+                                        onClick={() => handleEditStadium(stadium)}
+                                    >
+                                        <EditIcon fontSize="small" />
+                                    </IconButton>
+                                    <IconButton 
+                                        size="small" 
+                                        className="delete-button"
+                                        onClick={() => handleOpenDeleteDialog(stadium)}
+                                    >
+                                        <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                </div>
+                            </div>
+                            <div className="stadium-info">
+                                <Typography className="stadium-location">
+                                    <span>📍</span>
+                                    {stadium.location}
+                                </Typography>
+                                <Typography className="stadium-capacity">
+                                    <span>👥</span>
+                                    {stadium.capacity.toLocaleString()} seats
+                                </Typography>
+                                {stadium.latitude && stadium.longitude && (
+                                    <Typography className="stadium-coordinates">
+                                        <span>🌐</span>
+                                        {stadium.latitude.toFixed(4)}, {stadium.longitude.toFixed(4)}
+                                    </Typography>
+                                )}
+                            </div>
+                            <Typography className="stadium-about">
+                                {stadium.about}
+                            </Typography>
+                            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                                <Button 
+                                    variant="contained"
+                                    onClick={() => navigate(`/stadium/${stadium.id}`)}
+                                >
+                                    Manage
+                                </Button>
+                            </Box>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        )}
+
+
+        {/* Add Stadium Dialog */}
+        <StadiumForm
+            open={openAddDialog}
+            onClose={() => setOpenAddDialog(false)}
+            onSubmit={handleCreateStadium}
+            title="Add New Stadium"
+            submitText="Add Stadium"
+            uploading={uploading}
+        />
+
+        {/* Edit Stadium Dialog */}
+        <StadiumForm
+            open={openEditDialog}
+            onClose={handleCloseEditDialog}
+            onSubmit={handleUpdateStadium}
+            title="Edit Stadium"
+            submitText="Update Stadium"
+            initialData={editingStadium}
+            uploading={uploading}
+        />
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={openDeleteDialog} onClose={handleCloseDeleteDialog} maxWidth="sm" fullWidth>
+            <DialogTitle>Delete Stadium</DialogTitle>
+            <DialogContent>
+                <Typography>
+                    Are you sure you want to delete the stadium "{stadiumToDelete?.name}"? This action cannot be undone.
+                </Typography>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={handleCloseDeleteDialog}>Cancel</Button>
+                <Button 
+                    onClick={handleDeleteStadium} 
+                    variant="contained" 
+                    sx={{ 
+                        backgroundColor: '#dc004e',
+                        '&:hover': { backgroundColor: '#b8003d' }
+                    }}
+                >
+                    Delete
+                </Button>
+            </DialogActions>
+        </Dialog>
+
         </div>
     );
 };

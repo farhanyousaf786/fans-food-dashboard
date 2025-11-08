@@ -15,7 +15,8 @@ import {
   ShoppingCart as OrdersIcon,
   AttachMoney as MoneyIcon,
   TrendingUp as TrendingUpIcon,
-  People as PeopleIcon
+  People as PeopleIcon,
+  Campaign as PromotionIcon
 } from "@mui/icons-material";
 import { db } from "../../config/firebase";
 import {
@@ -34,6 +35,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "../../config/firebase";
 import MenuItem from "../../models/MenuItem";
 import AddMenuDialog from "./components/AddMenuDialod/AddMenuDialog";
+import AddPromotionDialog from "./components/AddPromotionDialog/AddPromotionDialog";
 import MenuList from "./components/MenuList/MenuList";
 import OfferList from "./components/OfferList/OfferList";
 
@@ -42,6 +44,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [shopData, setShopData] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
+  const [openPromotionDialog, setOpenPromotionDialog] = useState(false);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalOrders: 0,
@@ -127,6 +130,14 @@ const Dashboard = () => {
 
   const handleAddMenu = () => {
     setOpenDialog(true);
+  };
+
+  const handleAddPromotion = () => {
+    setOpenPromotionDialog(true);
+  };
+
+  const handleClosePromotionDialog = () => {
+    setOpenPromotionDialog(false);
   };
 
   const handleCloseDialog = () => {
@@ -270,7 +281,9 @@ const Dashboard = () => {
           kosher: false,
           vegan: false
         },
-        formData.currency || 'USD'
+        formData.currency || 'USD',
+        formData.isCombo || false,
+        formData.comboItemIds || []
       );
 
       if (newMenuItem.offerActive) {
@@ -356,34 +369,53 @@ const Dashboard = () => {
               <Typography
                 variant="subtitle1"
                 sx={{
-                  color: "text.secondary",
+                  color: "#718096",
                   fontSize: "1rem",
                 }}
               >
-                {shopData.name}
+                Manage your shop's menu and promotions
               </Typography>
             )}
           </Box>
-
           {shopData && (
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={handleAddMenu}
-              sx={{
-                bgcolor: "#3D70FF",
-                "&:hover": { bgcolor: "#3161EA" },
-                px: 3,
-                py: 1,
-                borderRadius: 2,
-                textTransform: "none",
-                fontSize: "1rem",
-                fontWeight: 500,
-                boxShadow: "0 4px 12px rgba(76, 158, 72, 0.2)",
-              }}
-            >
-              Add Menu Item
-            </Button>
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={handleAddMenu}
+                sx={{
+                  bgcolor: "#3D70FF",
+                  "&:hover": { bgcolor: "#3161EA" },
+                  px: 3,
+                  py: 1,
+                  borderRadius: 2,
+                  textTransform: "none",
+                  fontSize: "1rem",
+                  fontWeight: 500,
+                  boxShadow: "0 4px 12px rgba(76, 158, 72, 0.2)",
+                }}
+              >
+                Add Menu Item
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<PromotionIcon />}
+                onClick={handleAddPromotion}
+                sx={{
+                  bgcolor: "#FF6B35",
+                  "&:hover": { bgcolor: "#E55A2B" },
+                  px: 3,
+                  py: 1,
+                  borderRadius: 2,
+                  textTransform: "none",
+                  fontSize: "1rem",
+                  fontWeight: 500,
+                  boxShadow: "0 4px 12px rgba(255, 107, 53, 0.2)",
+                }}
+              >
+                Promotions
+              </Button>
+            </Box>
           )}
         </Box>
 
@@ -500,6 +532,12 @@ const Dashboard = () => {
             onSubmit={handleCreateMenuItem}
             menuItem={newMenuItem}
             onChange={handleInputChange}
+            shopData={shopData}
+          />
+
+          <AddPromotionDialog
+            open={openPromotionDialog}
+            onClose={handleClosePromotionDialog}
             shopData={shopData}
           />
 

@@ -346,22 +346,107 @@ const MenuList = ({ shopData }) => {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 
-      <Grid container spacing={3}>
-        {menuItems.map((item) => (
-          <Grid item xs={12} sm={6} md={4} key={item.id}>
-            <Card sx={{ display: 'flex', height: 180, overflow: 'hidden' }}>
-              <CardMedia
-                component="img"
-                image={item.images?.[0] || '/placeholder.jpg'}
-                alt={item.name}
-                sx={{ width: 140, height: 180, objectFit: 'cover' }}
-              />
+      <Grid container spacing={3} className="menu-items-grid">
+        {menuItems
+          .sort((a, b) => {
+            // Show combo items first
+            if (a.isCombo && !b.isCombo) return -1;
+            if (!a.isCombo && b.isCombo) return 1;
+            // Then sort by name
+            return (a.name || '').localeCompare(b.name || '');
+          })
+          .map((item) => (
+          <Grid item xs={12} sm={6} md={4} key={item.id} sx={{ display: 'flex' }}>
+            <Card sx={{ 
+              display: 'flex', 
+              height: 200, 
+              width: '100%',
+              overflow: 'hidden',
+              minHeight: 200,
+              maxHeight: 200,
+              flexShrink: 0
+            }}>
+              {/* Combo Images Grid or Single Image */}
+              {item.isCombo && item.images?.length > 1 ? (
+                <Box sx={{ 
+                  width: 140, 
+                  height: 200, 
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gridTemplateRows: '1fr 1fr',
+                  gap: 0.5,
+                  p: 0.5,
+                  bgcolor: '#f5f5f5',
+                  flexShrink: 0
+                }}>
+                  {item.images.slice(0, 4).map((img, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        backgroundImage: `url(${img})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        borderRadius: '4px',
+                        minHeight: 0
+                      }}
+                    />
+                  ))}
+                  {item.images.length > 4 && (
+                    <Box sx={{
+                      position: 'absolute',
+                      bottom: 4,
+                      right: 4,
+                      bgcolor: 'rgba(0,0,0,0.7)',
+                      color: 'white',
+                      borderRadius: '4px',
+                      px: 0.5,
+                      fontSize: '0.7rem'
+                    }}>
+                      +{item.images.length - 4}
+                    </Box>
+                  )}
+                </Box>
+              ) : (
+                <CardMedia
+                  component="img"
+                  image={item.images?.[0] || '/placeholder.jpg'}
+                  alt={item.name}
+                  sx={{ 
+                    width: 140, 
+                    height: 200, 
+                    objectFit: 'cover',
+                    flexShrink: 0
+                  }}
+                />
+              )}
               <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, p: 2 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                  <Box>
-                    <Typography variant="h6" sx={{ fontSize: '1.1rem', mb: 0.5 }}>
-                      {item.name}
-                    </Typography>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                      <Typography variant="h6" sx={{ 
+                        fontSize: '1.1rem', 
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        flex: 1
+                      }}>
+                        {item.name}
+                      </Typography>
+                      {item.isCombo && (
+                        <Box sx={{
+                          bgcolor: '#4caf50',
+                          color: 'white',
+                          px: 1,
+                          py: 0.25,
+                          borderRadius: '12px',
+                          fontSize: '0.7rem',
+                          fontWeight: 'bold',
+                          flexShrink: 0
+                        }}>
+                          🍽️ COMBO
+                        </Box>
+                      )}
+                    </Box>
                     {item.description && (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         <Typography variant="body2" color="text.secondary">

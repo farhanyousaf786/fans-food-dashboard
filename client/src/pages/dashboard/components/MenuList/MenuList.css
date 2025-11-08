@@ -1,9 +1,12 @@
 .menu-card {
     position: relative;
     transition: all 0.3s ease;
-    height: 100%;
+    height: 200px;
+    min-height: 200px;
+    max-height: 200px;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    overflow: hidden;
 }
 
 .menu-card:hover {
@@ -46,6 +49,7 @@
     line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    text-overflow: ellipsis;
     flex-grow: 1;
 }
 
@@ -72,4 +76,70 @@
     background-color: #f8f9fa;
     border-radius: 8px;
     border: 2px dashed #ddd;
+}
+
+/* Ensure consistent grid item heights */
+.menu-grid-item {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.menu-grid-item .MuiCard-root {
+    height: 200px !important;
+    min-height: 200px !important;
+    max-height: 200px !important;
+    width: 100% !important;
+    flex-shrink: 0 !important;
+}
+
+/* Override Material-UI Grid item styles */
+.MuiGrid-item {
+    display: flex !important;
+}
+
+.MuiGrid-item .MuiCard-root {
+    height: 200px !important;
+    min-height: 200px !important;
+    max-height: 200px !important;
+    width: 100% !important;
+}
+
+/* Ensure image consistency */
+.menu-card .MuiCardMedia-root {
+    width: 140px !important;
+    height: 200px !important;
+    flex-shrink: 0 !important;
+}
+
+/* Content area styling */
+.menu-content-area {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    padding: 16px;
+    overflow: hidden;
+}
+
+/* Specific targeting for menu items grid */
+.menu-items-grid .MuiGrid-item {
+    display: flex !important;
+    align-items: stretch !important;
+}
+
+.menu-items-grid .MuiGrid-item .MuiCard-root {
+    height: 200px !important;
+    min-height: 200px !important;
+    max-height: 200px !important;
+    width: 100% !important;
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: row !important;
+}
+
+.menu-items-grid .MuiCardMedia-root {
+    width: 140px !important;
+    min-width: 140px !important;
+    max-width: 140px !important;
+    height: 200px !important;
+    flex-shrink: 0 !important;
 }

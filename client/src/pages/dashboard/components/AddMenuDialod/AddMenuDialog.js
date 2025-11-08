@@ -27,6 +27,11 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
   const [showSuccess, setShowSuccess] = useState(false);
   const [stadiumShops, setStadiumShops] = useState(propStadiumShops || []);
   const fileInputRef = useRef(null);
+  
+  // Simple Combo States
+  const [isComboMode, setIsComboMode] = useState(false);
+  const [availableItems, setAvailableItems] = useState([]);
+  const [selectedComboItems, setSelectedComboItems] = useState([]);
 
   // Create a unified change handler that works with both interfaces
   const handleChange = (event) => {
@@ -145,6 +150,57 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
     }
   }, [open, shopData?.stadiumId, shopData?.id, propStadiumShops, isEditing]);
 
+  // Fetch available items for combo
+  useEffect(() => {
+    const fetchAvailableItems = async () => {
+      if (!open || !shopData?.stadiumId) return;
+      
+      try {
+        const menuItemsRef = collection(db, 'menuItems');
+        const q = query(menuItemsRef, where('stadiumId', '==', shopData.stadiumId));
+        const querySnapshot = await getDocs(q);
+        
+        const items = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          name: doc.data().name,
+          nameMap: doc.data().nameMap || {},
+          price: doc.data().price,
+          currency: doc.data().currency || 'USD',
+          images: doc.data().images || []
+        }));
+        
+        setAvailableItems(items);
+      } catch (error) {
+        console.error('Error fetching available items:', error);
+      }
+    };
+
+    fetchAvailableItems();
+  }, [open, shopData?.stadiumId]);
+
+  // Initialize combo mode when editing existing combo
+  useEffect(() => {
+    if (isEditing && menuItem?.isCombo && availableItems.length > 0) {
+      setIsComboMode(true);
+      
+      // Find the original combo items from availableItems using comboItemIds
+      if (menuItem.comboItemIds && menuItem.comboItemIds.length > 0) {
+        const comboItems = availableItems.filter(item => 
+          menuItem.comboItemIds.includes(item.id)
+        );
+        setSelectedComboItems(comboItems);
+      }
+    }
+  }, [isEditing, menuItem?.isCombo, menuItem?.comboItemIds, availableItems]);
+
+  // Reset combo state when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setIsComboMode(false);
+      setSelectedComboItems([]);
+    }
+  }, [open]);
+
   const handleShopSelection = (shopId) => {
     const currentSelection = menuItem.selectedShops || [];
     let newSelection;
@@ -211,6 +267,53 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
     handleChange({ target: { name: 'customization', value: updated } });
   };
 
+  // Simple Combo Functions
+  const handleComboItemSelection = (item) => {
+    const isSelected = selectedComboItems.some(selected => selected.id === item.id);
+    
+    if (isSelected) {
+      setSelectedComboItems(prev => prev.filter(selected => selected.id !== item.id));
+    } else {
+      setSelectedComboItems(prev => [...prev, item]);
+    }
+  };
+
+  const handleCreateCombo = () => {
+    if (selectedComboItems.length < 2) return;
+    
+    // Generate combo names exactly as before
+    const comboNameEn = selectedComboItems.map(item => item.nameMap?.en || item.name).join(' + ');
+    const comboNameHe = selectedComboItems.map(item => item.nameMap?.he || item.nameMap?.en || item.name).join(' + ');
+    
+    // Collect all images from selected items
+    const comboImages = [];
+    selectedComboItems.forEach(item => {
+      if (item.images && item.images.length > 0) {
+        comboImages.push(...item.images);
+      }
+    });
+    
+    const comboItemIds = selectedComboItems.map(item => item.id);
+    
+    // Log combo data for debugging
+    console.log('🍽️ COMBO CREATED:', {
+      isCombo: true,
+      comboItemIds: comboItemIds,
+      selectedItems: selectedComboItems.map(item => ({ id: item.id, name: item.name })),
+      comboNameEn,
+      comboNameHe,
+      totalImages: comboImages.length,
+      imagesArray: comboImages
+    });
+    
+    // Update form with combo data
+    handleChange({ target: { name: 'name', value: comboNameEn } });
+    handleChange({ target: { name: 'nameMap', value: { en: comboNameEn, he: comboNameHe } } });
+    handleChange({ target: { name: 'images', value: comboImages } });
+    handleChange({ target: { name: 'isCombo', value: true } });
+    handleChange({ target: { name: 'comboItemIds', value: comboItemIds } });
+  };
+
   const handleSubmit = async () => {
     if (shopData?.stadiumId) {
       handleChange({ target: { name: 'stadiumId', value: shopData.stadiumId } });
@@ -267,6 +370,104 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
         <Divider />
         <DialogContent className="modern-content" sx={{ overflowY: 'auto', flexGrow: 1, pb: 3 }}>
           <Stack spacing={3}>
+            {/* Simple Combo Creator - TOP POSITION */}
+            <Box sx={{ border: '2px solid #4caf50', borderRadius: '8px', p: 2, bgcolor: '#f1f8e9' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="subtitle1" fontWeight="600" color="#2e7d32">
+                  🍽️ Create Combo
+                </Typography>
+                <Switch
+                  checked={isComboMode}
+                  onChange={(e) => setIsComboMode(e.target.checked)}
+                  color="success"
+                />
+              </Box>
+              
+              {isComboMode && (
+                <Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Select items to create a combo meal
+                  </Typography>
+                  
+                  {/* Available Items List */}
+                  <Box sx={{ maxHeight: '300px', overflowY: 'auto', mb: 2 }}>
+                    {availableItems.map((item) => {
+                      const isSelected = selectedComboItems.some(selected => selected.id === item.id);
+                      return (
+                        <Box
+                          key={item.id}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            p: 1,
+                            mb: 1,
+                            border: '1px solid',
+                            borderColor: isSelected ? '#4caf50' : '#e0e0e0',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            bgcolor: isSelected ? '#f1f8e9' : '#fff',
+                            '&:hover': { bgcolor: isSelected ? '#f1f8e9' : '#f5f5f5' }
+                          }}
+                          onClick={() => handleComboItemSelection(item)}
+                        >
+                          <Checkbox
+                            checked={isSelected}
+                            onChange={() => handleComboItemSelection(item)}
+                            sx={{ mr: 1 }}
+                            color="success"
+                          />
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="body2" fontWeight="500">
+                              {item.nameMap?.en || item.name}
+                            </Typography>
+                            {item.nameMap?.he && (
+                              <Typography variant="caption" color="text.secondary">
+                                {item.nameMap.he}
+                              </Typography>
+                            )}
+                          </Box>
+                          <Typography variant="body2" color="primary" fontWeight="600">
+                            {item.currency === 'NIS' ? '₪' : '$'}{item.price}
+                          </Typography>
+                        </Box>
+                      );
+                    })}
+                  </Box>
+
+                  {/* Selected Items */}
+                  {selectedComboItems.length > 0 && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" fontWeight="500" sx={{ mb: 1 }}>
+                        Selected ({selectedComboItems.length}):
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                        {selectedComboItems.map((item) => (
+                          <Chip
+                            key={item.id}
+                            label={item.nameMap?.en || item.name}
+                            onDelete={() => handleComboItemSelection(item)}
+                            size="small"
+                            color="success"
+                            variant="outlined"
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
+
+                  <Button
+                    variant="contained"
+                    color="success"
+                    onClick={handleCreateCombo}
+                    disabled={selectedComboItems.length < 2}
+                    sx={{ mt: 1 }}
+                  >
+                    Create Combo
+                  </Button>
+                </Box>
+              )}
+            </Box>
+
             {/* Multilingual Item Names */}
             <Box sx={{ border: '1px solid #ddd', borderRadius: '8px', p: 2, bgcolor: '#fff' }}>
               <Typography variant="subtitle1" fontWeight="500" gutterBottom>
@@ -684,6 +885,7 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
                 </Stack>
               )}
             </Box>
+
 
             {/* ✅ Food Type Checkboxes Only */}
             <Box sx={{ mt: 3, border: '1px solid #ddd', borderRadius: '8px', p: 2, bgcolor: '#fff' }}>

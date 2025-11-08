@@ -18,7 +18,7 @@ import DeliveryPerson from '../../../models/DeliveryPerson';
 import AssignSectionsDialog from './AssignSectionsDialog';
 import './DeliveryUsers.css';
 
-const DeliveryUsers = () => {
+const DeliveryUsers = ({ stadiumId = null, showAll = false }) => {
   const [users, setUsers] = useState([]);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -26,7 +26,13 @@ const DeliveryUsers = () => {
   useEffect(() => {
     const ref = collection(db, 'deliveryUsers');
     const unsub = onSnapshot(ref, (snap) => {
-      const list = snap.docs.map((d) => DeliveryPerson.fromFirestore(d.data(), d.id));
+      let list = snap.docs.map((d) => DeliveryPerson.fromFirestore(d.data(), d.id));
+      
+      // Filter by stadium if stadiumId is provided and showAll is false
+      if (stadiumId && !showAll) {
+        list = list.filter(user => user.stadiumId === stadiumId);
+      }
+      
       // Stable, deterministic sort: first name, then last name, then id
       list.sort((a, b) => (
         (a.firstName || '').localeCompare(b.firstName || '') ||
@@ -36,7 +42,7 @@ const DeliveryUsers = () => {
       setUsers(list);
     });
     return () => unsub();
-  }, []);
+  }, [stadiumId, showAll]);
 
   const handleToggle = async (user) => {
     const newVal = !user.isActive;
@@ -62,10 +68,23 @@ const DeliveryUsers = () => {
 
   return (
     <div className="delivery-users">
-      <div className="delivery-users__header">
-        <Typography variant="h5" sx={{ fontWeight: 700 }}>Delivery Users</Typography>
-        <Chip color="success" label={`Active: ${users.filter(u => u.isActive).length}`} variant="filled" />
-      </div>
+      {!stadiumId && (
+        <div className="delivery-users__header">
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>Delivery Users</Typography>
+          <Chip color="success" label={`Active: ${users.filter(u => u.isActive).length}`} variant="filled" />
+        </div>
+      )}
+      {stadiumId && !showAll && users.length === 0 && (
+        <Typography color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+          No delivery personnel assigned to this stadium yet.
+        </Typography>
+      )}
+      {showAll && (
+        <div className="delivery-users__header">
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>All Delivery Personnel</Typography>
+          <Chip color="primary" label={`Total: ${users.length}`} variant="filled" size="small" />
+        </div>
+      )}
       <div className="delivery-users__grid">
         {users.map((u) => (
           <div className="delivery-users__item" key={u.id}>
