@@ -84,30 +84,15 @@ const DeliveryUsers = ({ stadiumId = null, showAll = false }) => {
           <Chip color="primary" label={`Total: ${users.length}`} variant="filled" size="small" />
         </div>
       )}
-      <div className="delivery-users__grid">
+      <div className="delivery-grid-wrapper">
+          <div className="delivery-users__grid">
         {users.map((u) => (
           <div className="delivery-users__item" key={u.id}>
-            <div className="delivery-user-card">
+            <div className="delivery-user-card" onClick={(e) => e.stopPropagation()}>
               <div className="delivery-user-card__content">
-                <div className="delivery-user-card__avatar">
-                  {u.image ? (
-                    <img src={u.image} alt={`${u.firstName} ${u.lastName}`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
-                  ) : (
-                    (u.firstName || '?').charAt(0)
-                  )}
-                </div>
                 <div className="delivery-user-card__main">
                   <p className="delivery-user-card__name">{u.firstName} {u.lastName}</p>
                   <p className="delivery-user-card__email">{u.email}</p>
-                  <div className="delivery-user-card__meta">
-                    <span className={`delivery-user-card__chip ${u.isActive ? 'delivery-user-card__chip--active' : ''}`}>{u.isActive ? 'Active' : 'Inactive'}</span>
-                    {u.phone && <span className="delivery-user-card__chip">{u.phone}</span>}
-                    {u.sectionIds && u.sectionIds.length > 0 && (
-                      <span className="delivery-user-card__chip" style={{ backgroundColor: '#e3f2fd', color: '#1976d2', borderColor: '#1976d2' }}>
-                        📍 {u.sectionIds.length} section{u.sectionIds.length > 1 ? 's' : ''}
-                      </span>
-                    )}
-                  </div>
                 </div>
                 <div className="delivery-user-card__actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                   {u.stadiumId && u.sectionIds && u.sectionIds.length > 0 && (
@@ -140,6 +125,7 @@ const DeliveryUsers = ({ stadiumId = null, showAll = false }) => {
             </div>
           </div>
         ))}
+          </div>
       </div>
 
       {/* Assign Sections Dialog */}

@@ -154,6 +154,7 @@ const MyShopsSection = () => {
             <Card 
               key={shop.id}
               className="shop-card"
+              onClick={(e) => e.stopPropagation()}
               sx={{ 
                 height: '100%',
                 cursor: 'pointer', 

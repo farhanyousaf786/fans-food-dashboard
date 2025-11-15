@@ -66,14 +66,16 @@ const Stadium = () => {
         <Box sx={{ mb: 3 }}>
           <Card 
             sx={{ 
-              bgcolor: 'rgba(25, 118, 210, 0.3)', 
               cursor: 'pointer',
-              '&:hover': { bgcolor: 'rgba(25, 118, 210, 0.4)' },
               transition: 'all 0.2s ease'
             }}
             onClick={() => setShopsExpanded(!shopsExpanded)}
           >
-            <CardContent sx={{ p: 3 }}>
+            <CardContent sx={{ 
+              p: 3,
+              bgcolor: 'rgba(25, 118, 210, 0.3)', 
+              '&:hover': { bgcolor: 'rgba(25, 118, 210, 0.4)' }
+            }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Typography variant="h6" sx={{ fontWeight: 600 }}>All Shops</Typography>
                 <IconButton 
@@ -103,14 +105,16 @@ const Stadium = () => {
         <Box sx={{ mb: 3 }}>
           <Card 
             sx={{ 
-              bgcolor: 'rgba(25, 118, 210, 0.3)', 
               cursor: 'pointer',
-              '&:hover': { bgcolor: 'rgba(25, 118, 210, 0.4)' },
               transition: 'all 0.2s ease'
             }}
             onClick={() => setStadiumExpanded(!stadiumExpanded)}
           >
-            <CardContent sx={{ p: 3 }}>
+            <CardContent sx={{ 
+              p: 3,
+              bgcolor: 'rgba(25, 118, 210, 0.3)', 
+              '&:hover': { bgcolor: 'rgba(25, 118, 210, 0.4)' }
+            }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Typography variant="h6" sx={{ fontWeight: 600 }}>Stadium Sections</Typography>
                 <IconButton 
@@ -140,14 +144,16 @@ const Stadium = () => {
         <Box>
           <Card 
             sx={{ 
-              bgcolor: 'rgba(25, 118, 210, 0.3)', 
               cursor: 'pointer',
-              '&:hover': { bgcolor: 'rgba(25, 118, 210, 0.4)' },
               transition: 'all 0.2s ease'
             }}
             onClick={() => setDeliveryExpanded(!deliveryExpanded)}
           >
-            <CardContent sx={{ p: 3 }}>
+            <CardContent sx={{ 
+              p: 3,
+              bgcolor: 'rgba(25, 118, 210, 0.3)', 
+              '&:hover': { bgcolor: 'rgba(25, 118, 210, 0.4)' }
+            }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Typography variant="h6" sx={{ fontWeight: 600 }}>Delivery Personnel</Typography>
                 <IconButton 

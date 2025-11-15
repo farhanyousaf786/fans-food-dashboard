@@ -2,6 +2,13 @@
   margin-top: 32px;
 }
 
+.delivery-grid-wrapper {
+  width: 100% !important;
+  margin: 0 -24px !important;
+  padding: 0 24px !important;
+  overflow-x: hidden !important;
+}
+
 .delivery-users__header {
   display: flex;
   align-items: center;
@@ -10,38 +17,70 @@
 }
 
 .delivery-users__grid {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 16px;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 12px !important;
 }
 
-/* 12-col layout responsive */
-@media (max-width: 599px) {
-  .delivery-users__item { grid-column: span 12; }
+/* Delivery user items for flexbox layout */
+.delivery-users__item {
+  flex: 1 1 calc(20% - 9.6px) !important;
+  min-width: 250px !important;
+  max-width: calc(20% - 9.6px) !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
-@media (min-width: 600px) and (max-width: 899px) {
-  .delivery-users__item { grid-column: span 6; }
+
+@media (max-width: 1920px) {
+  .delivery-users__item {
+    flex: 1 1 calc(25% - 9px) !important;
+    max-width: calc(25% - 9px) !important;
+  }
 }
-@media (min-width: 900px) {
-  .delivery-users__item { grid-column: span 4; }
+
+@media (max-width: 1280px) {
+  .delivery-users__item {
+    flex: 1 1 calc(33.333% - 8px) !important;
+    max-width: calc(33.333% - 8px) !important;
+  }
+}
+
+@media (max-width: 960px) {
+  .delivery-users__item {
+    flex: 1 1 calc(50% - 6px) !important;
+    max-width: calc(50% - 6px) !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .delivery-users__item {
+    flex: 1 1 calc(50% - 6px) !important;
+    max-width: calc(50% - 6px) !important;
+    min-width: 200px !important;
+  }
 }
 
 .delivery-user-card {
-  border: 1px solid var(--mui-palette-divider, #e0e0e0);
-  border-radius: 12px;
-  background: #fff;
-  transition: box-shadow .2s ease, transform .2s ease;
+  border-radius: 14px !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08) !important;
+  transition: box-shadow 0.2s ease, transform 0.15s ease !important;
+  background: #fff !important;
+  border: none !important;
 }
 .delivery-user-card:hover {
-  box-shadow: 0 6px 20px rgba(0,0,0,.08);
-  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.10) !important;
+  transform: translateY(-2px) !important;
 }
 
 .delivery-user-card__content {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding: 18px 18px 14px 18px !important;
 }
 
 .delivery-user-card__avatar {

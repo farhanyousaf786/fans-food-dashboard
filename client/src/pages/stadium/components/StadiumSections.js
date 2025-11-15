@@ -161,7 +161,7 @@ const StadiumSections = ({ stadiumId, shops }) => {
         <div className="stadium-grid-container">
           {sections.map((s) => (
             <div key={s.id} className="stadium-grid-item">
-              <Card className="section-card">
+              <Card className="section-card" onClick={(e) => e.stopPropagation()}>
                 <CardContent className="section-card__content">
                   <Stack direction="row" alignItems="center" justifyContent="space-between" className="section-card__header">
                     <Typography variant="subtitle1" className="section-title">
