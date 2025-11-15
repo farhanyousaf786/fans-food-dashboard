@@ -48,13 +48,13 @@ const Header = () => {
                 top: 0,
                 right: 0,
                 left: 0, // Full width across screen
-                height: '70px',
+                height: { xs: '60px', sm: '70px' }, // Smaller height on mobile
                 backgroundColor: '#fff',
                 boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                 zIndex: 1200, // Higher than sidebar
                 display: 'flex',
                 alignItems: 'center',
-                px: 3,
+                px: { xs: 2, sm: 3 }, // Less padding on mobile
                 justifyContent: 'space-between'
             }}
         >
@@ -63,11 +63,26 @@ const Header = () => {
                 sx={{ 
                     fontWeight: 'bold',
                     color: theme.palette.primary.main,
-                    fontSize: '1.5rem',
-                    letterSpacing: '0.5px'
+                    fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem' }, // Responsive font size
+                    letterSpacing: { xs: '0.2px', sm: '0.5px' },
+                    display: { xs: 'none', sm: 'block' } // Hide on mobile, show abbreviated
                 }}
             >
                 Fan Munch Dashboard
+            </Typography>
+            
+            {/* Mobile title - abbreviated */}
+            <Typography 
+                variant="h6" 
+                sx={{ 
+                    fontWeight: 'bold',
+                    color: theme.palette.primary.main,
+                    fontSize: '1rem',
+                    letterSpacing: '0.2px',
+                    display: { xs: 'block', sm: 'none' } // Show only on mobile
+                }}
+            >
+                Fan Munch
             </Typography>
             
             <Box sx={{ 
@@ -75,17 +90,22 @@ const Header = () => {
                 marginRight: isRTL ? 'auto' : 0,
                 display: 'flex', 
                 alignItems: 'center', 
-                gap: 2,
+                gap: { xs: 1, sm: 2 }, // Less gap on mobile
                 flexDirection: isRTL ? 'row-reverse' : 'row'
             }}>
                 <LanguageSelector />
                 
-                <Box sx={{ display: 'flex', flexDirection: isRTL ? 'row-reverse' : 'row', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: isRTL ? 'row-reverse' : 'row', 
+                    alignItems: 'center', 
+                    gap: { xs: 0.5, sm: 1 } // Less gap on mobile
+                }}>
                     <Avatar
                         src={userImage}
                         sx={{
-                            width: 40,
-                            height: 40,
+                            width: { xs: 32, sm: 40 }, // Smaller on mobile
+                            height: { xs: 32, sm: 40 },
                             bgcolor: userImage ? 'transparent' : theme.palette.primary.main,
                             transition: 'all 0.2s',
                             border: '2px solid transparent',
@@ -98,11 +118,11 @@ const Header = () => {
                         }}
                         onClick={() => navigate('/profile')}
                     >
-                        {!userImage && <PersonIcon />}
+                        {!userImage && <PersonIcon sx={{ fontSize: { xs: 18, sm: 24 } }} />}
                     </Avatar>
                     {userName && (
                         <Box sx={{ 
-                            display: 'flex', 
+                            display: { xs: 'none', sm: 'flex' }, // Hide username on mobile
                             alignItems: 'center', 
                             gap: 1,
                             marginRight: isRTL ? 1 : 0,
@@ -112,7 +132,7 @@ const Header = () => {
                                 sx={{ 
                                     color: theme.palette.primary.main,
                                     fontWeight: 600,
-                                    fontSize: '0.9rem',
+                                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
                                     display: 'flex',
                                     alignItems: 'center'
                                 }}

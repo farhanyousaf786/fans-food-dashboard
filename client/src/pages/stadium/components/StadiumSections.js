@@ -172,7 +172,10 @@ const StadiumSections = ({ stadiumId, shops }) => {
                         control={
                           <Switch
                             checked={!!s.isActive}
-                            onChange={(e) => handleToggleActive(s, e)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              handleToggleActive(s, e);
+                            }}
                             size="small"
                             color="success"
                           />
@@ -201,7 +204,8 @@ const StadiumSections = ({ stadiumId, shops }) => {
                     )}
                   </Box>
                   <Stack direction="row" justifyContent="flex-end" gap={1} className="section-card__actions">
-                    <Button size="small" variant="outlined" onClick={() => {
+                    <Button size="small" variant="outlined" onClick={(e) => {
+                      e.stopPropagation();
                       setCurrent(s);
                       setForm({
                         sectionName: s.sectionName || '',
@@ -213,7 +217,11 @@ const StadiumSections = ({ stadiumId, shops }) => {
                       });
                       setEditOpen(true);
                     }}>Edit</Button>
-                    <Button size="small" color="error" onClick={() => { setCurrent(s); setDeleteOpen(true); }}>Delete</Button>
+                    <Button size="small" color="error" onClick={(e) => { 
+                      e.stopPropagation(); 
+                      setCurrent(s); 
+                      setDeleteOpen(true); 
+                    }}>Delete</Button>
                   </Stack>
                 </CardContent>
               </Card>
@@ -278,8 +286,14 @@ const StadiumSections = ({ stadiumId, shops }) => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setAddOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleSave} disabled={!form.sectionName}>Save Section</Button>
+          <Button onClick={(e) => {
+                      e.stopPropagation();
+                      setAddOpen(false);
+                    }}>Cancel</Button>
+          <Button variant="contained" onClick={(e) => {
+                      e.stopPropagation();
+                      handleSave();
+                    }} disabled={!form.sectionName}>Save Section</Button>
         </DialogActions>
       </Dialog>
 
@@ -339,8 +353,14 @@ const StadiumSections = ({ stadiumId, shops }) => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleUpdate} disabled={!form.sectionName}>Update Section</Button>
+          <Button onClick={(e) => {
+                      e.stopPropagation();
+                      setEditOpen(false);
+                    }}>Cancel</Button>
+          <Button variant="contained" onClick={(e) => {
+                      e.stopPropagation();
+                      handleUpdate();
+                    }} disabled={!form.sectionName}>Update Section</Button>
         </DialogActions>
       </Dialog>
 
@@ -351,8 +371,14 @@ const StadiumSections = ({ stadiumId, shops }) => {
           <Typography>Are you sure you want to delete the section "{current?.sectionName}"?</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteOpen(false)}>Cancel</Button>
-          <Button color="error" variant="contained" onClick={handleDelete}>Delete</Button>
+          <Button onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteOpen(false);
+                    }}>Cancel</Button>
+          <Button color="error" variant="contained" onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete();
+                    }}>Delete</Button>
         </DialogActions>
       </Dialog>
     </Box>

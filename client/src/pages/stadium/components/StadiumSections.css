@@ -138,8 +138,17 @@
 
 @media (max-width: 600px) {
   .stadium-grid-item {
+    flex: 1 1 calc(50% - 6px) !important;
+    max-width: calc(50% - 6px) !important;
+    min-width: 160px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .stadium-grid-item {
     flex: 1 1 100% !important;
     max-width: 100% !important;
+    min-width: 280px !important;
   }
 }
 

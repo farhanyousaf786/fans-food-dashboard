@@ -33,6 +33,21 @@
   flex-grow: 1 !important;
 }
 
+/* Mobile responsive card content */
+@media (max-width: 600px) {
+  .shop-card-content {
+    padding: 14px 14px 12px 14px !important;
+    gap: 6px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .shop-card-content {
+    padding: 12px 12px 10px 12px !important;
+    gap: 4px !important;
+  }
+}
+
 @media (max-width: 1920px) {
   .shop-card {
     flex: 1 1 calc(25% - 9px) !important;
@@ -58,7 +73,15 @@
   .shop-card {
     flex: 1 1 calc(50% - 6px) !important;
     max-width: calc(50% - 6px) !important;
-    min-width: 200px !important;
+    min-width: 160px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .shop-card {
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
+    min-width: 280px !important;
   }
 }
 
@@ -77,6 +100,32 @@
 
 .shop-details {
   font-size: 0.75rem !important;
+}
+
+/* Mobile responsive typography */
+@media (max-width: 600px) {
+  .shop-name {
+    font-size: 0.85rem !important;
+    margin-bottom: 3px !important;
+  }
+  
+  .shop-details {
+    font-size: 0.7rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .shop-name {
+    font-size: 0.8rem !important;
+    margin-bottom: 2px !important;
+  }
+  
+  .shop-details {
+    font-size: 0.65rem !important;
+  }
+}
+
+.shop-details {
   color: #666 !important;
   margin-bottom: 2px !important;
   display: block !important;
@@ -88,7 +137,21 @@
   align-items: center !important;
   margin-top: auto !important;
   padding-top: 8px !important;
-  gap: 4px !important;
+}
+
+/* Mobile responsive actions */
+@media (max-width: 600px) {
+  .shop-actions {
+    padding-top: 6px !important;
+    gap: 4px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .shop-actions {
+    padding-top: 4px !important;
+    gap: 2px !important;
+  }
 }
 
 .shop-icon-button {
@@ -98,6 +161,27 @@
 
 .shop-go-button {
   font-size: 0.7rem !important;
-  padding: 4px 8px !important;
-  margin: 0 !important;
+}
+
+/* Mobile responsive buttons */
+@media (max-width: 600px) {
+  .shop-icon-button {
+    padding: 3px !important;
+  }
+  
+  .shop-go-button {
+    font-size: 0.65rem !important;
+    padding: 4px 8px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .shop-icon-button {
+    padding: 2px !important;
+  }
+  
+  .shop-go-button {
+    font-size: 0.6rem !important;
+    padding: 3px 6px !important;
+  }
 }
