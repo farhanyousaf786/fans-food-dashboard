@@ -81,7 +81,6 @@ const DeliveryUsers = ({ stadiumId = null, showAll = false }) => {
       )}
       {showAll && (
         <div className="delivery-users__header">
-          <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>All Delivery Personnel</Typography>
           <Chip color="primary" label={`Total: ${users.length}`} variant="filled" size="small" />
         </div>
       )}

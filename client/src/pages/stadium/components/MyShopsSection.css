@@ -1,0 +1,89 @@
+.shop-grid-container {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 12px !important;
+}
+
+.shop-card {
+  flex: 1 1 calc(16.666% - 10px) !important;
+  min-width: 200px !important;
+  max-width: calc(16.666% - 10px) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.shop-card-content {
+  padding: 16px !important;
+  margin: 0 !important;
+}
+
+@media (max-width: 1920px) {
+  .shop-card {
+    flex: 1 1 calc(20% - 10px) !important;
+    max-width: calc(20% - 10px) !important;
+  }
+}
+
+@media (max-width: 1280px) {
+  .shop-card {
+    flex: 1 1 calc(25% - 9px) !important;
+    max-width: calc(25% - 9px) !important;
+  }
+}
+
+@media (max-width: 960px) {
+  .shop-card {
+    flex: 1 1 calc(33.333% - 8px) !important;
+    max-width: calc(33.333% - 8px) !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .shop-card {
+    flex: 1 1 calc(50% - 6px) !important;
+    max-width: calc(50% - 6px) !important;
+    min-width: 150px !important;
+  }
+}
+
+.shop-grid-wrapper {
+  width: 100% !important;
+  margin: 0 -24px !important;
+  padding: 0 24px !important;
+  overflow-x: hidden !important;
+}
+
+.shop-name {
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  margin-bottom: 4px !important;
+}
+
+.shop-details {
+  font-size: 0.75rem !important;
+  color: #666 !important;
+  margin-bottom: 2px !important;
+  display: block !important;
+}
+
+.shop-actions {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-top: 8px !important;
+  gap: 4px !important;
+}
+
+.shop-icon-button {
+  padding: 4px !important;
+  margin: 0 !important;
+}
+
+.shop-go-button {
+  font-size: 0.7rem !important;
+  padding: 4px 8px !important;
+  margin: 0 !important;
+}

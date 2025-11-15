@@ -1,26 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth, db } from '../../../config/firebase';
-import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import {
-  Card,
-  CardContent,
-  Typography,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+import { db } from '../../../config/firebase';
+import { collection, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { 
+  Box, 
+  Typography, 
+  Card, 
+  CardContent, 
+  Button, 
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  DialogActions, 
   TextField,
-  FormControlLabel,
+  IconButton,
   Switch,
-  Tooltip,
-  Grid,
-  Button,
-  Box
+  FormControlLabel,
+  Tooltip
 } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Edit, Delete } from '@mui/icons-material';
 import Shop from '../../../models/Shop';
+import './MyShopsSection.css';
 
 const MyShopsSection = () => {
   const navigate = useNavigate();
@@ -30,6 +30,7 @@ const MyShopsSection = () => {
   const [editingShop, setEditingShop] = useState(null);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [shopToDelete, setShopToDelete] = useState(null);
+  const [expanded, setExpanded] = useState(true);
 
   useEffect(() => {
     const fetchShops = async () => {
@@ -140,10 +141,6 @@ const MyShopsSection = () => {
 
   return (
     <>
-      <div className="section-header">
-        <Typography variant="h5" sx={{ mt: 4, mb: 3 }}>All Shops</Typography>
-      </div>
-      
       {shops.length === 0 ? (
         <div className="empty-message">
           <Typography variant="h6">
@@ -151,17 +148,41 @@ const MyShopsSection = () => {
           </Typography>
         </div>
       ) : (
-        <div className="stadiums-grid">
+        <div className="shop-grid-wrapper">
+          <div className="shop-grid-container">
           {shops.map((shop) => (
             <Card 
-              className="stadium-card" 
               key={shop.id}
-              sx={{ '&:hover': { transform: 'scale(1.02)', transition: 'transform 0.2s' } }}
+              className="shop-card"
+              sx={{ 
+                height: '100%',
+                cursor: 'pointer', 
+                '&:hover': { boxShadow: 3, transform: 'scale(1.01)' },
+                transition: 'all 0.2s ease'
+              }}
             >
-              <CardContent className="stadium-content">
-                <div className="stadium-header">
-                  <Typography variant="h6" className="stadium-title">{shop.name}</Typography>
-                  <div className="stadium-actions">
+              <CardContent className="shop-card-content">
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1.5 }}>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography className="shop-name">
+                      {shop.name}
+                    </Typography>
+                    <Typography className="shop-details">
+                      🏟️ {shop.stadiumName}
+                    </Typography>
+                    <Typography className="shop-details">
+                      📍 {shop.location}
+                    </Typography>
+                    <Typography className="shop-details">
+                      🚪 Gate {shop.gate} • Floor {shop.floor}
+                    </Typography>
+                    {shop.description && (
+                      <Typography className="shop-details">
+                        {shop.description}
+                      </Typography>
+                    )}
+                  </Box>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, ml: 1 }}>
                     <Tooltip title={shop.shopAvailability ? 'Shop is Open' : 'Shop is Closed'}>
                       <FormControlLabel
                         onClick={(e) => e.stopPropagation()}
@@ -170,13 +191,25 @@ const MyShopsSection = () => {
                             checked={!!shop.shopAvailability}
                             onChange={(e) => handleToggleAvailability(shop, e)}
                             color="success"
+                            size="small"
                           />
                         }
                         label={shop.shopAvailability ? 'Open' : 'Closed'}
+                        sx={{ ml: 'auto' }}
+                        componentsProps={{
+                          typography: {
+                            variant: 'caption'
+                          }
+                        }}
                       />
                     </Tooltip>
+                  </Box>
+                </Box>
+                <Box className="shop-actions">
+                  <Box sx={{ display: 'flex', gap: 0.5 }}>
                     <IconButton
                       onClick={(e) => handleEditShop(shop, e)}
+                      className="shop-icon-button"
                       sx={{ 
                         color: '#3D70FF',
                         '&:hover': { 
@@ -185,10 +218,11 @@ const MyShopsSection = () => {
                       }}
                       size="small"
                     >
-                      <EditIcon />
+                      <Edit fontSize="small" />
                     </IconButton>
                     <IconButton
                       onClick={(e) => handleOpenDeleteDialog(shop, e)}
+                      className="shop-icon-button"
                       sx={{ 
                         color: '#dc004e',
                         '&:hover': { 
@@ -197,22 +231,14 @@ const MyShopsSection = () => {
                       }}
                       size="small"
                     >
-                      <DeleteIcon />
+                      <Delete fontSize="small" />
                     </IconButton>
-                  </div>
-                </div>
-                <div className="stadium-info">
-                  <Typography className="stadium-location"><span>🏟️</span>{shop.stadiumName}</Typography>
-                  <Typography className="stadium-location"><span>📍</span>{shop.location}</Typography>
-                  <Typography className="stadium-capacity"><span>🚪</span>Gate {shop.gate}, Floor {shop.floor}</Typography>
-                </div>
-                <Typography className="stadium-about">{shop.description}</Typography>
-                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                  </Box>
                   <Button 
                     variant="contained" 
                     size="small"
+                    className="shop-go-button"
                     onClick={() => navigate('/dashboard', { state: { shopData: shop } })}
-                    sx={{ fontSize: '0.75rem' }}
                   >
                     Go to Shop
                   </Button>
@@ -221,6 +247,7 @@ const MyShopsSection = () => {
             </Card>
           ))}
         </div>
+      </div>
       )}
 
       {/* Edit Shop Dialog */}
