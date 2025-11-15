@@ -30,14 +30,6 @@ import Autocomplete from '@mui/material/Autocomplete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import './StadiumSections.css';
 
-const cardSx = {
-  height: 260,
-  display: 'flex',
-  flexDirection: 'column',
-  width: '100%',
-  minWidth: 260,
-};
-
 const StadiumSections = ({ stadiumId, shops }) => {
   const [sections, setSections] = useState([]);
   const [addOpen, setAddOpen] = useState(false);
@@ -161,21 +153,18 @@ const StadiumSections = ({ stadiumId, shops }) => {
 
   return (
     <Box>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" className="section-header" sx={{ mb: 3, gap: 2 }}>
-        <Typography variant="h6">Stadium Structure</Typography>
-        <Button className="add-section-btn" variant="contained" onClick={() => setAddOpen(true)}>Add Section</Button>
-      </Stack>
+    
 
       {sections.length === 0 ? (
         <Typography color="text.secondary">No sections added yet.</Typography>
       ) : (
-        <Grid container spacing={2}>
+        <div className="stadium-grid-container">
           {sections.map((s) => (
-            <Grid item xs={12} md={6} lg={4} key={s.id} sx={{ display: 'flex' }}>
-              <Card sx={cardSx} className="section-card">
+            <div key={s.id} className="stadium-grid-item">
+              <Card className="section-card">
                 <CardContent className="section-card__content">
                   <Stack direction="row" alignItems="center" justifyContent="space-between" className="section-card__header">
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <Typography variant="subtitle1" className="section-title">
                       {s.sectionName || 'Unnamed section'}
                     </Typography>
                     <Stack direction="row" alignItems="center" spacing={1}>
@@ -199,7 +188,7 @@ const StadiumSections = ({ stadiumId, shops }) => {
                   </Typography>
                   <Divider sx={{ my: 1 }} />
                   <Typography variant="body2" className="section-card__shops-title">Shops</Typography>
-                  <Box className="section-card__shops" sx={{ flexGrow: 1 }}>
+                  <Box className="section-card__shops section-shops-grow">
                     {Array.isArray(s.shops) && s.shops.length > 0 ? (
                       <Stack direction="row" flexWrap="wrap" gap={1}>
                         {s.shops.map((shopId) => {
@@ -228,9 +217,9 @@ const StadiumSections = ({ stadiumId, shops }) => {
                   </Stack>
                 </CardContent>
               </Card>
-            </Grid>
+            </div>
           ))}
-        </Grid>
+        </div>
       )}
 
       {/* Add Dialog */}
@@ -238,7 +227,7 @@ const StadiumSections = ({ stadiumId, shops }) => {
         <DialogTitle>Add Stadium Section</DialogTitle>
         <DialogContent>
           <TextField autoFocus margin="dense" label="Section Name" fullWidth value={form.sectionName} onChange={(e) => setForm({ ...form, sectionName: e.target.value })} />
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 1 }}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} className="form-stack">
             <TextField margin="dense" label="Section No" type="number" fullWidth value={form.sectionNo} onChange={(e) => setForm({ ...form, sectionNo: e.target.value })} />
             <TextField margin="dense" label="Rows" type="number" fullWidth value={form.rows} onChange={(e) => setForm({ ...form, rows: e.target.value })} />
             <TextField margin="dense" label="Columns" type="number" fullWidth value={form.column} onChange={(e) => setForm({ ...form, column: e.target.value })} />
@@ -299,7 +288,7 @@ const StadiumSections = ({ stadiumId, shops }) => {
         <DialogTitle>Edit Stadium Section</DialogTitle>
         <DialogContent>
           <TextField autoFocus margin="dense" label="Section Name" fullWidth value={form.sectionName} onChange={(e) => setForm({ ...form, sectionName: e.target.value })} />
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 1 }}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} className="form-stack">
             <TextField margin="dense" label="Section No" type="number" fullWidth value={form.sectionNo} onChange={(e) => setForm({ ...form, sectionNo: e.target.value })} />
             <TextField margin="dense" label="Rows" type="number" fullWidth value={form.rows} onChange={(e) => setForm({ ...form, rows: e.target.value })} />
             <TextField margin="dense" label="Columns" type="number" fullWidth value={form.column} onChange={(e) => setForm({ ...form, column: e.target.value })} />
