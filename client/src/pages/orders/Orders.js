@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Typography, Menu, MenuItem, CircularProgress, Grid, Container, ButtonGroup, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Select, FormControl, InputLabel } from '@mui/material';
+import { Box, Typography, Menu, MenuItem, CircularProgress, Grid, Container, ButtonGroup, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Select, FormControl, InputLabel, FormControlLabel, Checkbox } from '@mui/material';
 import { AccessTime, LocalDining, LocalShipping, Delete, GetApp, DateRange } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers';
@@ -31,11 +31,13 @@ const Orders = () => {
   const [allShops, setAllShops] = useState([]);
   const [selectedShopFilter, setSelectedShopFilter] = useState('all');
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [availableDates, setAvailableDates] = useState([]);
+  const [selectedDates, setSelectedDates] = useState([]);
+  const [dateFilterDialogOpen, setDateFilterDialogOpen] = useState(false);
   const [dateRange, setDateRange] = useState({
     startDate: null,
     endDate: null
   });
-  const [dateFilterDialogOpen, setDateFilterDialogOpen] = useState(false);
   const [selectedDateRange, setSelectedDateRange] = useState({
     startDate: new Date(new Date().setHours(0, 0, 0, 0)), // Today at midnight
     endDate: new Date(new Date().setHours(23, 59, 59, 999)) // Today at end of day
@@ -139,130 +141,192 @@ const Orders = () => {
       handleMenuClose();
     } catch (e) {
       console.error('Error deleting order:', e);
-    } finally {
+    } finally {currentShopData
       setDeleting(false);
     }
   };
 
   const handleExportClick = () => {
+    // Get unique dates from orders
+    const uniqueDates = [...new Set(
+      orders
+        .filter(order => order.createdAt)
+        .map(order => new Date(order.createdAt).toLocaleDateString())
+    )].sort((a, b) => new Date(a) - new Date(b));
+    
+    setAvailableDates(uniqueDates);
+    setSelectedDates(uniqueDates); // Select all dates by default
     setExportDialogOpen(true);
   };
 
   const handleExportClose = () => {
     setExportDialogOpen(false);
-    setDateRange({ startDate: null, endDate: null });
+    setAvailableDates([]);
+    setSelectedDates([]);
   };
 
   const exportToExcel = () => {
-    // Prepare data for Excel
-    const excelData = [];
-    
-    // Filter orders by date range if dates are selected
+    // Filter orders by selected dates
     const filteredOrders = orders.filter(order => {
-      if (!dateRange.startDate && !dateRange.endDate) return true;
-      
-      const orderDate = order.createdAt ? new Date(order.createdAt) : null;
-      if (!orderDate) return false;
-      
-      const startOfDay = dateRange.startDate ? new Date(dateRange.startDate.setHours(0, 0, 0, 0)) : null;
-      const endOfDay = dateRange.endDate ? new Date(dateRange.endDate.setHours(23, 59, 59, 999)) : null;
-      
-      const afterStart = !startOfDay || orderDate >= startOfDay;
-      const beforeEnd = !endOfDay || orderDate <= endOfDay;
-      
-      return afterStart && beforeEnd;
+      if (!order.createdAt) return false;
+      const orderDate = new Date(order.createdAt).toLocaleDateString();
+      return selectedDates.includes(orderDate);
     });
     
     if (filteredOrders.length === 0) {
-      alert('No orders found in the selected date range.');
-      setExportDialogOpen(false);
+      alert('No orders found for the selected dates.');
       return;
     }
 
-    filteredOrders.forEach(order => {
-      // Calculate Stripe fee (2.9% + $0.30)
-      const total = order.total || 0;
-      const stripeFee = (total * 0.029) + 0.30;
-      const totalAfterStripeFee = total - stripeFee;
-      
-      // Revenue split before Stripe fee allocation
-      const tipAmount = order.tipAmount || 0;
-      const deliveryFee = order.deliveryFee || 0;
-      const fanMunchGrossRevenue = tipAmount + deliveryFee;
-      const vendorGrossRevenue = total - fanMunchGrossRevenue;
-      
-      // Calculate percentage split for Stripe fee allocation
-      const fanMunchPercentage = total > 0 ? fanMunchGrossRevenue / total : 0;
-      const vendorPercentage = total > 0 ? vendorGrossRevenue / total : 0;
-      
-      // Allocate Stripe fee proportionally
-      const fanMunchStripeFee = stripeFee * fanMunchPercentage;
-      const vendorStripeFee = stripeFee * vendorPercentage;
-      
-      // Final revenue after Stripe fee allocation
-      const fanMunchRevenue = fanMunchGrossRevenue - fanMunchStripeFee;
-      const vendorRevenue = vendorGrossRevenue - vendorStripeFee;
-      
-      // Create order data with all items combined
-      const orderData = {
-        [t('orders.export.orderId')]: order.orderId || order.id,
-        [t('orders.export.userName')]: order.userInfo?.userName || t('common.unknownUser'),
-        [t('common.date')]: order.createdAt ? new Date(order.createdAt).toLocaleDateString(i18n.language) : t('common.unknownDate'),
-        [t('orders.export.totalAmount')]: `₪${total.toFixed(2)}`,
-        [t('orders.export.totalStripeFee')]: `₪${stripeFee.toFixed(2)}`,
-        [t('orders.export.fanMunchStripeFee')]: `₪${fanMunchStripeFee.toFixed(2)}`,
-        [t('orders.export.vendorStripeFee')]: `₪${vendorStripeFee.toFixed(2)}`,
-        [t('orders.export.totalAfterStripe')]: `₪${totalAfterStripeFee.toFixed(2)}`,
-        [t('orders.export.subtotal')]: `₪${order.subtotal || 0}`,
-        [t('orders.export.deliveryFee')]: `₪${deliveryFee.toFixed(2)}`,
-        [t('orders.export.tipAmount')]: `₪${tipAmount.toFixed(2)}`,
-        [t('orders.export.fanMunchGross')]: `₪${fanMunchGrossRevenue.toFixed(2)}`,
-        [t('orders.export.fanMunchPercent')]: `${(fanMunchPercentage * 100).toFixed(1)}%`,
-        [t('orders.export.fanMunchNet')]: `₪${fanMunchRevenue.toFixed(2)}`,
-        [t('orders.export.vendorGross')]: `₪${vendorGrossRevenue.toFixed(2)}`,
-        [t('orders.export.vendorPercent')]: `${(vendorPercentage * 100).toFixed(1)}%`,
-        [t('orders.export.vendorNet')]: `₪${vendorRevenue.toFixed(2)}`,
-        [t('common.status')]: t(`orderStatus.${order.status}`),
-        [t('orders.export.seatInfo')]: order.seatInfo ? 
-          `${t('orders.export.section')} ${order.seatInfo.section || ''}, ${t('orders.export.row')} ${order.seatInfo.row || ''}, ${t('orders.export.seat')} ${order.seatInfo.seatNo || ''}`.trim() 
-          : t('orders.export.noSeatInfo'),
-      };
+    // Sort orders by date
+    const sortedOrders = filteredOrders.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    
+    // Group orders by date
+    const ordersByDate = {};
+    sortedOrders.forEach(order => {
+      const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'Unknown Date';
+      if (!ordersByDate[date]) {
+        ordersByDate[date] = [];
+      }
+      ordersByDate[date].push(order);
+    });
 
-      // Add items information
-      if (order.cart && order.cart.length > 0) {
-        // Format items as 'name: qty, name: qty'
-        const itemsList = order.cart.map(item => {
-          const name = item.name || 'Unknown Item';
-          const qty = item.quantity || 1;
-          return `${name}: ${qty}`;
-        }).join(', ');
-        
-        // Calculate total quantity
-        const totalQuantity = order.cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-        
-        orderData['Items'] = itemsList;
-        orderData['Total Items'] = totalQuantity;
-      } else {
-        orderData['Items'] = 'No items';
-        orderData['Total Items'] = 0;
+    // Prepare data for Excel with date grouping
+    const excelData = [];
+    let rowNumber = 1;
+
+    Object.keys(ordersByDate).forEach(date => {
+      // Add 2 blank rows before each date group (except first)
+      if (Object.keys(ordersByDate).indexOf(date) > 0) {
+        excelData.push({});
+        excelData.push({});
       }
       
-      excelData.push(orderData);
+      // Calculate daily totals
+      const dayOrders = ordersByDate[date];
+      const dayTotal = dayOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+      const daySubtotal = dayOrders.reduce((sum, order) => sum + (order.subtotal || 0), 0);
+      const dayDeliveryFee = dayOrders.reduce((sum, order) => sum + (order.deliveryFee || 0), 0);
+      const dayTipGross = dayOrders.reduce((sum, order) => sum + (order.tipAmount || 0), 0);
+      const dayStripeFee = dayOrders.reduce((sum, order) => sum + ((order.total || 0) * 0.029 + 0.30), 0);
+      const dayFanMunchGross = dayTipGross + dayDeliveryFee;
+      const dayVendorGross = dayTotal - dayFanMunchGross;
+      const dayFanMunchStripeFee = dayStripeFee * (dayTotal > 0 ? dayFanMunchGross / dayTotal : 0);
+      const dayVendorStripeFee = dayStripeFee - dayFanMunchStripeFee;
+      const dayFanMunchNet = dayFanMunchGross - dayFanMunchStripeFee;
+      const dayVendorNet = dayVendorGross - dayVendorStripeFee;
+      const dayTotalPayout = dayTotal - dayStripeFee;
+      
+      // Add date header row with daily totals
+      excelData.push({
+        'Date': `${date} - Daily Totals (${dayOrders.length} orders)`,
+        'Order ID': '',
+        'User Name': '',
+        'Seat Info': '',
+        'Items': '',
+        'Total Items': '',
+        'Customer Total Payment': `₪${dayTotal.toFixed(2)}`,
+        'Order Subtotal': `₪${daySubtotal.toFixed(2)}`,
+        'Delivery Fee': `₪${dayDeliveryFee.toFixed(2)}`,
+        'Tip Gross': `₪${dayTipGross.toFixed(2)}`,
+        'Total Stripe Fee': `₪${dayStripeFee.toFixed(2)}`,
+        'FanMunch Stripe Fee': `₪${dayFanMunchStripeFee.toFixed(2)}`,
+        'Vendor Stripe Fee': `₪${dayVendorStripeFee.toFixed(2)}`,
+        'Total Payout': `₪${dayTotalPayout.toFixed(2)}`,
+        'FanMunch Gross Revenue': `₪${dayFanMunchGross.toFixed(2)}`,
+        'FanMunch Net Revenue': `₪${dayFanMunchNet.toFixed(2)}`,
+        'Vendor Gross Revenue': `₪${dayVendorGross.toFixed(2)}`,
+        'Vendor Net Revenue': `₪${dayVendorNet.toFixed(2)}`,
+        'Row #': ''
+      });
+      rowNumber++;
+
+      // Add orders for this date
+      ordersByDate[date].forEach(order => {
+        // Calculate Stripe fee (2.9% + $0.30)
+        const total = order.total || 0;
+        const stripeFee = (total * 0.029) + 0.30;
+        const totalAfterStripeFee = total - stripeFee;
+        
+        // Revenue split before Stripe fee allocation
+        const tipAmount = order.tipAmount || 0;
+        const deliveryFee = order.deliveryFee || 0;
+        const fanMunchGrossRevenue = tipAmount + deliveryFee;
+        const vendorGrossRevenue = total - fanMunchGrossRevenue;
+        
+        // Calculate percentage split for Stripe fee allocation
+        const fanMunchPercentage = total > 0 ? fanMunchGrossRevenue / total : 0;
+        const vendorPercentage = total > 0 ? vendorGrossRevenue / total : 0;
+        
+        // Allocate Stripe fee proportionally
+        const fanMunchStripeFee = stripeFee * fanMunchPercentage;
+        const vendorStripeFee = stripeFee * vendorPercentage;
+        
+        // Final revenue after Stripe fee allocation
+        const fanMunchRevenue = fanMunchGrossRevenue - fanMunchStripeFee;
+        const vendorRevenue = vendorGrossRevenue - vendorStripeFee;
+        
+        // Format items list
+        let itemsList = '';
+        let totalQuantity = 0;
+        if (order.cart && order.cart.length > 0) {
+          itemsList = order.cart.map(item => {
+            const name = item.name || 'Unknown Item';
+            const qty = item.quantity || 1;
+            totalQuantity += qty;
+            return `${name}: ${qty}`;
+          }).join(', ');
+        } else {
+          itemsList = 'No items';
+        }
+        
+        // Format seat info
+        const seatInfo = order.seatInfo ? 
+          `Section ${order.seatInfo.section || ''}, Row ${order.seatInfo.row || ''}, Seat ${order.seatInfo.seatNo || ''}`.trim() 
+          : 'No seat info';
+
+        // Create order row with exact column order
+        const orderData = {
+          'Date': order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '',
+          'Order ID': order.orderId || order.id || '',
+          'User Name': order.userInfo?.userName || 'Unknown User',
+          'Seat Info': seatInfo,
+          'Items': itemsList,
+          'Total Items': totalQuantity,
+          'Customer Total Payment': `₪${total.toFixed(2)}`,
+          'Order Subtotal': `₪${(order.subtotal || 0).toFixed(2)}`,
+          'Delivery Fee': `₪${deliveryFee.toFixed(2)}`,
+          'Tip Gross': `₪${tipAmount.toFixed(2)}`,
+          'Total Stripe Fee': `₪${stripeFee.toFixed(2)}`,
+          'FanMunch Stripe Fee': `₪${fanMunchStripeFee.toFixed(2)}`,
+          'Vendor Stripe Fee': `₪${vendorStripeFee.toFixed(2)}`,
+          'Total Payout': `₪${totalAfterStripeFee.toFixed(2)}`,
+          'FanMunch Gross Revenue': `₪${fanMunchGrossRevenue.toFixed(2)}`,
+          'FanMunch Net Revenue': `₪${fanMunchRevenue.toFixed(2)}`,
+          'Vendor Gross Revenue': `₪${vendorGrossRevenue.toFixed(2)}`,
+          'Vendor Net Revenue': `₪${vendorRevenue.toFixed(2)}`,
+          'Row #': rowNumber
+        };
+        
+        excelData.push(orderData);
+        rowNumber++;
+      });
     });
 
     // Create workbook and worksheet
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(excelData);
     
-    // Add worksheet to workbook with translated title
-    XLSX.utils.book_append_sheet(wb, ws, t('orders.title'));
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Orders Report');
     
     // Generate filename with current date
     const today = new Date().toISOString().split('T')[0];
-    const filename = `${t('orders.export.filename')}_${today}.xlsx`;
+    const filename = `orders_report_${today}.xlsx`;
     
     // Save file
     XLSX.writeFile(wb, filename);
+    setExportDialogOpen(false);
   };
 
   const openDialog = (order) => {
@@ -548,42 +612,86 @@ const Orders = () => {
         </Dialog>
 
         {/* Export Dialog */}
-        <Dialog open={exportDialogOpen} onClose={handleExportClose}>
-          <DialogTitle>Export Orders</DialogTitle>
+        <Dialog open={exportDialogOpen} onClose={handleExportClose} maxWidth="sm" fullWidth>
+          <DialogTitle>Export Orders - Select Game Dates</DialogTitle>
           <DialogContent>
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 300, mt: 2 }}>
-                <DatePicker
-                  label="Start Date"
-                  value={dateRange.startDate}
-                  onChange={(newValue) => setDateRange(prev => ({ ...prev, startDate: newValue }))}
-                  slotProps={{ textField: { fullWidth: true } }}
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Select the dates that have games/orders to export:
+            </Typography>
+            
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, maxHeight: 300, overflowY: 'auto' }}>
+              {availableDates.map((date, index) => (
+                <FormControlLabel
+                  key={date}
+                  control={
+                    <Checkbox
+                      checked={selectedDates.includes(date)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedDates(prev => [...prev, date]);
+                        } else {
+                          setSelectedDates(prev => prev.filter(d => d !== date));
+                        }
+                      }}
+                    />
+                  }
+                  label={
+                    <Box>
+                      <Typography variant="body2" fontWeight="500">
+                        {date}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {orders.filter(order => 
+                          order.createdAt && 
+                          new Date(order.createdAt).toLocaleDateString() === date
+                        ).length} orders
+                      </Typography>
+                    </Box>
+                  }
+                  sx={{ 
+                    ml: 0,
+                    pl: 1,
+                    py: 0.5,
+                    borderRadius: 1,
+                    '&:hover': { bgcolor: 'action.hover' }
+                  }}
                 />
-                <DatePicker
-                  label="End Date"
-                  value={dateRange.endDate}
-                  onChange={(newValue) => setDateRange(prev => ({ ...prev, endDate: newValue }))}
-                  minDate={dateRange.startDate}
-                  slotProps={{ textField: { fullWidth: true } }}
-                />
-                <Typography variant="caption" color="textSecondary">
-                  Leave dates empty to export all orders
-                </Typography>
-              </Box>
-            </LocalizationProvider>
+              ))}
+            </Box>
+            
+            {availableDates.length === 0 && (
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
+                No orders found to export
+              </Typography>
+            )}
           </DialogContent>
-          <DialogActions>
-            <Button onClick={handleExportClose}>Cancel</Button>
+          <DialogActions sx={{ display: 'flex', justifyContent: 'space-between', px: 3, pb: 2 }}>
             <Button 
               onClick={() => {
-                exportToExcel();
-                handleExportClose();
-              }} 
-              variant="contained"
-              color="primary"
+                if (availableDates.length > 0) {
+                  setSelectedDates(availableDates); // Select all
+                }
+              }}
+              size="small"
             >
-              Export
+              Select All
             </Button>
+            <Box>
+              <Button onClick={handleExportClose} sx={{ mr: 1 }}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => {
+                  exportToExcel();
+                  handleExportClose();
+                }} 
+                variant="contained"
+                color="primary"
+                disabled={selectedDates.length === 0}
+              >
+                Export ({selectedDates.length} {selectedDates.length === 1 ? 'date' : 'dates'})
+              </Button>
+            </Box>
           </DialogActions>
         </Dialog>
       </Box>

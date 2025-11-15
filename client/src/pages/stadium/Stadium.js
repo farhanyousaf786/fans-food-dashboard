@@ -4,6 +4,7 @@ import { db } from '../../config/firebase';
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { Box, Typography, Card, CardContent, CardMedia, Grid, Chip, Button, Divider, Stack } from '@mui/material';
 import StadiumSections from './components/StadiumSections';
+import MyShopsSection from './components/MyShopsSection';
 import DeliveryUsers from '../admin/components/DeliveryUsers';
 
 const Stadium = () => {
@@ -61,42 +62,18 @@ const Stadium = () => {
         <Button variant="contained" onClick={() => navigate(-1)}>Back</Button>
       </Stack>
 
-      <Grid container spacing={3}>
+{/* My Shops Section */}
         <Grid item xs={12}>
-          <Card sx={{ borderRadius: 2 }}>
-            <CardContent>
-              <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-                <Typography variant="h6">Shops in this Stadium</Typography>
-                <Chip color="primary" label={`Total: ${shops.length}`} />
-              </Stack>
-              {shops.length === 0 ? (
-                <Typography color="text.secondary">No shops yet in this stadium.</Typography>
-              ) : (
-                <Grid container spacing={2}>
-                  {shops.map((shop) => (
-                    <Grid item xs={12} sm={6} key={shop.id}>
-                      <Card sx={{ height: '100%', cursor: 'pointer', '&:hover': { boxShadow: 6 } }} onClick={() => navigate('/dashboard', { state: { shopData: shop } })}>
-                        <CardContent>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{shop.name}</Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>📍 {shop.location}</Typography>
-                          <Typography variant="body2" color="text.secondary">🚪 Gate {shop.gate} • Floor {shop.floor}</Typography>
-                          {shop.description && (
-                            <Typography variant="body2" sx={{ mt: 1 }}>{shop.description}</Typography>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
-              )}
-            </CardContent>
-          </Card>
+          <MyShopsSection />
         </Grid>
-
+      <Grid container spacing={3}>
+        
         {/* Stadium Structure Section extracted into component */}
         <Grid item xs={12}>
           <StadiumSections stadiumId={id} shops={shops} />
         </Grid>
+
+        
 
         {/* Delivery Users Section */}
         <Grid item xs={12}>
