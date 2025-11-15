@@ -14,9 +14,9 @@ const Stadium = () => {
   const [stadium, setStadium] = useState(null);
   const [shops, setShops] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [shopsExpanded, setShopsExpanded] = useState(false);
-  const [stadiumExpanded, setStadiumExpanded] = useState(false);
-  const [deliveryExpanded, setDeliveryExpanded] = useState(false);
+  const [shopsExpanded, setShopsExpanded] = useState(true);
+  const [stadiumExpanded, setStadiumExpanded] = useState(true);
+  const [deliveryExpanded, setDeliveryExpanded] = useState(true);
   const shopsRef = collection(db, 'shops');
 
   useEffect(() => {
@@ -86,13 +86,31 @@ const Stadium = () => {
                   sx={{ 
                     bgcolor: 'primary.main',
                     color: 'white',
-                    '&:hover': { bgcolor: 'primary.dark' }
+                    width: 36,
+                    height: 36,
+                    borderRadius: '50%',
+                    boxShadow: '0 2px 8px rgba(25, 118, 210, 0.3)',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': { 
+                      bgcolor: 'primary.dark',
+                      transform: 'scale(1.1)',
+                      boxShadow: '0 4px 12px rgba(25, 118, 210, 0.4)'
+                    },
+                    '&:active': {
+                      transform: 'scale(0.95)',
+                      boxShadow: '0 2px 6px rgba(25, 118, 210, 0.3)'
+                    }
                   }}
                 >
-                  {shopsExpanded ? <ExpandLess /> : <ExpandMore />}
+                  <Box sx={{ 
+                    transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transform: shopsExpanded ? 'rotate(180deg)' : 'rotate(0deg)'
+                  }}>
+                    {shopsExpanded ? <ExpandLess /> : <ExpandMore />}
+                  </Box>
                 </IconButton>
               </Box>
-              <Collapse in={shopsExpanded} timeout="auto" unmountOnExit>
+              <Collapse in={shopsExpanded} timeout={300} unmountOnExit>
                 <Box sx={{ mt: 2, mx: -3, px: 3 }}>
                   <MyShopsSection />
                 </Box>
@@ -125,13 +143,31 @@ const Stadium = () => {
                   sx={{ 
                     bgcolor: 'primary.main',
                     color: 'white',
-                    '&:hover': { bgcolor: 'primary.dark' }
+                    width: 36,
+                    height: 36,
+                    borderRadius: '50%',
+                    boxShadow: '0 2px 8px rgba(25, 118, 210, 0.3)',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': { 
+                      bgcolor: 'primary.dark',
+                      transform: 'scale(1.1)',
+                      boxShadow: '0 4px 12px rgba(25, 118, 210, 0.4)'
+                    },
+                    '&:active': {
+                      transform: 'scale(0.95)',
+                      boxShadow: '0 2px 6px rgba(25, 118, 210, 0.3)'
+                    }
                   }}
                 >
-                  {stadiumExpanded ? <ExpandLess /> : <ExpandMore />}
+                  <Box sx={{ 
+                    transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transform: stadiumExpanded ? 'rotate(180deg)' : 'rotate(0deg)'
+                  }}>
+                    {stadiumExpanded ? <ExpandLess /> : <ExpandMore />}
+                  </Box>
                 </IconButton>
               </Box>
-              <Collapse in={stadiumExpanded} timeout="auto" unmountOnExit>
+              <Collapse in={stadiumExpanded} timeout={300} unmountOnExit>
                 <Box sx={{ mt: 2 }}>
                   <StadiumSections stadiumId={id} shops={shops} />
                 </Box>
@@ -164,13 +200,31 @@ const Stadium = () => {
                   sx={{ 
                     bgcolor: 'primary.main',
                     color: 'white',
-                    '&:hover': { bgcolor: 'primary.dark' }
+                    width: 36,
+                    height: 36,
+                    borderRadius: '50%',
+                    boxShadow: '0 2px 8px rgba(25, 118, 210, 0.3)',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': { 
+                      bgcolor: 'primary.dark',
+                      transform: 'scale(1.1)',
+                      boxShadow: '0 4px 12px rgba(25, 118, 210, 0.4)'
+                    },
+                    '&:active': {
+                      transform: 'scale(0.95)',
+                      boxShadow: '0 2px 6px rgba(25, 118, 210, 0.3)'
+                    }
                   }}
                 >
-                  {deliveryExpanded ? <ExpandLess /> : <ExpandMore />}
+                  <Box sx={{ 
+                    transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transform: deliveryExpanded ? 'rotate(180deg)' : 'rotate(0deg)'
+                  }}>
+                    {deliveryExpanded ? <ExpandLess /> : <ExpandMore />}
+                  </Box>
                 </IconButton>
               </Box>
-              <Collapse in={deliveryExpanded} timeout="auto" unmountOnExit>
+              <Collapse in={deliveryExpanded} timeout={300} unmountOnExit>
                 <Box sx={{ mt: 2 }}>
                   <Card sx={{ borderRadius: 2, bgcolor: 'white' }}>
                     <CardContent>
