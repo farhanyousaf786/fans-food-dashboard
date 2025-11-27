@@ -83,8 +83,6 @@ class Order {
         order.updatedAt = updatedAt;
         // Ensure tipAmount is parsed as float with 2 decimal places
         order.tipAmount = parseFloat((data.tipAmount || 0).toFixed(2));
-        // Add deliveryUserId if it exists in the data
-        order.deliveryUserId = data.deliveryUserId || data.deliveryUserID || null;
         return order;
     }
 

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth, db, storage } from '../../config/firebase';
+import { auth, db } from '../../config/firebase';
 import { signOut } from 'firebase/auth';
 import { collection, getDocs, addDoc, doc, updateDoc, getDoc, deleteDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
   Card,
   CardContent,
@@ -119,15 +118,6 @@ const ShopPanel = () => {
   const handleCreateShop = async () => {
     try {
       const stadiumName = stadiums.find(s => s.id === selectedStadiumId)?.name;
-      let imageUrl = null;
-
-      // Upload image if provided
-      if (newShop.imageFile) {
-        const imageRef = ref(storage, `shops/${Date.now()}_${newShop.imageFile.name}`);
-        await uploadBytes(imageRef, newShop.imageFile);
-        imageUrl = await getDownloadURL(imageRef);
-        console.log('✅ Image uploaded successfully:', imageUrl);
-      }
 
       // Create new Shop instance
       const shop = new Shop(
@@ -145,11 +135,7 @@ const ShopPanel = () => {
 
       // First create shop in root collection
       const shopsRootCollection = collection(db, 'shops');
-      const shopData = shop.toFirestore();
-      if (imageUrl) {
-        shopData.imageUrl = imageUrl;
-      }
-      const shopDocRef = await addDoc(shopsRootCollection, shopData);
+      const shopDocRef = await addDoc(shopsRootCollection, shop.toFirestore());
 
       // Update the shop instance and document with its own ID
       shop.docId = shopDocRef.id;
@@ -257,16 +243,6 @@ const ShopPanel = () => {
 
     try {
       console.log('✏️ SHOP PANEL: Updating shop:', editingShop.id);
-      
-      let imageUrl = editingShop.imageUrl || null;
-
-      // Upload new image if provided
-      if (newShop.imageFile) {
-        const imageRef = ref(storage, `shops/${Date.now()}_${newShop.imageFile.name}`);
-        await uploadBytes(imageRef, newShop.imageFile);
-        imageUrl = await getDownloadURL(imageRef);
-        console.log('✅ Image uploaded successfully:', imageUrl);
-      }
 
       const shopRef = doc(db, 'shops', editingShop.id);
       const updatedShopData = {
@@ -279,10 +255,6 @@ const ShopPanel = () => {
         longitude: newShop.longitude ? parseFloat(newShop.longitude) : null,
         updatedAt: new Date()
       };
-
-      if (imageUrl) {
-        updatedShopData.imageUrl = imageUrl;
-      }
 
       await updateDoc(shopRef, updatedShopData);
 

@@ -103,7 +103,6 @@ const Orders = () => {
           deliveryUsersMap[doc.id] = { id: doc.id, ...doc.data() };
         });
         setDeliveryUsers(deliveryUsersMap);
-        console.log('🔍 Sample Delivery User Data:', deliveryUsersMap[Object.keys(deliveryUsersMap)[0]]);
         console.log('✅ Fetched delivery users:', Object.keys(deliveryUsersMap).length);
       } catch (error) {
         console.error('Error fetching delivery users:', error);

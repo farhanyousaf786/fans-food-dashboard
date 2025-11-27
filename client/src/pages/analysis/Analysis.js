@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Container, 
-  Paper, 
-  Grid, 
-  FormControl, 
-  InputLabel, 
-  Select, 
-  MenuItem, 
-  Card, 
+import {
+  Box,
+  Typography,
+  Container,
+  Paper,
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Card,
   CardContent,
   TextField,
   Divider,
@@ -20,7 +20,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../../config/firebase';
+import { db, auth } from '../../config/firebase';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const Analysis = () => {
@@ -32,26 +32,46 @@ const Analysis = () => {
   const [endDate, setEndDate] = useState(null);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+  const [shopsLoaded, setShopsLoaded] = useState(false);
+
   // Animation state
   const [fadeIn, setFadeIn] = useState(false);
 
   useEffect(() => {
     fetchShops();
-    fetchOrders();
-  }, [selectedShop, startDate, endDate]);
+  }, []);
+
+  useEffect(() => {
+    if (shopsLoaded) {
+      fetchOrders();
+    }
+  }, [selectedShop, startDate, endDate, shopsLoaded]);
 
   const fetchShops = async () => {
     try {
+      const userString = localStorage.getItem('user');
+      const user = userString ? JSON.parse(userString) : null;
+      const currentUserId = auth.currentUser?.uid || user?.id;
+
       const shopsRef = collection(db, 'shops');
       const snapshot = await getDocs(shopsRef);
-      const shopsList = snapshot.docs.map(doc => ({
+      let shopsList = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
+
+      // Filter shops for shop owners
+      if (user && user.role === 'shopowner') {
+        shopsList = shopsList.filter(shop =>
+          shop.admins && shop.admins.includes(currentUserId)
+        );
+      }
+
       setShops(shopsList);
+      setShopsLoaded(true);
     } catch (error) {
       console.error('Error fetching shops:', error);
+      setShopsLoaded(true);
     }
   };
 
@@ -59,19 +79,19 @@ const Analysis = () => {
     try {
       setLoading(true);
       let ordersQuery = collection(db, 'orders');
-      
+
       // Apply shop filter
       if (selectedShop !== 'all') {
         ordersQuery = query(ordersQuery, where('shopId', '==', selectedShop));
       }
-      
+
       // Apply date range filter
       if (startDate && endDate) {
         const start = new Date(startDate);
         const end = new Date(endDate);
         start.setHours(0, 0, 0, 0);
         end.setHours(23, 59, 59, 999);
-        
+
         ordersQuery = query(
           ordersQuery,
           where('createdAt', '>=', start),
@@ -80,11 +100,16 @@ const Analysis = () => {
       }
 
       const snapshot = await getDocs(ordersQuery);
-      const ordersList = snapshot.docs.map(doc => ({
+      let ordersList = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
-      
+
+      // Security: Filter orders to only include those from accessible shops
+      // This is crucial when selectedShop is 'all'
+      const accessibleShopIds = shops.map(s => s.id);
+      ordersList = ordersList.filter(order => accessibleShopIds.includes(order.shopId));
+
       setOrders(ordersList);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -110,14 +135,11 @@ const Analysis = () => {
       dailyData[date].revenue += order.total || 0;
       dailyData[date].orders += 1;
     });
-    
+
     return Object.values(dailyData).sort((a, b) => new Date(a.date) - new Date(b.date));
   };
 
   const chartData = prepareChartData();
-
-  // Filter orders for the chart data
-  const filteredOrders = orders;
 
   useEffect(() => {
     // Trigger fade in animation
@@ -125,16 +147,16 @@ const Analysis = () => {
   }, []);
 
   return (
-    <Container maxWidth="xl" sx={{ 
+    <Container maxWidth="xl" sx={{
       opacity: fadeIn ? 1 : 0,
       transition: 'opacity 0.5s ease-in-out',
       py: 4
     }}>
       <Box sx={{ mb: 4 }}>
-        <Typography 
-          variant="h4" 
-          gutterBottom 
-          sx={{ 
+        <Typography
+          variant="h4"
+          gutterBottom
+          sx={{
             fontWeight: 600,
             color: theme.palette.primary.main,
             textShadow: '1px 1px 2px rgba(0,0,0,0.1)'
@@ -143,12 +165,12 @@ const Analysis = () => {
           Sales Analytics
         </Typography>
         <Divider sx={{ mb: 3 }} />
-        
+
         {/* Filters */}
-        <Paper 
-          elevation={2} 
-          sx={{ 
-            p: isMobile ? 2 : 3, 
+        <Paper
+          elevation={2}
+          sx={{
+            p: isMobile ? 2 : 3,
             mb: 4,
             borderRadius: 2,
             background: theme.palette.background.paper,
@@ -194,15 +216,15 @@ const Analysis = () => {
                 />
               </LocalizationProvider>
             </Grid>
-           
+
           </Grid>
         </Paper>
 
         {/* Summary Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={12} md={4}>
-            <Card 
-              sx={{ 
+            <Card
+              sx={{
                 height: '100%',
                 transition: 'transform 0.3s, box-shadow 0.3s',
                 '&:hover': {
@@ -213,11 +235,11 @@ const Analysis = () => {
             >
               <CardContent>
                 <Box display="flex" alignItems="center" mb={1}>
-                  <Box 
-                    sx={{ 
-                      width: 40, 
-                      height: 40, 
-                      borderRadius: '50%', 
+                  <Box
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: '50%',
                       background: 'rgba(61, 112, 255, 0.1)',
                       display: 'flex',
                       alignItems: 'center',
@@ -232,7 +254,7 @@ const Analysis = () => {
                       Total Revenue
                     </Typography>
                     <Typography variant="h5" fontWeight={600}>
-                      ₪{totalRevenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                      ₪{totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Typography>
                   </Box>
                 </Box>
@@ -240,8 +262,8 @@ const Analysis = () => {
             </Card>
           </Grid>
           <Grid item xs={12} md={4}>
-            <Card 
-              sx={{ 
+            <Card
+              sx={{
                 height: '100%',
                 transition: 'transform 0.3s, box-shadow 0.3s',
                 '&:hover': {
@@ -252,11 +274,11 @@ const Analysis = () => {
             >
               <CardContent>
                 <Box display="flex" alignItems="center" mb={1}>
-                  <Box 
-                    sx={{ 
-                      width: 40, 
-                      height: 40, 
-                      borderRadius: '50%', 
+                  <Box
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: '50%',
                       background: 'rgba(76, 175, 80, 0.1)',
                       display: 'flex',
                       alignItems: 'center',
@@ -279,8 +301,8 @@ const Analysis = () => {
             </Card>
           </Grid>
           <Grid item xs={12} md={4}>
-            <Card 
-              sx={{ 
+            <Card
+              sx={{
                 height: '100%',
                 transition: 'transform 0.3s, box-shadow 0.3s',
                 '&:hover': {
@@ -291,11 +313,11 @@ const Analysis = () => {
             >
               <CardContent>
                 <Box display="flex" alignItems="center" mb={1}>
-                  <Box 
-                    sx={{ 
-                      width: 40, 
-                      height: 40, 
-                      borderRadius: '50%', 
+                  <Box
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: '50%',
                       background: 'rgba(255, 152, 0, 0.1)',
                       display: 'flex',
                       alignItems: 'center',
@@ -310,7 +332,7 @@ const Analysis = () => {
                       Avg. Order Value
                     </Typography>
                     <Typography variant="h5" fontWeight={600}>
-                      ₪{avgOrderValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                      ₪{avgOrderValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Typography>
                   </Box>
                 </Box>
@@ -322,9 +344,9 @@ const Analysis = () => {
         {/* Charts */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={12}>
-            <Paper 
+            <Paper
               elevation={2}
-              sx={{ 
+              sx={{
                 p: isMobile ? 2 : 3,
                 borderRadius: 2,
                 background: theme.palette.background.paper,
@@ -341,7 +363,7 @@ const Analysis = () => {
                     <Select
                       value=""
                       label="Time Range"
-                      onChange={() => {}}
+                      onChange={() => { }}
                       size="small"
                     >
                       <MenuItem value="week">This Week</MenuItem>
@@ -353,30 +375,30 @@ const Analysis = () => {
               </Box>
               <div style={{ height: isMobile ? 300 : 400 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart 
+                  <BarChart
                     data={chartData}
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                   >
                     <defs>
                       <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={theme.palette.primary.main} stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor={theme.palette.primary.main} stopOpacity={0.1}/>
+                        <stop offset="5%" stopColor={theme.palette.primary.main} stopOpacity={0.8} />
+                        <stop offset="95%" stopColor={theme.palette.primary.main} stopOpacity={0.1} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                    <XAxis 
-                      dataKey="date" 
+                    <XAxis
+                      dataKey="date"
                       tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
                       axisLine={false}
                       tickLine={false}
                     />
-                    <YAxis 
+                    <YAxis
                       tickFormatter={(value) => `₪${value}`}
                       tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
                       axisLine={false}
                       tickLine={false}
                     />
-                    <Tooltip 
+                    <Tooltip
                       formatter={(value) => [`₪${value}`, 'Revenue']}
                       contentStyle={{
                         borderRadius: 8,
@@ -384,9 +406,9 @@ const Analysis = () => {
                         border: 'none'
                       }}
                     />
-                    <Bar 
-                      dataKey="revenue" 
-                      name="Revenue" 
+                    <Bar
+                      dataKey="revenue"
+                      name="Revenue"
                       fill="url(#colorRevenue)"
                       radius={[4, 4, 0, 0]}
                       animationDuration={1500}
@@ -401,9 +423,9 @@ const Analysis = () => {
         {/* Additional Metrics */}
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
-            <Paper 
+            <Paper
               elevation={2}
-              sx={{ 
+              sx={{
                 p: 3,
                 height: '100%',
                 borderRadius: 2,
@@ -422,9 +444,9 @@ const Analysis = () => {
             </Paper>
           </Grid>
           <Grid item xs={12} md={6}>
-            <Paper 
+            <Paper
               elevation={2}
-              sx={{ 
+              sx={{
                 p: 3,
                 height: '100%',
                 borderRadius: 2,

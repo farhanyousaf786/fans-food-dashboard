@@ -103,7 +103,6 @@ const Orders = () => {
           deliveryUsersMap[doc.id] = { id: doc.id, ...doc.data() };
         });
         setDeliveryUsers(deliveryUsersMap);
-        console.log('🔍 Sample Delivery User Data:', deliveryUsersMap[Object.keys(deliveryUsersMap)[0]]);
         console.log('✅ Fetched delivery users:', Object.keys(deliveryUsersMap).length);
       } catch (error) {
         console.error('Error fetching delivery users:', error);
@@ -371,23 +370,10 @@ const Orders = () => {
           };
         } else if (exportFormat === 'delivery_personnel') {
           // Delivery Personnel: Date, Order ID, Delivery Person Name, Email, Tip Amount, Total Order Value
-          
-          // Try multiple possible field names for delivery user ID
-          const deliveryUserId = order.deliveryUserId || order.deliveryUserID || order.deliveryUser || order.assignedDeliveryUser;
-          const deliveryUser = deliveryUserId ? deliveryUsers[deliveryUserId] : null;
-          
-          // Debug first order
-          if (rowNumber === 1) {
-            console.log('🔍 First Order Delivery Data:', {
-              deliveryUserId: order.deliveryUserId,
-              foundUser: deliveryUser,
-              totalDeliveryUsers: Object.keys(deliveryUsers).length
-            });
-          }
-          
+          const deliveryUser = order.deliveryUserId ? deliveryUsers[order.deliveryUserId] : null;
           const deliveryName = deliveryUser ? `${deliveryUser.firstName || ''} ${deliveryUser.lastName || ''}`.trim() : 'Unassigned';
           const deliveryEmail = deliveryUser?.email || 'N/A';
-          
+
           orderRow = {
             'Date': order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '',
             'Order ID': order.orderId || order.id || '',
@@ -753,7 +739,6 @@ const Orders = () => {
                     <FormControlLabel value="admin" control={<Radio />} label="Admin (Full)" />
                     <FormControlLabel value="vendor" control={<Radio />} label="Vendor" />
                     <FormControlLabel value="field_manager" control={<Radio />} label="Field Manager" />
-                    <FormControlLabel value="delivery_personnel" control={<Radio />} label="Delivery Personnel" />
                   </RadioGroup>
                 </Box>
               )}
