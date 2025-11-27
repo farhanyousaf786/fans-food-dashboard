@@ -371,11 +371,11 @@ const Orders = () => {
           };
         } else if (exportFormat === 'delivery_personnel') {
           // Delivery Personnel: Date, Order ID, Delivery Person Name, Email, Tip Amount, Total Order Value
-          
+
           // Try multiple possible field names for delivery user ID
           const deliveryUserId = order.deliveryUserId || order.deliveryUserID || order.deliveryUser || order.assignedDeliveryUser;
           const deliveryUser = deliveryUserId ? deliveryUsers[deliveryUserId] : null;
-          
+
           // Debug first order
           if (rowNumber === 1) {
             console.log('🔍 First Order Delivery Data:', {
@@ -384,10 +384,10 @@ const Orders = () => {
               totalDeliveryUsers: Object.keys(deliveryUsers).length
             });
           }
-          
+
           const deliveryName = deliveryUser ? `${deliveryUser.firstName || ''} ${deliveryUser.lastName || ''}`.trim() : 'Unassigned';
           const deliveryEmail = deliveryUser?.email || 'N/A';
-          
+
           orderRow = {
             'Date': order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '',
             'Order ID': order.orderId || order.id || '',
@@ -429,6 +429,82 @@ const Orders = () => {
         rowNumber++;
       });
     });
+
+    // Add Delivery Personnel Summary (only for delivery_personnel format)
+    if (exportFormat === 'delivery_personnel') {
+      const deliverySummary = {};
+
+      filteredOrders.forEach(order => {
+        const deliveryUserId = order.deliveryUserId || order.deliveryUserID || order.deliveryUser || order.assignedDeliveryUser;
+        const deliveryUser = deliveryUserId ? deliveryUsers[deliveryUserId] : null;
+        const deliveryName = deliveryUser ? `${deliveryUser.firstName || ''} ${deliveryUser.lastName || ''}`.trim() : 'Unassigned';
+        const deliveryEmail = deliveryUser?.email || 'N/A';
+        const tipAmount = order.tipAmount || 0;
+
+        if (!deliverySummary[deliveryUserId || 'unassigned']) {
+          deliverySummary[deliveryUserId || 'unassigned'] = {
+            name: deliveryName,
+            email: deliveryEmail,
+            orderCount: 0,
+            totalTips: 0
+          };
+        }
+
+        deliverySummary[deliveryUserId || 'unassigned'].orderCount++;
+        deliverySummary[deliveryUserId || 'unassigned'].totalTips += tipAmount;
+      });
+
+      excelData.push({});
+      excelData.push({});
+      excelData.push({});
+
+      excelData.push({
+        'Date': '=== DELIVERY PERSONNEL SUMMARY ===',
+        'Order ID': '',
+        'Delivery Person Name': '',
+        'Delivery Person Email': '',
+        'Customer Name': '',
+        'Seat Info': '',
+        'Total Order Value': '',
+        'Tip Amount': '',
+        'Delivery Fee': '',
+        'Product Names': ''
+      });
+
+      excelData.push({});
+
+      Object.values(deliverySummary).forEach(summary => {
+        excelData.push({
+          'Date': '',
+          'Order ID': '',
+          'Delivery Person Name': summary.name,
+          'Delivery Person Email': summary.email,
+          'Customer Name': `${summary.orderCount} orders`,
+          'Seat Info': '',
+          'Total Order Value': '',
+          'Tip Amount': `₪${summary.totalTips.toFixed(2)}`,
+          'Delivery Fee': '',
+          'Product Names': ''
+        });
+      });
+
+      const grandTotalOrders = Object.values(deliverySummary).reduce((sum, s) => sum + s.orderCount, 0);
+      const grandTotalTips = Object.values(deliverySummary).reduce((sum, s) => sum + s.totalTips, 0);
+
+      excelData.push({});
+      excelData.push({
+        'Date': '',
+        'Order ID': '',
+        'Delivery Person Name': 'GRAND TOTAL',
+        'Delivery Person Email': '',
+        'Customer Name': `${grandTotalOrders} orders`,
+        'Seat Info': '',
+        'Total Order Value': '',
+        'Tip Amount': `₪${grandTotalTips.toFixed(2)}`,
+        'Delivery Fee': '',
+        'Product Names': ''
+      });
+    }
 
     // Create workbook and worksheet
     const wb = XLSX.utils.book_new();
