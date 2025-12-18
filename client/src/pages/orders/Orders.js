@@ -758,6 +758,8 @@ const Orders = () => {
           open={dialogOpen}
           onClose={closeDialog}
           restaurantName={shopData?.name || 'Restaurant'}
+          deliveryUsers={deliveryUsers}
+          currentUser={currentUser}
         />
 
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>

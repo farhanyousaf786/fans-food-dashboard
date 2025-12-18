@@ -11,21 +11,36 @@ import {
   IconButton,
   Divider,
   useTheme,
-  Button
+  Button,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Alert
 } from '@mui/material';
 import { 
   Close, 
   AccessTime, 
   ShoppingCart, 
   Payment,
-  Person
+  Person,
+  LocalShipping,
+  AssignmentTurnedIn
 } from '@mui/icons-material';
 import Order from '../../../models/Order';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../../../config/firebase';
+import { useState } from 'react';
 
-const OrderDetails = ({ order, open, onClose, restaurantName }) => {
+const OrderDetails = ({ order, open, onClose, restaurantName, deliveryUsers, currentUser }) => {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === 'he';
+  
+  // Assignment state
+  const [selectedDeliveryPerson, setSelectedDeliveryPerson] = React.useState('');
+  const [assigning, setAssigning] = React.useState(false);
+  const [assignmentMessage, setAssignmentMessage] = React.useState('');
   
   if (!order) return null;
 
@@ -37,6 +52,36 @@ const OrderDetails = ({ order, open, onClose, restaurantName }) => {
       minute: '2-digit',
       hour12: false
     });
+  };
+
+  // Assign delivery person to order
+  const handleAssignDeliveryPerson = async () => {
+    if (!selectedDeliveryPerson) return;
+    
+    try {
+      setAssigning(true);
+      setAssignmentMessage('');
+      
+      const orderRef = doc(db, 'orders', order.id);
+      await updateDoc(orderRef, {
+        deliveryUserId: selectedDeliveryPerson,
+        updatedAt: new Date()
+      });
+      
+      setAssignmentMessage('Delivery person assigned successfully!');
+      setSelectedDeliveryPerson('');
+      
+      // Close dialog after successful assignment
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Error assigning delivery person:', error);
+      setAssignmentMessage('Failed to assign delivery person. Please try again.');
+    } finally {
+      setAssigning(false);
+    }
   };
 
   return (
@@ -130,6 +175,146 @@ const OrderDetails = ({ order, open, onClose, restaurantName }) => {
                 Row {order.seatInfo.row}, 
                 Seat {order.seatInfo.seatNo}
               </Typography>
+            )}
+          </Box>
+        </Box>
+
+        {/* Delivery Person Information */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle1" sx={{ 
+            color: theme.palette.primary.main,
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            mb: 2
+          }}>
+            <LocalShipping /> Delivery Information
+          </Typography>
+          <Box sx={{ 
+            bgcolor: 'background.paper',
+            p: 2,
+            borderRadius: 2,
+            border: '1px solid',
+            borderColor: 'divider'
+          }}>
+            {order.deliveryUserId && deliveryUsers && deliveryUsers[order.deliveryUserId] ? (
+              (() => {
+                const deliveryPerson = deliveryUsers[order.deliveryUserId];
+                return (
+                  <Box>
+                    <Typography><strong>Name:</strong> {deliveryPerson.name || 'N/A'}</Typography>
+                    <Typography><strong>Email:</strong> {deliveryPerson.email || 'N/A'}</Typography>
+                    <Typography><strong>Phone:</strong> {deliveryPerson.phone || 'N/A'}</Typography>
+                    <Typography sx={{ fontFamily: 'monospace', fontSize: '0.85em', mt: 1 }}>
+                      <strong>Delivery ID:</strong> {deliveryPerson.id || 'N/A'}
+                    </Typography>
+                    
+                    {/* Reassignment UI - Only for admin@fanmunch.com */}
+                    {currentUser?.email === 'admin@fanmunch.com' && (
+                      <>
+                        <Divider sx={{ my: 2 }} />
+                        <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                          <Typography variant="subtitle2" sx={{ mb: 2, color: theme.palette.primary.main }}>
+                            <AssignmentTurnedIn sx={{ mr: 1, verticalAlign: 'middle' }} />
+                            Reassign Delivery Person
+                          </Typography>
+                          
+                          <FormControl fullWidth sx={{ mb: 2 }}>
+                            <InputLabel>Select New Delivery Person</InputLabel>
+                            <Select
+                              value={selectedDeliveryPerson}
+                              label="Select New Delivery Person"
+                              onChange={(e) => setSelectedDeliveryPerson(e.target.value)}
+                            >
+                              {deliveryUsers && Object.values(deliveryUsers)
+                                .filter(person => person.isActive === true)
+                                .map((person) => (
+                                  <MenuItem key={person.id} value={person.id}>
+                                    {person.name} - {person.email}
+                                  </MenuItem>
+                                ))}
+                            </Select>
+                          </FormControl>
+                          
+                          <Button
+                            variant="outlined"
+                            onClick={handleAssignDeliveryPerson}
+                            disabled={!selectedDeliveryPerson || assigning}
+                            sx={{ mr: 1 }}
+                          >
+                            {assigning ? 'Reassigning...' : 'Reassign Delivery Person'}
+                          </Button>
+                          
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                            This will replace the current delivery person assignment.
+                          </Typography>
+                          
+                          {assignmentMessage && (
+                            <Alert 
+                              severity={assignmentMessage.includes('successfully') ? 'success' : 'error'}
+                              sx={{ mt: 2 }}
+                            >
+                              {assignmentMessage}
+                            </Alert>
+                          )}
+                        </Box>
+                      </>
+                    )}
+                  </Box>
+                );
+              })()
+            ) : (
+              <Box>
+                <Typography color="text.secondary" sx={{ mb: 2 }}>
+                  <strong>No delivery person currently assigned</strong>
+                </Typography>
+                
+                {/* Assignment UI - Only for admin@fanmunch.com */}
+                {currentUser?.email === 'admin@fanmunch.com' && (
+                  <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 2, color: theme.palette.primary.main }}>
+                      <AssignmentTurnedIn sx={{ mr: 1, verticalAlign: 'middle' }} />
+                      Assign Delivery Person
+                    </Typography>
+                    
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                      <InputLabel>Select Delivery Person</InputLabel>
+                      <Select
+                        value={selectedDeliveryPerson}
+                        label="Select Delivery Person"
+                        onChange={(e) => setSelectedDeliveryPerson(e.target.value)}
+                      >
+                        {deliveryUsers && Object.values(deliveryUsers)
+                          .filter(person => person.isActive === true)
+                          .map((person) => (
+                            <MenuItem key={person.id} value={person.id}>
+                              {person.name} - {person.email}
+                            </MenuItem>
+                          ))}
+                      </Select>
+                    </FormControl>
+                    
+                    <Button
+                      variant="contained"
+                      onClick={handleAssignDeliveryPerson}
+                      disabled={!selectedDeliveryPerson || assigning}
+                      sx={{ mr: 1 }}
+                    >
+                      {assigning ? 'Assigning...' : 'Assign Delivery Person'}
+                    </Button>
+                    
+                    {assignmentMessage && (
+                      <Alert 
+                        severity={assignmentMessage.includes('successfully') ? 'success' : 'error'}
+                        sx={{ mt: 2 }}
+                      >
+                        {assignmentMessage}
+                      </Alert>
+                    )}
+                  </Box>
+                )}
+              </Box>
             )}
           </Box>
         </Box>

@@ -51,7 +51,7 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
               {order.userInfo?.userName || t('common.customer')}
             </Typography>
             <Typography variant="caption" className="order-id" color="text.secondary" dir="ltr" sx={{ display: 'block' }}>
-              {t('orders.orderNumber', { number: order.orderId.slice(-6) })}
+              {t('orders.orderNumber', { number: order.id })}
             </Typography>
             {shopName && (
               <Typography variant="caption" sx={{ display: 'block', color: 'success.main', fontWeight: 600, mt: 0.5 }}>
