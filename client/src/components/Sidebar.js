@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTranslation } from 'react-i18next';
 import {
@@ -24,10 +24,11 @@ import {
   People as PeopleIcon
 } from '@mui/icons-material';
 import { Category as CategoryIcon } from '@mui/icons-material';
+import { LocalShipping as DeliveryIcon } from '@mui/icons-material';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth, db, getFCMToken } from '../config/firebase';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 import User from '../models/User';
 import logo from '../assets/logo.png';
 
@@ -39,6 +40,7 @@ const Sidebar = () => {
   const { language } = useLanguage();
   const { t } = useTranslation();
   const isRTL = language === 'he';
+  const [userStadiumId, setUserStadiumId] = useState(null);
   
   // Get current user role from localStorage
   const getCurrentUserRole = () => {
@@ -51,6 +53,26 @@ const Sidebar = () => {
   };
   
   const userRole = getCurrentUserRole();
+
+  // Fetch user's first stadium for dynamic linking
+  useEffect(() => {
+    const fetchUserStadium = async () => {
+      try {
+        const stadiumsCollection = collection(db, 'stadiums');
+        const stadiumsSnapshot = await getDocs(stadiumsCollection);
+        const stadiums = stadiumsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        if (stadiums.length > 0) {
+          // For now, just use the first stadium. You can modify this logic based on user permissions
+          setUserStadiumId(stadiums[0].id);
+        }
+      } catch (error) {
+        console.error('Error fetching stadiums:', error);
+      }
+    };
+
+    fetchUserStadium();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -123,6 +145,12 @@ const Sidebar = () => {
 
   // Admin-only menu items
   const adminMenuItems = [
+    { 
+      text: 'Shops and Delivery', 
+      icon: <DeliveryIcon />, 
+      path: userStadiumId ? `/stadium/${userStadiumId}` : '/dashboard',
+      disabled: !userStadiumId
+    },
     { text: 'User Management', icon: <PeopleIcon />, path: '/user-management' },
   ];
 
@@ -191,8 +219,9 @@ const Sidebar = () => {
                 component={Link}
                 to={item.path}
                 selected={location.pathname === item.path}
+                disabled={item.disabled}
                 sx={{
-                  color: 'white',
+                  color: item.disabled ? 'rgba(255,255,255,0.5)' : 'white',
                   '&.Mui-selected': {
                     backgroundColor: '#fff',
                     color: '#3D70FF',
@@ -201,13 +230,16 @@ const Sidebar = () => {
                     },
                   },
                   '&:hover': {
-                    backgroundColor: 'rgba(255,255,255,0.1)',
+                    backgroundColor: item.disabled ? 'transparent' : 'rgba(255,255,255,0.1)',
+                  },
+                  '&.Mui-disabled': {
+                    opacity: 0.5,
                   },
                 }}
               >
                 <ListItemIcon
                   sx={{
-                    color: location.pathname === item.path ? '#3D70FF' : 'white',
+                    color: location.pathname === item.path ? '#3D70FF' : (item.disabled ? 'rgba(255,255,255,0.5)' : 'white'),
                   }}
                 >
                   {item.icon}

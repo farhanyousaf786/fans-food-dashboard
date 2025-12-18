@@ -116,7 +116,14 @@ const OrderDetails = ({ order, open, onClose, restaurantName }) => {
             borderColor: 'divider'
           }}>
             <Typography><strong>Name:</strong> {order.userInfo?.userName || 'N/A'}</Typography>
-            <Typography><strong>Order ID:</strong> #{order.orderId.slice(0, 6)}</Typography>
+            <Typography><strong>Email:</strong> {order.userInfo?.userEmail || 'N/A'}</Typography>
+            <Typography><strong>Phone:</strong> {order.userInfo?.userPhoneNo || 'N/A'}</Typography>
+            <Typography sx={{ fontFamily: 'monospace', fontSize: '0.85em', mt: 1 }}>
+              <strong>User ID:</strong> {order.userInfo?.userId || 'N/A'}
+            </Typography>
+            <Typography sx={{ mt: 1, color: 'text.secondary', fontSize: '0.85em' }}>
+              <strong>Last Updated:</strong> {order.updatedAt ? formatDate(order.updatedAt) : 'N/A'}
+            </Typography>
             {order.seatInfo && (
               <Typography sx={{ mt: 1 }}>
                 <strong>Seat:</strong> Section {order.seatInfo.section}, 
