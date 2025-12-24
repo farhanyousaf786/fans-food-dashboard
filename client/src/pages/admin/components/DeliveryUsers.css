@@ -85,8 +85,8 @@
 
 .delivery-user-card__content {
   display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
   gap: 12px !important;
   padding: 18px 18px 14px 18px !important;
 }
@@ -103,8 +103,6 @@
   .delivery-user-card__content {
     padding: 12px 12px 10px 12px !important;
     gap: 6px !important;
-    flex-direction: column !important;
-    align-items: flex-start !important;
   }
 }
 
@@ -184,8 +182,10 @@
 .delivery-user-card__actions {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 8px;
-  flex-shrink: 0;
+  flex-wrap: wrap;
+  width: 100%;
 }
 
 /* Mobile responsive actions */
@@ -198,6 +198,5 @@
 @media (max-width: 480px) {
   .delivery-user-card__actions {
     gap: 4px !important;
-    align-self: flex-end !important;
   }
 }

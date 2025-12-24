@@ -13,6 +13,7 @@ class DeliveryPerson {
       createdAt = new Date(),
       updatedAt = new Date(),
       isActive = true,
+      userAvailability = true,
       location = null, // Firestore GeoPoint or null
       docId = null,
     } = {}
@@ -27,6 +28,7 @@ class DeliveryPerson {
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
     this.isActive = isActive;
+    this.userAvailability = userAvailability;
 
     this.location = location;
     this.docId = docId; // Firestore document ID
@@ -45,6 +47,7 @@ class DeliveryPerson {
       createdAt: this.createdAt instanceof Date ? Timestamp.fromDate(this.createdAt) : this.createdAt,
       updatedAt: Timestamp.fromDate(new Date()),
       isActive: this.isActive,
+      userAvailability: this.userAvailability,
 
       location: this.location,
       type: 'deliveryPerson',
@@ -64,6 +67,7 @@ class DeliveryPerson {
         createdAt: this.parseFirestoreDate(data.createdAt),
         updatedAt: this.parseFirestoreDate(data.updatedAt),
         isActive: typeof data.isActive === 'boolean' ? data.isActive : true,
+        userAvailability: typeof data.userAvailability === 'boolean' ? data.userAvailability : true,
         location: data.location ?? null,
         docId: id || data.docId || null,
       }
