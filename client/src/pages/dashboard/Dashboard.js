@@ -84,7 +84,19 @@ const Dashboard = () => {
     const fetchStats = async () => {
       try {
         const ordersRef = collection(db, "orders");
-        const ordersQuery = query(ordersRef, orderBy("createdAt", "desc"));
+        let ordersQuery;
+
+        // Filter by stadium if shopData has stadiumId
+        if (shopData?.stadiumId) {
+          ordersQuery = query(
+            ordersRef, 
+            where("stadiumId", "==", shopData.stadiumId),
+            orderBy("createdAt", "desc")
+          );
+        } else {
+          ordersQuery = query(ordersRef, orderBy("createdAt", "desc"));
+        }
+
         const ordersSnap = await getDocs(ordersQuery);
 
         let totalRevenue = 0;
@@ -110,8 +122,10 @@ const Dashboard = () => {
       }
     };
 
-    fetchStats();
-  }, []);
+    if (shopData) {
+      fetchStats();
+    }
+  }, [shopData]);
 
   useEffect(() => {
     if (location.state?.shopData) {

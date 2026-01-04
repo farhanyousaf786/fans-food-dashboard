@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { db } from '../../../config/firebase';
-import { collection, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { useNavigate, useParams } from 'react-router-dom';
+import { db, storage } from '../../../config/firebase';
+import { collection, getDocs, doc, deleteDoc, updateDoc, query, where, addDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { 
   Box, 
   Typography, 
@@ -18,33 +19,45 @@ import {
   FormControlLabel,
   Tooltip
 } from '@mui/material';
-import { Edit, Delete } from '@mui/icons-material';
+import { Edit, Delete, Add as AddIcon } from '@mui/icons-material';
 import Shop from '../../../models/Shop';
 import './MyShopsSection.css';
 
 const MyShopsSection = () => {
   const navigate = useNavigate();
+  const { id: stadiumId } = useParams();
   const [shops, setShops] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [editingShop, setEditingShop] = useState(null);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [shopToDelete, setShopToDelete] = useState(null);
+  const [openAddDialog, setOpenAddDialog] = useState(false);
+  const [newShop, setNewShop] = useState({ 
+    name: '', 
+    location: '', 
+    floor: '', 
+    gate: '', 
+    description: '',
+    imageFile: null,
+    imagePreview: null
+  });
   const [expanded, setExpanded] = useState(true);
 
   useEffect(() => {
     const fetchShops = async () => {
       try {
-        // Get all shops from root collection (admin can see all)
+        // Get shops filtered by current stadiumId
         const shopsCollection = collection(db, 'shops');
-        const shopsSnapshot = await getDocs(shopsCollection);
-        const allShops = shopsSnapshot.docs.map(doc => {
+        const q = query(shopsCollection, where('stadiumId', '==', stadiumId));
+        const shopsSnapshot = await getDocs(q);
+        const stadiumShops = shopsSnapshot.docs.map(doc => {
           const rawData = doc.data();
           return Shop.fromFirestore(rawData, doc.id);
         });
         
-        console.log('🏪 MY SHOPS SECTION: Total shops loaded:', allShops.length);
-        setShops(allShops);
+        console.log('🏪 MY SHOPS SECTION: Shops for stadium', stadiumId, ':', stadiumShops.length);
+        setShops(stadiumShops);
       } catch (error) {
         console.error('Error fetching shops:', error);
       } finally {
@@ -52,7 +65,77 @@ const MyShopsSection = () => {
       }
     };
     fetchShops();
-  }, []);
+  }, [stadiumId]);
+
+  const handleAddShop = () => {
+    setOpenAddDialog(true);
+  };
+
+  const handleCloseAddDialog = () => {
+    setOpenAddDialog(false);
+    setNewShop({ 
+      name: '', 
+      location: '', 
+      floor: '', 
+      gate: '', 
+      description: '',
+      imageFile: null,
+      imagePreview: null
+    });
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setNewShop({ 
+        ...newShop, 
+        imageFile: file,
+        imagePreview: URL.createObjectURL(file)
+      });
+    }
+  };
+
+  const handleCreateShop = async () => {
+    try {
+      let imageUrl = null;
+
+      // Upload image if provided
+      if (newShop.imageFile) {
+        const imageRef = ref(storage, `shops/${Date.now()}_${newShop.imageFile.name}`);
+        await uploadBytes(imageRef, newShop.imageFile);
+        imageUrl = await getDownloadURL(imageRef);
+        console.log('✅ Image uploaded successfully:', imageUrl);
+      }
+
+      // Create new Shop instance
+      const shop = new Shop(
+        newShop.name,
+        newShop.location,
+        newShop.floor,
+        newShop.gate,
+        newShop.description,
+        [], // No admins for now, admin can assign later
+        stadiumId,
+        null, // stadiumName
+        null, // latitude
+        null, // longitude
+        null, // docId
+        imageUrl // imageUrl
+      );
+
+      // Add to Firestore
+      const shopData = shop.toFirestore();
+      const shopDocRef = await addDoc(collection(db, 'shops'), shopData);
+      console.log('✅ Shop created successfully:', shopDocRef.id);
+
+      // Update local state
+      setShops(prev => [...prev, { id: shopDocRef.id, ...shopData }]);
+      
+      handleCloseAddDialog();
+    } catch (error) {
+      console.error('Error creating shop:', error);
+    }
+  };
 
   const handleToggleAvailability = async (shop, e) => {
     e.stopPropagation();
@@ -141,10 +224,28 @@ const MyShopsSection = () => {
 
   return (
     <>
+      {/* Add Shop Button */}
+      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleAddShop}
+          sx={{ 
+            bgcolor: 'primary.main',
+            '&:hover': { bgcolor: 'primary.dark' }
+          }}
+        >
+          Add Shop
+        </Button>
+      </Box>
+
       {shops.length === 0 ? (
         <div className="empty-message">
           <Typography variant="h6">
-            No shops found in the system.
+            No shops found in this stadium.
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Click "Add Shop" to create the first shop for this stadium.
           </Typography>
         </div>
       ) : (
@@ -324,6 +425,83 @@ const MyShopsSection = () => {
           >
             Delete
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Shop Dialog */}
+      <Dialog open={openAddDialog} onClose={handleCloseAddDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>Add New Shop</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Shop Name"
+            fullWidth
+            value={newShop.name}
+            onChange={(e) => setNewShop({ ...newShop, name: e.target.value })}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            label="Location in Stadium"
+            fullWidth
+            value={newShop.location}
+            onChange={(e) => setNewShop({ ...newShop, location: e.target.value })}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            label="Floor"
+            fullWidth
+            value={newShop.floor}
+            onChange={(e) => setNewShop({ ...newShop, floor: e.target.value })}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            label="Gate Number"
+            fullWidth
+            value={newShop.gate}
+            onChange={(e) => setNewShop({ ...newShop, gate: e.target.value })}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            label="Description"
+            fullWidth
+            multiline
+            rows={3}
+            value={newShop.description}
+            onChange={(e) => setNewShop({ ...newShop, description: e.target.value })}
+            sx={{ mb: 2 }}
+          />
+          <Button
+            variant="outlined"
+            component="label"
+            fullWidth
+            sx={{ mb: 2 }}
+          >
+            Upload Shop Image
+            <input
+              type="file"
+              hidden
+              accept="image/*"
+              onChange={handleImageChange}
+            />
+          </Button>
+          {newShop.imagePreview && (
+            <Box sx={{ mt: 2, textAlign: 'center' }}>
+              <img 
+                src={newShop.imagePreview} 
+                alt="Shop preview" 
+                style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAddDialog}>Cancel</Button>
+          <Button onClick={handleCreateShop} variant="contained">Create Shop</Button>
         </DialogActions>
       </Dialog>
     </>

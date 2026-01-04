@@ -1,5 +1,5 @@
 class Shop {
-    constructor(name, location, floor, gate, description, admins, stadiumId, stadiumName, latitude = null, longitude = null, docId = null) {
+    constructor(name, location, floor, gate, description, admins, stadiumId, stadiumName, latitude = null, longitude = null, docId = null, imageUrl = null) {
         this.name = name;
         this.location = location;
         this.floor = floor;
@@ -11,6 +11,7 @@ class Shop {
         this.latitude = latitude;
         this.longitude = longitude;
         this.docId = docId;
+        this.imageUrl = imageUrl;
         // Shop availability flag (open/closed). Default to true for backwards compatibility
         this.shopAvailability = true;
         this.createdAt = new Date();
@@ -33,7 +34,8 @@ class Shop {
             updatedAt: this.updatedAt,
             stadiumName: this.stadiumName,
             docId: this.docId,
-            shopAvailability: this.shopAvailability
+            shopAvailability: this.shopAvailability,
+            imageUrl: this.imageUrl
         };
     }
 
@@ -50,7 +52,8 @@ class Shop {
             data.stadiumName,
             data.latitude,
             data.longitude,
-            id
+            id,
+            data.imageUrl
         );
         shop.id = id;
         shop.createdAt = data.createdAt?.toDate() || new Date();

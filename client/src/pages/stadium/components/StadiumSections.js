@@ -28,6 +28,7 @@ import {
 } from '@mui/material';
 import Autocomplete from '@mui/material/Autocomplete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import { Add as AddIcon } from '@mui/icons-material';
 import './StadiumSections.css';
 
 const StadiumSections = ({ stadiumId, shops }) => {
@@ -153,10 +154,30 @@ const StadiumSections = ({ stadiumId, shops }) => {
 
   return (
     <Box>
-    
+      {/* Add Section Button */}
+      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setAddOpen(true)}
+          sx={{ 
+            bgcolor: 'primary.main',
+            '&:hover': { bgcolor: 'primary.dark' }
+          }}
+        >
+          Add Section
+        </Button>
+      </Box>
 
       {sections.length === 0 ? (
-        <Typography color="text.secondary">No sections added yet.</Typography>
+        <Box sx={{ textAlign: 'center', py: 4 }}>
+          <Typography color="text.secondary" sx={{ mb: 1 }}>
+            No sections added yet.
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Click "Add Section" to create the first section for this stadium.
+          </Typography>
+        </Box>
       ) : (
         <div className="stadium-grid-container">
           {sections.map((s) => (

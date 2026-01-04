@@ -90,21 +90,10 @@ const Stadium = () => {
                     setShopsExpanded(!shopsExpanded);
                   }}
                   sx={{ 
-                    bgcolor: 'primary.main',
-                    color: 'white',
-                    width: 36,
-                    height: 36,
-                    borderRadius: '50%',
-                    boxShadow: '0 2px 8px rgba(25, 118, 210, 0.3)',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    color: 'text.secondary',
                     '&:hover': { 
-                      bgcolor: 'primary.dark',
-                      transform: 'scale(1.1)',
-                      boxShadow: '0 4px 12px rgba(25, 118, 210, 0.4)'
-                    },
-                    '&:active': {
-                      transform: 'scale(0.95)',
-                      boxShadow: '0 2px 6px rgba(25, 118, 210, 0.3)'
+                      color: 'primary.main',
+                      bgcolor: 'transparent'
                     }
                   }}
                 >
@@ -153,21 +142,10 @@ const Stadium = () => {
                     setStadiumExpanded(!stadiumExpanded);
                   }}
                   sx={{ 
-                    bgcolor: 'primary.main',
-                    color: 'white',
-                    width: 36,
-                    height: 36,
-                    borderRadius: '50%',
-                    boxShadow: '0 2px 8px rgba(25, 118, 210, 0.3)',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    color: 'text.secondary',
                     '&:hover': { 
-                      bgcolor: 'primary.dark',
-                      transform: 'scale(1.1)',
-                      boxShadow: '0 4px 12px rgba(25, 118, 210, 0.4)'
-                    },
-                    '&:active': {
-                      transform: 'scale(0.95)',
-                      boxShadow: '0 2px 6px rgba(25, 118, 210, 0.3)'
+                      color: 'primary.main',
+                      bgcolor: 'transparent'
                     }
                   }}
                 >
@@ -216,21 +194,10 @@ const Stadium = () => {
                     setDeliveryExpanded(!deliveryExpanded);
                   }}
                   sx={{ 
-                    bgcolor: 'primary.main',
-                    color: 'white',
-                    width: 36,
-                    height: 36,
-                    borderRadius: '50%',
-                    boxShadow: '0 2px 8px rgba(25, 118, 210, 0.3)',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    color: 'text.secondary',
                     '&:hover': { 
-                      bgcolor: 'primary.dark',
-                      transform: 'scale(1.1)',
-                      boxShadow: '0 4px 12px rgba(25, 118, 210, 0.4)'
-                    },
-                    '&:active': {
-                      transform: 'scale(0.95)',
-                      boxShadow: '0 2px 6px rgba(25, 118, 210, 0.3)'
+                      color: 'primary.main',
+                      bgcolor: 'transparent'
                     }
                   }}
                 >
@@ -246,7 +213,7 @@ const Stadium = () => {
                 <Box sx={{ mt: 2 }}>
                   <Card sx={{ borderRadius: 2, bgcolor: 'white' }}>
                     <CardContent>
-                      <DeliveryUsers stadiumId={id} showAll={true} />
+                      <DeliveryUsers stadiumId={id} showAll={false} />
                     </CardContent>
                   </Card>
                 </Box>

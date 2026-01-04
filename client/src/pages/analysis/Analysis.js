@@ -27,7 +27,8 @@ const Analysis = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [shops, setShops] = useState([]);
-  const [selectedShop, setSelectedShop] = useState('all');
+  const [selectedShop, setSelectedShop] = useState('stadium');
+  const [shopData, setShopData] = useState(null);
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [orders, setOrders] = useState([]);
@@ -38,6 +39,11 @@ const Analysis = () => {
   const [fadeIn, setFadeIn] = useState(false);
 
   useEffect(() => {
+    // Get current shop data from localStorage (for stadium context)
+    const savedShopData = localStorage.getItem('currentShopData');
+    if (savedShopData) {
+      setShopData(JSON.parse(savedShopData));
+    }
     fetchShops();
   }, []);
 
@@ -54,7 +60,16 @@ const Analysis = () => {
       const currentUserId = auth.currentUser?.uid || user?.id;
 
       const shopsRef = collection(db, 'shops');
-      const snapshot = await getDocs(shopsRef);
+      let shopsQuery;
+      
+      // If admin has stadium context, only fetch shops from that stadium
+      if (user?.role === 'admin' && shopData?.stadiumId) {
+        shopsQuery = query(shopsRef, where('stadiumId', '==', shopData.stadiumId));
+      } else {
+        shopsQuery = query(shopsRef); // Fetch all for other cases
+      }
+      
+      const snapshot = await getDocs(shopsQuery);
       let shopsList = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -81,7 +96,10 @@ const Analysis = () => {
       let ordersQuery = collection(db, 'orders');
 
       // Apply shop filter
-      if (selectedShop !== 'all') {
+      if (selectedShop === 'stadium' && shopData?.stadiumId) {
+        // Filter by stadium for admin users
+        ordersQuery = query(ordersQuery, where('stadiumId', '==', shopData.stadiumId));
+      } else if (selectedShop !== 'stadium') {
         ordersQuery = query(ordersQuery, where('shopId', '==', selectedShop));
       }
 
@@ -186,7 +204,7 @@ const Analysis = () => {
                   onChange={(e) => setSelectedShop(e.target.value)}
                   label="Select Shop"
                 >
-                  <MenuItem value="all">All Shops</MenuItem>
+                  <MenuItem value="stadium">All Shops</MenuItem>
                   {shops.map((shop) => (
                     <MenuItem key={shop.id} value={shop.id}>
                       {shop.name}

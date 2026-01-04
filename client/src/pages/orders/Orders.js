@@ -73,6 +73,15 @@ const Orders = () => {
           setSelectedShopFilter(shopData.id);
           setExportShopId(shopData.id);
         }
+      } else if (user.role === 'admin') {
+        // For admin, check if we have currentShopData (from stadium page)
+        const savedShopData = localStorage.getItem('currentShopData');
+        if (savedShopData) {
+          const shopData = JSON.parse(savedShopData);
+          setShopData(shopData);
+          // Filter by stadium - get all shops in this stadium
+          setSelectedShopFilter('stadium'); // Special value for stadium filtering
+        }
       }
     }
   }, []);
@@ -82,7 +91,16 @@ const Orders = () => {
     const fetchShops = async () => {
       try {
         const shopsRef = collection(db, 'shops');
-        const shopsSnap = await getDocs(shopsRef);
+        let shopsQuery;
+        
+        // Only fetch shops from the current stadium
+        if (shopData?.stadiumId) {
+          shopsQuery = query(shopsRef, where('stadiumId', '==', shopData.stadiumId));
+        } else {
+          shopsQuery = query(shopsRef); // Fallback to all shops if no stadium context
+        }
+        
+        const shopsSnap = await getDocs(shopsQuery);
         const shopsList = shopsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setAllShops(shopsList);
       } catch (error) {
@@ -90,7 +108,7 @@ const Orders = () => {
       }
     };
     fetchShops();
-  }, []);
+  }, [shopData]);
 
   // Fetch delivery users
   useEffect(() => {
@@ -117,8 +135,9 @@ const Orders = () => {
     let q;
 
     // Build query with shop filter
-    if (selectedShopFilter === 'all') {
-      q = query(ordersRef);
+    if (selectedShopFilter === 'stadium' && shopData?.stadiumId) {
+      // Filter by stadium for admin users
+      q = query(ordersRef, where('stadiumId', '==', shopData.stadiumId));
     } else {
       q = query(ordersRef, where('shopId', '==', selectedShopFilter));
     }
@@ -144,7 +163,7 @@ const Orders = () => {
     });
 
     return () => unsubscribe();
-  }, [selectedShopFilter, selectedDateRange]);
+  }, [selectedShopFilter, selectedDateRange, shopData]);
 
 
 
@@ -568,7 +587,7 @@ const Orders = () => {
                 label="Filter by Shop"
                 onChange={(e) => setSelectedShopFilter(e.target.value)}
               >
-                <MenuItem value="all">All Shops</MenuItem>
+                <MenuItem value="stadium">All Shops</MenuItem>
                 {allShops.map((shop) => (
                   <MenuItem key={shop.id} value={shop.id}>
                     {shop.name}
