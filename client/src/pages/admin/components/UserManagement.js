@@ -31,7 +31,9 @@ import {
   doc, 
   updateDoc, 
   deleteDoc,
-  setDoc 
+  setDoc,
+  query,
+  where
 } from 'firebase/firestore';
 import { 
   createUserWithEmailAndPassword, 
@@ -41,9 +43,11 @@ import {
 } from 'firebase/auth';
 import { auth, db } from '../../../config/firebase';
 import User from '../../../models/User';
+import Stadium from '../../../models/Stadium';
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
+  const [stadiums, setStadiums] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -56,13 +60,29 @@ const UserManagement = () => {
     name: '',
     email: '',
     password: '',
-    role: 'shopowner'
+    role: 'shopowner',
+    stadiumId: ''
   });
 
   // Fetch all users from both collections
   useEffect(() => {
     fetchUsers();
+    fetchStadiums();
   }, []);
+
+  const fetchStadiums = async () => {
+    try {
+      const stadiumsRef = collection(db, 'stadiums');
+      const stadiumsSnap = await getDocs(stadiumsRef);
+      const stadiumsList = stadiumsSnap.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data() 
+      }));
+      setStadiums(stadiumsList);
+    } catch (error) {
+      console.error('Error fetching stadiums:', error);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -125,7 +145,8 @@ const UserManagement = () => {
         name: user.name || user.firstName + ' ' + user.lastName || '',
         email: user.email || '',
         password: '',
-        role: user.role || 'shopowner'
+        role: user.role || 'shopowner',
+        stadiumId: user.stadiumId || ''
       });
     } else {
       setEditMode(false);
@@ -134,7 +155,8 @@ const UserManagement = () => {
         name: '',
         email: '',
         password: '',
-        role: 'shopowner'
+        role: 'shopowner',
+        stadiumId: ''
       });
     }
     setDialogOpen(true);
@@ -146,7 +168,7 @@ const UserManagement = () => {
     setDialogOpen(false);
     setEditMode(false);
     setCurrentUser(null);
-    setFormData({ name: '', email: '', password: '', role: 'shopowner' });
+    setFormData({ name: '', email: '', password: '', role: 'shopowner', stadiumId: '' });
     setError('');
     setSuccess('');
   };
@@ -196,6 +218,7 @@ const UserManagement = () => {
           name: formData.name,
           email: formData.email,
           role: formData.role,
+          stadiumId: formData.stadiumId,
           updatedAt: new Date()
         };
 
@@ -233,11 +256,11 @@ const UserManagement = () => {
           name: formData.name,
           email: formData.email,
           role: formData.role,
-          createdAt: new Date(),
-          updatedAt: new Date()
+          stadiumId: formData.stadiumId,
+          createdAt: new Date()
         };
 
-        // For delivery users, split name and add additional fields
+        // For delivery users, split name into firstName and lastName
         if (formData.role === 'delivery') {
           const nameParts = formData.name.split(' ');
           userData = {
@@ -246,6 +269,7 @@ const UserManagement = () => {
             email: formData.email,
             phone: '',
             isActive: true,
+            stadiumId: formData.stadiumId,
             createdAt: new Date(),
             updatedAt: new Date()
           };
@@ -437,7 +461,7 @@ const UserManagement = () => {
               />
             )}
             
-            <FormControl fullWidth>
+            <FormControl fullWidth required>
               <InputLabel>Role</InputLabel>
               <Select
                 name="role"
@@ -445,9 +469,26 @@ const UserManagement = () => {
                 onChange={handleInputChange}
                 label="Role"
               >
-                <MenuItem value="shopowner">Shop Owner</MenuItem>
                 <MenuItem value="admin">Admin</MenuItem>
-                <MenuItem value="delivery">Delivery Person</MenuItem>
+                <MenuItem value="shopowner">Shop Owner</MenuItem>
+                <MenuItem value="delivery">Delivery Personnel</MenuItem>
+              </Select>
+            </FormControl>
+            
+            <FormControl fullWidth>
+              <InputLabel>Stadium</InputLabel>
+              <Select
+                name="stadiumId"
+                value={formData.stadiumId}
+                onChange={handleInputChange}
+                label="Stadium"
+              >
+                <MenuItem value="">No Stadium</MenuItem>
+                {stadiums.map((stadium) => (
+                  <MenuItem key={stadium.id} value={stadium.id}>
+                    {stadium.name}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
           </Box>

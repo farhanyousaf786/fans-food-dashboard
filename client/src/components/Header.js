@@ -116,7 +116,11 @@ const Header = () => {
                                 transform: 'scale(1.05)',
                             }
                         }}
-                        onClick={() => navigate('/profile')}
+                        onClick={() => {
+    // Use navigate first, then reload to ensure screen updates
+    navigate('/profile');
+    setTimeout(() => window.location.reload(), 100);
+}}
                     >
                         {!userImage && <PersonIcon sx={{ fontSize: { xs: 18, sm: 24 } }} />}
                     </Avatar>

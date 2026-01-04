@@ -38,7 +38,7 @@ const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { language } = useLanguage();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isRTL = language === 'he';
   const [userStadiumId, setUserStadiumId] = useState(null);
   
@@ -220,6 +220,14 @@ const Sidebar = () => {
                 to={item.path}
                 selected={location.pathname === item.path}
                 disabled={item.disabled}
+                onClick={() => {
+                  // Use navigate instead of window.location for proper screen update
+                  if (item.path === '/add-category') {
+                    navigate(item.path);
+                    // Force a small delay to ensure component mounts
+                    setTimeout(() => window.location.reload(), 100);
+                  }
+                }}
                 sx={{
                   color: item.disabled ? 'rgba(255,255,255,0.5)' : 'white',
                   '&.Mui-selected': {

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Box, Paper, Typography, TextField, Button, Stack, Snackbar, Alert, Divider, List, ListItem, ListItemText, IconButton, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { Edit as EditIcon } from '@mui/icons-material';
 import { db } from '../../config/firebase';
-import { collection, doc, setDoc, onSnapshot, query, orderBy, updateDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, onSnapshot, query, orderBy, updateDoc, where } from 'firebase/firestore';
 
 const AddCategory = () => {
   const [icon, setIcon] = useState('');
@@ -16,6 +16,7 @@ const AddCategory = () => {
   const [editIcon, setEditIcon] = useState('');
   const [editNameEn, setEditNameEn] = useState('');
   const [editNameHe, setEditNameHe] = useState('');
+  const [shopData, setShopData] = useState(null);
 
   const reset = () => {
     setIcon('');
@@ -24,8 +25,26 @@ const AddCategory = () => {
   };
 
   useEffect(() => {
-    // Live fetch categories ordered by English name
-    const q = query(collection(db, 'categories'), orderBy('nameMap.en'));
+    // Get current shop data from localStorage (for stadium context)
+    const savedShopData = localStorage.getItem('currentShopData');
+    if (savedShopData) {
+      setShopData(JSON.parse(savedShopData));
+    }
+  }, []);
+
+  useEffect(() => {
+    // Live fetch categories ordered by English name, filtered by stadium if available
+    let q;
+    if (shopData?.stadiumId) {
+      q = query(
+        collection(db, 'categories'), 
+        where('stadiumId', '==', shopData.stadiumId),
+        orderBy('nameMap.en')
+      );
+    } else {
+      q = query(collection(db, 'categories'), orderBy('nameMap.en'));
+    }
+    
     const unsub = onSnapshot(q, (snap) => {
       const list = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
       setCategories(list);
@@ -33,7 +52,7 @@ const AddCategory = () => {
       console.error('Error loading categories:', err);
     });
     return () => unsub();
-  }, []);
+  }, [shopData]);
 
   const openEdit = (cat) => {
     setEditing(cat);
@@ -54,6 +73,7 @@ const AddCategory = () => {
           he: (editNameHe || '').trim(),
         },
         docId: editing.docId || editing.id,
+        stadiumId: editing.stadiumId || shopData?.stadiumId || null, // Preserve stadiumId
       });
       setToast({ open: true, message: 'Category updated.', severity: 'success' });
       setEditOpen(false);
@@ -87,6 +107,7 @@ const AddCategory = () => {
           en: nameEn.trim(),
           he: nameHe.trim(),
         },
+        stadiumId: shopData?.stadiumId || null, // Add stadiumId if available
       };
 
       await setDoc(newDocRef, payload);

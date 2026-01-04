@@ -5,7 +5,9 @@ import {
   collection,
   getDocs,
   doc,
-  updateDoc
+  updateDoc,
+  query,
+  where
 } from 'firebase/firestore';
 import ShopAdminCard from './ShopAdminCard';
 import AddAdminDialog from './AddAdminDialog';
@@ -17,11 +19,17 @@ const ShopAdminManager = () => {
   const [selectedShop, setSelectedShop] = useState(null);
   const [selectedOwner, setSelectedOwner] = useState('');
   const [loading, setLoading] = useState(true);
+  const [shopData, setShopData] = useState(null);
 
   useEffect(() => {
+    // Get current shop data from localStorage (for stadium context)
+    const savedShopData = localStorage.getItem('currentShopData');
+    if (savedShopData) {
+      setShopData(JSON.parse(savedShopData));
+    }
     fetchAllShopOwners();
     fetchUserShops();
-  }, []);
+  }, [shopData]);
 
   const fetchAllShopOwners = async () => {
     try {
@@ -41,15 +49,23 @@ const ShopAdminManager = () => {
   const fetchUserShops = async () => {
     try {
       const shopsCollection = collection(db, 'shops');
-      const shopsSnapshot = await getDocs(shopsCollection);
+      let shopsQuery;
+      
+      // If admin has stadium context, only fetch shops from that stadium
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user?.role === 'admin' && shopData?.stadiumId) {
+        shopsQuery = query(shopsCollection, where('stadiumId', '==', shopData.stadiumId));
+      } else {
+        shopsQuery = query(shopsCollection); // Fetch all for other cases
+      }
+      
+      const shopsSnapshot = await getDocs(shopsQuery);
       const allShops = shopsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-      const user = JSON.parse(localStorage.getItem('user'));
-
       if (user && user.role === 'admin') {
-        // Admin sees all shops
+        // Admin sees shops from current stadium (or all if no stadium context)
         setUserShops(allShops);
-        console.log('🏪 SHOP ADMIN MANAGER: Admin user - showing all shops:', allShops.length);
+        console.log('🏪 SHOP ADMIN MANAGER: Admin user - showing stadium shops:', allShops.length);
       } else {
         // Filter shops where current user is admin
         const currentUserId = auth.currentUser?.uid || user?.id;
