@@ -65,8 +65,14 @@ const Header = () => {
                     color: theme.palette.primary.main,
                     fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem' }, // Responsive font size
                     letterSpacing: { xs: '0.2px', sm: '0.5px' },
-                    display: { xs: 'none', sm: 'block' } // Hide on mobile, show abbreviated
+                    display: { xs: 'none', sm: 'block' }, // Hide on mobile, show abbreviated
+                    cursor: 'pointer',
+                    '&:hover': {
+                        opacity: 0.8,
+                        textDecoration: 'underline'
+                    }
                 }}
+                onClick={() => navigate('/dashboard')}
             >
                 Fan Munch Dashboard
             </Typography>
@@ -79,8 +85,14 @@ const Header = () => {
                     color: theme.palette.primary.main,
                     fontSize: '1rem',
                     letterSpacing: '0.2px',
-                    display: { xs: 'block', sm: 'none' } // Show only on mobile
+                    display: { xs: 'block', sm: 'none' }, // Show only on mobile
+                    cursor: 'pointer',
+                    '&:hover': {
+                        opacity: 0.8,
+                        textDecoration: 'underline'
+                    }
                 }}
+                onClick={() => navigate('/dashboard')}
             >
                 Fan Munch
             </Typography>

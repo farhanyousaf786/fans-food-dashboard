@@ -191,15 +191,25 @@ const Sidebar = () => {
         >
           <Box sx={{ pt: 1.5, pb: 3, px: 3, display: 'flex', justifyContent: 'center' }}>
             <Box sx={{
-              width: '100px',
-              height: '100px',
-              backgroundColor: 'white',
+              width: 80,
+              height: 80,
               borderRadius: '50%',
+              backgroundColor: '#fff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.2)'
-            }}>
+              boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+              cursor: 'pointer',
+              '&:hover': {
+                transform: 'scale(1.05)',
+                transition: 'transform 0.2s ease-in-out'
+              }
+            }}
+            onClick={() => {
+              navigate('/');
+              window.location.reload();
+            }}
+            >
               <img 
                 src={logo} 
                 alt="FansFood Logo" 
@@ -223,6 +233,10 @@ const Sidebar = () => {
                 onClick={() => {
                   // Use navigate instead of window.location for proper screen update
                   if (item.path === '/add-category') {
+                    navigate(item.path);
+                    // Force a small delay to ensure component mounts
+                    setTimeout(() => window.location.reload(), 100);
+                  } else if (item.path === '/profile') {
                     navigate(item.path);
                     // Force a small delay to ensure component mounts
                     setTimeout(() => window.location.reload(), 100);
