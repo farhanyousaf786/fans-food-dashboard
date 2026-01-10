@@ -82,7 +82,13 @@ const AdminPanel = () => {
                 imageUrl: imageUrl,
                 about: formData.about,
                 latitude: formData.latitude,
-                longitude: formData.longitude
+                longitude: formData.longitude,
+                availableRooms: formData.availableRooms,
+                availableSections: formData.availableSections,
+                availablePickupPoints: formData.availablePickupPoints,
+                availableShops: formData.availableShops,
+                availableStands: formData.availableStands,
+                availableFloors: formData.availableFloors
             };
             
             await updateDoc(stadiumRef, updatedStadium);
@@ -97,7 +103,13 @@ const AdminPanel = () => {
                         updatedStadium.imageUrl,
                         updatedStadium.about,
                         updatedStadium.latitude,
-                        updatedStadium.longitude
+                        updatedStadium.longitude,
+                        updatedStadium.availableRooms,
+                        updatedStadium.availableSections,
+                        updatedStadium.availablePickupPoints,
+                        updatedStadium.availableShops,
+                        updatedStadium.availableStands,
+                        updatedStadium.availableFloors
                     );
                     updatedStadiumObj.id = editingStadium.id;
                     updatedStadiumObj.createdAt = stadium.createdAt;
@@ -168,7 +180,13 @@ const AdminPanel = () => {
                 imageUrl,
                 formData.about,
                 formData.latitude,
-                formData.longitude
+                formData.longitude,
+                formData.availableRooms,
+                formData.availableSections,
+                formData.availablePickupPoints,
+                formData.availableShops,
+                formData.availableStands,
+                formData.availableFloors
             );
             
             const docRef = await addDoc(stadiumsRef, newStadiumObj.toFirestore());
