@@ -63,10 +63,7 @@ const Dashboard = () => {
     preparationTime: 15,
     selectedShops: [], // Array of shop IDs for multi-shop support
     customization: {
-      toppings: [],
-      extras: [],
-      sauces: [],
-      sizes: [],
+      options: [],
     },
     allergens: [],
     nutritionalInfo: {},
@@ -89,7 +86,7 @@ const Dashboard = () => {
         // Filter by stadium if shopData has stadiumId
         if (shopData?.stadiumId) {
           ordersQuery = query(
-            ordersRef, 
+            ordersRef,
             where("stadiumId", "==", shopData.stadiumId),
             orderBy("createdAt", "desc")
           );
@@ -176,10 +173,7 @@ const Dashboard = () => {
       preparationTime: 15,
       selectedShops: [],
       customization: {
-        toppings: [],
-        extras: [],
-        sauces: [],
-        sizes: [],
+        options: [],
       },
       allergens: [],
       nutritionalInfo: {},
@@ -193,7 +187,7 @@ const Dashboard = () => {
 
   const handleInputChange = (e) => {
     const { name, value, checked } = e.target;
-    
+
     if (name.startsWith("foodType.")) {
       // Handle individual foodType checkbox updates
       const key = name.split(".")[1];
@@ -263,10 +257,10 @@ const Dashboard = () => {
       }
 
       // Create MenuItem instance with shopIds array
-      const shopIds = formData.selectedShops && formData.selectedShops.length > 0 
-        ? formData.selectedShops 
+      const shopIds = formData.selectedShops && formData.selectedShops.length > 0
+        ? formData.selectedShops
         : [shopData.id]; // Default to current shop if no shops selected
-        
+
       const flatName = (formData?.nameMap && formData.nameMap.en) ? formData.nameMap.en : (formData.name || '');
       const flatDescription = (formData?.descriptionMap && formData.descriptionMap.en) ? formData.descriptionMap.en : (formData.description || '');
       const menuItem = new MenuItem(
@@ -283,10 +277,7 @@ const Dashboard = () => {
         shopData.stadiumId,
         null, // docId
         formData.customization || {
-          toppings: [],
-          extras: [],
-          sauces: [],
-          sizes: []
+          options: []
         },
         formData.allergens || [],
         formData.nutritionalInfo || {},
@@ -345,7 +336,7 @@ const Dashboard = () => {
       color: "#ff9800",
       lightColor: "#fff3e0",
     },
-    
+
   ];
 
   if (loading) {

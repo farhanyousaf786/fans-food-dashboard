@@ -15,10 +15,7 @@ class MenuItem {
         stadiumId,
         docId = null,
         customization = {
-            toppings: [],
-            extras: [],
-            sauces: [],
-            sizes: []
+            options: []
         },
         allergens = [],
         nutritionalInfo = {},
@@ -95,10 +92,7 @@ class MenuItem {
             data.stadiumId,
             data.docId || id,
             data.customization || {
-                toppings: [],
-                extras: [],
-                sauces: [],
-                sizes: []
+                options: []
             },
             data.allergens || [],
             data.nutritionalInfo || {},
@@ -114,37 +108,37 @@ class MenuItem {
         // Also store the Firestore document ID on the instance for convenience
         if (id) menuItem.id = id;
         if (!menuItem.docId) menuItem.docId = id;
-        
+
         // Handle both Timestamp and string formats for createdAt/updatedAt
         menuItem.createdAt = this.parseFirestoreDate(data.createdAt);
         menuItem.updatedAt = this.parseFirestoreDate(data.updatedAt);
-        
+
         return menuItem;
     }
 
     static parseFirestoreDate(dateValue) {
         if (!dateValue) return new Date();
-        
+
         // If it's a Firestore Timestamp
         if (typeof dateValue.toDate === 'function') {
             return dateValue.toDate();
         }
-        
+
         // If it's already a Date object
         if (dateValue instanceof Date) {
             return dateValue;
         }
-        
+
         // If it's a string representation
         if (typeof dateValue === 'string') {
             return new Date(dateValue);
         }
-        
+
         // If it's a number (timestamp)
         if (typeof dateValue === 'number') {
             return new Date(dateValue);
         }
-        
+
         // Fallback to current date
         return new Date();
     }

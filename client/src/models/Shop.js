@@ -1,5 +1,5 @@
 class Shop {
-    constructor(name, location, floor, gate, description, admins, stadiumId, stadiumName, latitude = null, longitude = null, docId = null, imageUrl = null) {
+    constructor(name, location, floor, gate, description, admins, stadiumId, stadiumName, latitude = null, longitude = null, docId = null, imageUrl = null, deliveryFee = 0, deliveryFeeCurrency = 'ILS') {
         this.name = name;
         this.location = location;
         this.floor = floor;
@@ -12,6 +12,8 @@ class Shop {
         this.longitude = longitude;
         this.docId = docId;
         this.imageUrl = imageUrl;
+        this.deliveryFee = parseFloat(deliveryFee) || 0; // Delivery fee in local currency
+        this.deliveryFeeCurrency = deliveryFeeCurrency || 'ILS'; // Currency for delivery fee (ILS, USD, EUR)
         // Shop availability flag (open/closed). Default to true for backwards compatibility
         this.shopAvailability = true;
         this.createdAt = new Date();
@@ -35,7 +37,9 @@ class Shop {
             stadiumName: this.stadiumName,
             docId: this.docId,
             shopAvailability: this.shopAvailability,
-            imageUrl: this.imageUrl
+            imageUrl: this.imageUrl,
+            deliveryFee: this.deliveryFee,
+            deliveryFeeCurrency: this.deliveryFeeCurrency
         };
     }
 
@@ -53,7 +57,9 @@ class Shop {
             data.latitude,
             data.longitude,
             id,
-            data.imageUrl
+            data.imageUrl,
+            data.deliveryFee,
+            data.deliveryFeeCurrency || 'ILS'
         );
         shop.id = id;
         shop.createdAt = data.createdAt?.toDate() || new Date();

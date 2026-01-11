@@ -27,7 +27,7 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
   const [showSuccess, setShowSuccess] = useState(false);
   const [stadiumShops, setStadiumShops] = useState(propStadiumShops || []);
   const fileInputRef = useRef(null);
-  
+
   // Simple Combo States
   const [isComboMode, setIsComboMode] = useState(false);
   const [availableItems, setAvailableItems] = useState([]);
@@ -38,7 +38,7 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
     if (setMenuItem) {
       // New interface for editing mode
       const { name, value, checked, type } = event.target;
-      
+
       // Handle nested object updates (like foodType.halal)
       if (name.includes('.')) {
         const [parentKey, childKey] = name.split('.');
@@ -115,12 +115,12 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
   useEffect(() => {
     const fetchStadiumShops = async () => {
       if (!shopData?.stadiumId || propStadiumShops?.length > 0) return;
-      
+
       try {
         const shopsRef = collection(db, 'shops');
         const q = query(shopsRef, where('stadiumId', '==', shopData.stadiumId));
         const querySnapshot = await getDocs(q);
-        
+
         const shops = querySnapshot.docs.map(doc => ({
           id: doc.id,
           name: doc.data().name,
@@ -128,9 +128,9 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
           floor: doc.data().floor,
           gate: doc.data().gate
         }));
-        
+
         setStadiumShops(shops);
-        
+
         // Auto-select current shop if no shops are selected and not in editing mode
         if (!isEditing && (!menuItem.selectedShops || menuItem.selectedShops.length === 0)) {
           handleChange({
@@ -154,12 +154,12 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
   useEffect(() => {
     const fetchAvailableItems = async () => {
       if (!open || !shopData?.stadiumId) return;
-      
+
       try {
         const menuItemsRef = collection(db, 'menuItems');
         const q = query(menuItemsRef, where('stadiumId', '==', shopData.stadiumId));
         const querySnapshot = await getDocs(q);
-        
+
         const items = querySnapshot.docs.map(doc => ({
           id: doc.id,
           name: doc.data().name,
@@ -168,7 +168,7 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
           currency: doc.data().currency || 'USD',
           images: doc.data().images || []
         }));
-        
+
         setAvailableItems(items);
       } catch (error) {
         console.error('Error fetching available items:', error);
@@ -182,10 +182,10 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
   useEffect(() => {
     if (isEditing && menuItem?.isCombo && availableItems.length > 0) {
       setIsComboMode(true);
-      
+
       // Find the original combo items from availableItems using comboItemIds
       if (menuItem.comboItemIds && menuItem.comboItemIds.length > 0) {
-        const comboItems = availableItems.filter(item => 
+        const comboItems = availableItems.filter(item =>
           menuItem.comboItemIds.includes(item.id)
         );
         setSelectedComboItems(comboItems);
@@ -204,7 +204,7 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
   const handleShopSelection = (shopId) => {
     const currentSelection = menuItem.selectedShops || [];
     let newSelection;
-    
+
     if (currentSelection.includes(shopId)) {
       // Remove shop from selection
       newSelection = currentSelection.filter(id => id !== shopId);
@@ -212,7 +212,7 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
       // Add shop to selection
       newSelection = [...currentSelection, shopId];
     }
-    
+
     handleChange({
       target: {
         name: 'selectedShops',
@@ -246,31 +246,43 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
 
   const handleAddOption = (type) => {
     const updated = { ...menuItem.customization };
+    // Ensure the array exists before spreading
+    if (!updated[type]) {
+      updated[type] = [];
+    }
     updated[type] = [...updated[type], { name: '', price: '' }];
     handleChange({ target: { name: 'customization', value: updated } });
   };
 
   const handleRemoveOption = (type, index) => {
     const updated = { ...menuItem.customization };
-    updated[type].splice(index, 1);
-    handleChange({ target: { name: 'customization', value: updated } });
+    if (updated[type]) {
+      updated[type] = updated[type].filter((_, i) => i !== index);
+      handleChange({ target: { name: 'customization', value: updated } });
+    }
   };
 
   const handleOptionChange = (type, index, field, value) => {
     const updated = { ...menuItem.customization };
-    // Convert price to number
-    if (field === 'price') {
-      updated[type][index][field] = parseFloat(value) || 0;
-    } else {
-      updated[type][index][field] = value;
-    }
+    if (!updated[type] || !updated[type][index]) return;
+
+    // Create a new array with the updated item
+    updated[type] = updated[type].map((item, i) => {
+      if (i === index) {
+        return {
+          ...item,
+          [field]: field === 'price' ? (parseFloat(value) || 0) : value
+        };
+      }
+      return item;
+    });
     handleChange({ target: { name: 'customization', value: updated } });
   };
 
   // Simple Combo Functions
   const handleComboItemSelection = (item) => {
     const isSelected = selectedComboItems.some(selected => selected.id === item.id);
-    
+
     if (isSelected) {
       setSelectedComboItems(prev => prev.filter(selected => selected.id !== item.id));
     } else {
@@ -280,11 +292,11 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
 
   const handleCreateCombo = () => {
     if (selectedComboItems.length < 2) return;
-    
+
     // Generate combo names exactly as before
     const comboNameEn = selectedComboItems.map(item => item.nameMap?.en || item.name).join(' + ');
     const comboNameHe = selectedComboItems.map(item => item.nameMap?.he || item.nameMap?.en || item.name).join(' + ');
-    
+
     // Collect all images from selected items
     const comboImages = [];
     selectedComboItems.forEach(item => {
@@ -292,9 +304,9 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
         comboImages.push(...item.images);
       }
     });
-    
+
     const comboItemIds = selectedComboItems.map(item => item.id);
-    
+
     // Log combo data for debugging
     console.log('🍽️ COMBO CREATED:', {
       isCombo: true,
@@ -305,7 +317,7 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
       totalImages: comboImages.length,
       imagesArray: comboImages
     });
-    
+
     // Update form with combo data
     handleChange({ target: { name: 'name', value: comboNameEn } });
     handleChange({ target: { name: 'nameMap', value: { en: comboNameEn, he: comboNameHe } } });
@@ -382,13 +394,13 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
                   color="success"
                 />
               </Box>
-              
+
               {isComboMode && (
                 <Box>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     Select items to create a combo meal
                   </Typography>
-                  
+
                   {/* Available Items List */}
                   <Box sx={{ maxHeight: '300px', overflowY: 'auto', mb: 2 }}>
                     {availableItems.map((item) => {
@@ -531,27 +543,27 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
                 </Box>
               </Stack>
             </Box>
-            
+
             {/* Price with Currency Selection */}
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-              <TextField 
-                label="Price" 
-                name="price" 
-                type="number" 
-                required 
-                value={menuItem.price} 
+              <TextField
+                label="Price"
+                name="price"
+                type="number"
+                required
+                value={menuItem.price}
                 onChange={handleChange}
                 sx={{ flex: 1 }}
-                InputProps={{ 
-                  startAdornment: <span>{menuItem.currency === 'NIS' ? '₪' : '$'}</span> 
+                InputProps={{
+                  startAdornment: <span>{menuItem.currency === 'NIS' ? '₪' : '$'}</span>
                 }}
               />
               <FormControl sx={{ minWidth: 120 }}>
                 <InputLabel>Currency</InputLabel>
-                <Select 
-                  name="currency" 
-                  value={menuItem.currency || 'USD'} 
-                  onChange={handleChange} 
+                <Select
+                  name="currency"
+                  value={menuItem.currency || 'USD'}
+                  onChange={handleChange}
                   label="Currency"
                 >
                   <MenuItem value="USD">
@@ -620,7 +632,7 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Select which shops in {shopData?.stadiumName || 'this stadium'} will offer this menu item
               </Typography>
-              
+
               {stadiumShops.length > 0 ? (
                 <Grid container spacing={1}>
                   {stadiumShops.filter(shop => shop && shop.id && shop.name).map((shop) => (
@@ -667,7 +679,7 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
                   <Typography color="text.secondary">Loading shops...</Typography>
                 </Box>
               )}
-              
+
               {menuItem.selectedShops && menuItem.selectedShops.length > 0 && (
                 <Box sx={{ mt: 2, p: 1, bgcolor: '#e8f5e8', borderRadius: '4px' }}>
                   <Typography variant="body2" color="success.main">
@@ -684,16 +696,16 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
 
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <Typography>Activate Offer</Typography>
-              <Switch 
-                name="offerActive" 
-                checked={menuItem.offerActive || false} 
-                onChange={(e) => handleChange({ 
-                  target: { 
-                    name: 'offerActive', 
-                    value: e.target.checked 
-                  } 
-                })} 
-                color="secondary" 
+              <Switch
+                name="offerActive"
+                checked={menuItem.offerActive || false}
+                onChange={(e) => handleChange({
+                  target: {
+                    name: 'offerActive',
+                    value: e.target.checked
+                  }
+                })}
+                color="secondary"
               />
             </Box>
 
@@ -707,8 +719,8 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
                 onChange={handleChange}
                 InputProps={{
                   endAdornment: <Typography sx={{ color: '#888' }}>%</Typography>,
-                  inputProps: { 
-                    min: 0, 
+                  inputProps: {
+                    min: 0,
                     max: 100,
                     step: 0.1 // Allows decimal numbers with one decimal place
                   }
@@ -801,59 +813,51 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
 
             {/* Customization Options */}
             <Box sx={{ mt: 3, border: '1px solid #ddd', borderRadius: '8px', p: 2, bgcolor: '#fff' }}>
-              <Typography variant="subtitle1" fontWeight="500" gutterBottom>Customization Options</Typography>
-              {Object.entries(menuItem.customization || {}).map(([type, options]) => (
-                <Box key={type} sx={{ mb: 3 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                    <Typography variant="subtitle2" sx={{ textTransform: 'capitalize' }}>{type}</Typography>
-                    <Button
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="subtitle1" fontWeight="500">Customization Options</Typography>
+                <Button
+                  size="small"
+                  startIcon={<AddCircleOutline />}
+                  onClick={() => handleAddOption('options')}
+                >
+                  Add Option
+                </Button>
+              </Box>
+              <Stack spacing={2}>
+                {((menuItem.customization?.options || []).filter(option => option && typeof option === 'object')).map((option, index) => (
+                  <Box key={index} sx={{
+                    display: 'flex',
+                    gap: 2,
+                    alignItems: 'center',
+                    p: 1,
+                    border: '1px solid #eee',
+                    borderRadius: '4px'
+                  }}>
+                    <TextField
                       size="small"
-                      startIcon={<AddCircleOutline />}
-                      onClick={() => handleAddOption(type)}
+                      label="Name"
+                      value={option.name || ''}
+                      onChange={(e) => handleOptionChange('options', index, 'name', e.target.value)}
+                      sx={{ flex: 1 }}
+                    />
+                    <TextField
+                      size="small"
+                      label="Price"
+                      type="number"
+                      value={option.price || ''}
+                      onChange={(e) => handleOptionChange('options', index, 'price', e.target.value)}
+                      sx={{ width: '120px' }}
+                    />
+                    <IconButton
+                      size="small"
+                      onClick={() => handleRemoveOption('options', index)}
+                      color="error"
                     >
-                      Add {type.slice(0, -1)}
-                    </Button>
+                      <RemoveCircleOutline />
+                    </IconButton>
                   </Box>
-                  <Stack spacing={2}>
-                    {(options || []).filter(option => option && typeof option === 'object').map((option, index) => (
-                      <Box key={index} sx={{
-                        display: 'flex',
-                        gap: 2,
-                        alignItems: 'center',
-                        p: 1,
-                        border: '1px solid #eee',
-                        borderRadius: '4px'
-                      }}>
-                        <TextField
-                          size="small"
-                          label="Name"
-                          value={option.name || ''}
-                          onChange={(e) => handleOptionChange(type, index, 'name', e.target.value)}
-                          sx={{ flex: 1 }}
-                        />
-                        <TextField
-                          size="small"
-                          label="Price"
-                          type="number"
-                          value={option.price || ''}
-                          onChange={(e) => handleOptionChange(type, index, 'price', e.target.value)}
-                          sx={{ width: '100px' }}
-                          InputProps={{
-                            startAdornment: <Typography>$</Typography>
-                          }}
-                        />
-                        <IconButton
-                          size="small"
-                          onClick={() => handleRemoveOption(type, index)}
-                          color="error"
-                        >
-                          <RemoveCircleOutline />
-                        </IconButton>
-                      </Box>
-                    ))}
-                  </Stack>
-                </Box>
-              ))}
+                ))}
+              </Stack>
             </Box>
 
             {/* Image Upload Section */}

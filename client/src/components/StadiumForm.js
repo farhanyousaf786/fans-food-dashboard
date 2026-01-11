@@ -39,7 +39,9 @@ const StadiumForm = ({
     availablePickupPoints: initialData?.availablePickupPoints || false,
     availableShops: initialData?.availableShops || false,
     availableStands: initialData?.availableStands || false,
-    availableFloors: initialData?.availableFloors || false
+    availableFloors: initialData?.availableFloors || false,
+    availableSeats: initialData?.availableSeats || false,
+    availableTickets: initialData?.availableTickets || false
   });
   
   const [selectedImage, setSelectedImage] = useState(null);
@@ -60,7 +62,9 @@ const StadiumForm = ({
         availablePickupPoints: initialData.availablePickupPoints || false,
         availableShops: initialData.availableShops || false,
         availableStands: initialData.availableStands || false,
-        availableFloors: initialData.availableFloors || false
+        availableFloors: initialData.availableFloors || false,
+        availableSeats: initialData.availableSeats || false,
+        availableTickets: initialData.availableTickets || false
       });
       setLocationSelected(!!(initialData.latitude && initialData.longitude));
     } else {
@@ -77,7 +81,9 @@ const StadiumForm = ({
         availablePickupPoints: false,
         availableShops: false,
         availableStands: false,
-        availableFloors: false
+        availableFloors: false,
+        availableSeats: false,
+        availableTickets: false
       });
       setLocationSelected(false);
     }
@@ -136,7 +142,9 @@ const StadiumForm = ({
       availablePickupPoints: false,
       availableShops: false,
       availableStands: false,
-      availableFloors: false
+      availableFloors: false,
+      availableSeats: false,
+      availableTickets: false
     });
     setSelectedImage(null);
     setLocationSelected(false);
@@ -459,6 +467,28 @@ const StadiumForm = ({
                   />
                 }
                 label="Floors"
+                sx={{ '& .MuiFormControlLabel-label': { fontSize: '0.95rem' } }}
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.availableSeats}
+                    onChange={(e) => handleChange('availableSeats', e.target.checked)}
+                    color="primary"
+                  />
+                }
+                label="Seats"
+                sx={{ '& .MuiFormControlLabel-label': { fontSize: '0.95rem' } }}
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.availableTickets}
+                    onChange={(e) => handleChange('availableTickets', e.target.checked)}
+                    color="primary"
+                  />
+                }
+                label="Tickets"
                 sx={{ '& .MuiFormControlLabel-label': { fontSize: '0.95rem' } }}
               />
             </Box>

@@ -88,7 +88,9 @@ const AdminPanel = () => {
                 availablePickupPoints: formData.availablePickupPoints,
                 availableShops: formData.availableShops,
                 availableStands: formData.availableStands,
-                availableFloors: formData.availableFloors
+                availableFloors: formData.availableFloors,
+                availableSeats: formData.availableSeats,
+                availableTickets: formData.availableTickets
             };
             
             await updateDoc(stadiumRef, updatedStadium);
@@ -109,7 +111,9 @@ const AdminPanel = () => {
                         updatedStadium.availablePickupPoints,
                         updatedStadium.availableShops,
                         updatedStadium.availableStands,
-                        updatedStadium.availableFloors
+                        updatedStadium.availableFloors,
+                        updatedStadium.availableSeats,
+                        updatedStadium.availableTickets
                     );
                     updatedStadiumObj.id = editingStadium.id;
                     updatedStadiumObj.createdAt = stadium.createdAt;
@@ -186,7 +190,9 @@ const AdminPanel = () => {
                 formData.availablePickupPoints,
                 formData.availableShops,
                 formData.availableStands,
-                formData.availableFloors
+                formData.availableFloors,
+                formData.availableSeats,
+                formData.availableTickets
             );
             
             const docRef = await addDoc(stadiumsRef, newStadiumObj.toFirestore());

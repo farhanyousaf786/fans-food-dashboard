@@ -3,21 +3,25 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { db, storage } from '../../../config/firebase';
 import { collection, getDocs, doc, deleteDoc, updateDoc, query, where, addDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { 
-  Box, 
-  Typography, 
-  Card, 
-  CardContent, 
-  Button, 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  DialogActions, 
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   TextField,
   IconButton,
   Switch,
   FormControlLabel,
-  Tooltip
+  Tooltip,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel
 } from '@mui/material';
 import { Edit, Delete, Add as AddIcon } from '@mui/icons-material';
 import Shop from '../../../models/Shop';
@@ -33,16 +37,29 @@ const MyShopsSection = () => {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [shopToDelete, setShopToDelete] = useState(null);
   const [openAddDialog, setOpenAddDialog] = useState(false);
-  const [newShop, setNewShop] = useState({ 
-    name: '', 
-    location: '', 
-    floor: '', 
-    gate: '', 
+  const [newShop, setNewShop] = useState({
+    name: '',
+    location: '',
+    floor: '',
+    gate: '',
     description: '',
+    deliveryFee: '',
+    deliveryFeeCurrency: 'ILS',
     imageFile: null,
     imagePreview: null
   });
   const [expanded, setExpanded] = useState(true);
+
+  const getCurrencySymbol = (currencyCode) => {
+    switch (currencyCode) {
+      case 'ILS':
+        return '₪';
+      case 'USD':
+        return '$';
+      default:
+        return '';
+    }
+  };
 
   useEffect(() => {
     const fetchShops = async () => {
@@ -55,7 +72,7 @@ const MyShopsSection = () => {
           const rawData = doc.data();
           return Shop.fromFirestore(rawData, doc.id);
         });
-        
+
         console.log('🏪 MY SHOPS SECTION: Shops for stadium', stadiumId, ':', stadiumShops.length);
         setShops(stadiumShops);
       } catch (error) {
@@ -73,12 +90,14 @@ const MyShopsSection = () => {
 
   const handleCloseAddDialog = () => {
     setOpenAddDialog(false);
-    setNewShop({ 
-      name: '', 
-      location: '', 
-      floor: '', 
-      gate: '', 
+    setNewShop({
+      name: '',
+      location: '',
+      floor: '',
+      gate: '',
       description: '',
+      deliveryFee: '',
+      deliveryFeeCurrency: 'ILS',
       imageFile: null,
       imagePreview: null
     });
@@ -87,8 +106,8 @@ const MyShopsSection = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setNewShop({ 
-        ...newShop, 
+      setNewShop({
+        ...newShop,
         imageFile: file,
         imagePreview: URL.createObjectURL(file)
       });
@@ -101,7 +120,7 @@ const MyShopsSection = () => {
 
       // Upload image if provided
       if (newShop.imageFile) {
-        const imageRef = ref(storage, `shops/${Date.now()}_${newShop.imageFile.name}`);
+        const imageRef = ref(storage, `shops / ${ Date.now() }_${ newShop.imageFile.name } `);
         await uploadBytes(imageRef, newShop.imageFile);
         imageUrl = await getDownloadURL(imageRef);
         console.log('✅ Image uploaded successfully:', imageUrl);
@@ -120,7 +139,9 @@ const MyShopsSection = () => {
         null, // latitude
         null, // longitude
         null, // docId
-        imageUrl // imageUrl
+        imageUrl, // imageUrl
+        newShop.deliveryFee ? parseFloat(newShop.deliveryFee) : 0, // deliveryFee
+        newShop.deliveryFeeCurrency || 'ILS' // deliveryFeeCurrency
       );
 
       // Add to Firestore
@@ -130,7 +151,7 @@ const MyShopsSection = () => {
 
       // Update local state
       setShops(prev => [...prev, { id: shopDocRef.id, ...shopData }]);
-      
+
       handleCloseAddDialog();
     } catch (error) {
       console.error('Error creating shop:', error);
@@ -166,7 +187,7 @@ const MyShopsSection = () => {
 
   const handleUpdateShop = async () => {
     if (!editingShop) return;
-    
+
     try {
       const shopRef = doc(db, 'shops', editingShop.id);
       await updateDoc(shopRef, {
@@ -174,14 +195,16 @@ const MyShopsSection = () => {
         location: editingShop.location,
         floor: editingShop.floor,
         gate: editingShop.gate,
-        description: editingShop.description
+        description: editingShop.description,
+        deliveryFee: editingShop.deliveryFee ? parseFloat(editingShop.deliveryFee) : 0,
+        deliveryFeeCurrency: editingShop.deliveryFeeCurrency || 'ILS'
       });
-      
+
       // Update local state
-      setShops(prev => prev.map(shop => 
+      setShops(prev => prev.map(shop =>
         shop.id === editingShop.id ? editingShop : shop
       ));
-      
+
       handleCloseEditDialog();
     } catch (error) {
       console.error('Error updating shop:', error);
@@ -204,13 +227,13 @@ const MyShopsSection = () => {
 
     try {
       console.log('🗑️ MY SHOPS SECTION: Deleting shop:', shopToDelete.id);
-      
+
       // Delete shop from Firestore
       await deleteDoc(doc(db, 'shops', shopToDelete.id));
-      
+
       // Remove shop from local state
       setShops(prev => prev.filter(shop => shop.id !== shopToDelete.id));
-      
+
       console.log('✅ MY SHOPS SECTION: Shop deleted successfully');
       handleCloseDeleteDialog();
     } catch (error) {
@@ -230,7 +253,7 @@ const MyShopsSection = () => {
           variant="contained"
           startIcon={<AddIcon />}
           onClick={handleAddShop}
-          sx={{ 
+          sx={{
             bgcolor: 'primary.main',
             '&:hover': { bgcolor: 'primary.dark' }
           }}
@@ -251,105 +274,108 @@ const MyShopsSection = () => {
       ) : (
         <div className="shop-grid-wrapper">
           <div className="shop-grid-container">
-          {shops.map((shop) => (
-            <Card 
-              key={shop.id}
-              className="shop-card"
-              onClick={(e) => e.stopPropagation()}
-              sx={{ 
-                height: '100%',
-                cursor: 'pointer', 
-                '&:hover': { boxShadow: 3, transform: 'scale(1.01)' },
-                transition: 'all 0.2s ease'
-              }}
-            >
-              <CardContent className="shop-card-content">
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1.5 }}>
-                  <Box sx={{ flex: 1 }}>
-                    <Typography className="shop-name">
-                      {shop.name}
-                    </Typography>
-                    <Typography className="shop-details">
-                      🏟️ {shop.stadiumName}
-                    </Typography>
-                    <Typography className="shop-details">
-                      📍 {shop.location}
-                    </Typography>
-                    <Typography className="shop-details">
-                      🚪 Gate {shop.gate} • Floor {shop.floor}
-                    </Typography>
-                    {shop.description && (
-                      <Typography className="shop-details">
-                        {shop.description}
+            {shops.map((shop) => (
+              <Card
+                key={shop.id}
+                className="shop-card"
+                onClick={(e) => e.stopPropagation()}
+                sx={{
+                  height: '100%',
+                  cursor: 'pointer',
+                  '&:hover': { boxShadow: 3, transform: 'scale(1.01)' },
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <CardContent className="shop-card-content">
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1.5 }}>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography className="shop-name">
+                        {shop.name}
                       </Typography>
-                    )}
+                      <Typography className="shop-details">
+                        🏟️ {shop.stadiumName}
+                      </Typography>
+                      <Typography className="shop-details">
+                        📍 {shop.location}
+                      </Typography>
+                      <Typography className="shop-details">
+                        🚪 Gate {shop.gate} • Floor {shop.floor}
+                      </Typography>
+                      {shop.description && (
+                        <Typography className="shop-details">
+                          {shop.description}
+                        </Typography>
+                      )}
+                      <Typography className="shop-details" sx={{ color: '#4caf50', fontWeight: 500 }}>
+                        🛵 Delivery Fee: ₪{shop.deliveryFee ? parseFloat(shop.deliveryFee).toFixed(2) : '0.00'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, ml: 1 }}>
+                      <Tooltip title={shop.shopAvailability ? 'Shop is Open' : 'Shop is Closed'}>
+                        <FormControlLabel
+                          onClick={(e) => e.stopPropagation()}
+                          control={
+                            <Switch
+                              checked={!!shop.shopAvailability}
+                              onChange={(e) => handleToggleAvailability(shop, e)}
+                              color="success"
+                              size="small"
+                            />
+                          }
+                          label={shop.shopAvailability ? 'Open' : 'Closed'}
+                          sx={{ ml: 'auto' }}
+                          componentsProps={{
+                            typography: {
+                              variant: 'caption'
+                            }
+                          }}
+                        />
+                      </Tooltip>
+                    </Box>
                   </Box>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, ml: 1 }}>
-                    <Tooltip title={shop.shopAvailability ? 'Shop is Open' : 'Shop is Closed'}>
-                      <FormControlLabel
-                        onClick={(e) => e.stopPropagation()}
-                        control={
-                          <Switch
-                            checked={!!shop.shopAvailability}
-                            onChange={(e) => handleToggleAvailability(shop, e)}
-                            color="success"
-                            size="small"
-                          />
-                        }
-                        label={shop.shopAvailability ? 'Open' : 'Closed'}
-                        sx={{ ml: 'auto' }}
-                        componentsProps={{
-                          typography: {
-                            variant: 'caption'
+                  <Box className="shop-actions">
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      <IconButton
+                        onClick={(e) => handleEditShop(shop, e)}
+                        className="shop-icon-button"
+                        sx={{
+                          color: '#3D70FF',
+                          '&:hover': {
+                            backgroundColor: 'rgba(61, 112, 255, 0.1)'
                           }
                         }}
-                      />
-                    </Tooltip>
-                  </Box>
-                </Box>
-                <Box className="shop-actions">
-                  <Box sx={{ display: 'flex', gap: 0.5 }}>
-                    <IconButton
-                      onClick={(e) => handleEditShop(shop, e)}
-                      className="shop-icon-button"
-                      sx={{ 
-                        color: '#3D70FF',
-                        '&:hover': { 
-                          backgroundColor: 'rgba(61, 112, 255, 0.1)' 
-                        }
-                      }}
+                        size="small"
+                      >
+                        <Edit fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        onClick={(e) => handleOpenDeleteDialog(shop, e)}
+                        className="shop-icon-button"
+                        sx={{
+                          color: '#dc004e',
+                          '&:hover': {
+                            backgroundColor: 'rgba(220, 0, 78, 0.1)'
+                          }
+                        }}
+                        size="small"
+                      >
+                        <Delete fontSize="small" />
+                      </IconButton>
+                    </Box>
+                    <Button
+                      variant="contained"
                       size="small"
+                      className="shop-go-button"
+                      onClick={() => navigate('/dashboard', { state: { shopData: shop } })}
                     >
-                      <Edit fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      onClick={(e) => handleOpenDeleteDialog(shop, e)}
-                      className="shop-icon-button"
-                      sx={{ 
-                        color: '#dc004e',
-                        '&:hover': { 
-                          backgroundColor: 'rgba(220, 0, 78, 0.1)' 
-                        }
-                      }}
-                      size="small"
-                    >
-                      <Delete fontSize="small" />
-                    </IconButton>
+                      Go to Shop
+                    </Button>
                   </Box>
-                  <Button 
-                    variant="contained" 
-                    size="small"
-                    className="shop-go-button"
-                    onClick={() => navigate('/dashboard', { state: { shopData: shop } })}
-                  >
-                    Go to Shop
-                  </Button>
-                </Box>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
-      </div>
       )}
 
       {/* Edit Shop Dialog */}
@@ -397,7 +423,29 @@ const MyShopsSection = () => {
             rows={4}
             value={editingShop?.description || ''}
             onChange={(e) => setEditingShop(prev => ({ ...prev, description: e.target.value }))}
+            sx={{ mb: 2 }}
           />
+          <TextField
+            margin="dense"
+            label="Delivery Fee"
+            fullWidth
+            type="number"
+            value={editingShop?.deliveryFee || ''}
+            onChange={(e) => setEditingShop(prev => ({ ...prev, deliveryFee: e.target.value }))}
+            helperText="Enter delivery fee amount (e.g., 5.00)"
+          <FormControl fullWidth margin="dense" sx={{ mb: 2 }}>
+            <InputLabel>Currency</InputLabel>
+            <Select
+              value={editingShop?.deliveryFeeCurrency || 'ILS'}
+              onChange={(e) => setEditingShop(prev => ({ ...prev, deliveryFeeCurrency: e.target.value }))}
+              label="Currency"
+            >
+              <MenuItem value="ILS">₪ ILS (Israeli Shekel)</MenuItem>
+              <MenuItem value="USD">$ USD (US Dollar)</MenuItem>
+              <MenuItem value="EUR">€ EUR (Euro)</MenuItem>
+            </Select>
+          </FormControl>
+          </FormControl>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseEditDialog}>Cancel</Button>
@@ -415,10 +463,10 @@ const MyShopsSection = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDeleteDialog}>Cancel</Button>
-          <Button 
-            onClick={handleDeleteShop} 
-            variant="contained" 
-            sx={{ 
+          <Button
+            onClick={handleDeleteShop}
+            variant="contained"
+            sx={{
               backgroundColor: '#dc004e',
               '&:hover': { backgroundColor: '#b8003d' }
             }}
@@ -475,6 +523,28 @@ const MyShopsSection = () => {
             onChange={(e) => setNewShop({ ...newShop, description: e.target.value })}
             sx={{ mb: 2 }}
           />
+          <TextField
+            margin="dense"
+            label="Delivery Fee"
+            fullWidth
+            type="number"
+            value={newShop.deliveryFee}
+            onChange={(e) => setNewShop({ ...newShop, deliveryFee: e.target.value })}
+            helperText="Enter delivery fee amount (e.g., 5.00)"
+            sx={{ mb: 2 }}
+          <FormControl fullWidth margin="dense" sx={{ mb: 2 }}>
+            <InputLabel>Currency</InputLabel>
+            <Select
+              value={newShop.deliveryFeeCurrency}
+              onChange={(e) => setNewShop({ ...newShop, deliveryFeeCurrency: e.target.value })}
+              label="Currency"
+            >
+              <MenuItem value="ILS">₪ ILS (Israeli Shekel)</MenuItem>
+              <MenuItem value="USD">$ USD (US Dollar)</MenuItem>
+              <MenuItem value="EUR">€ EUR (Euro)</MenuItem>
+            </Select>
+          </FormControl>
+          </FormControl>
           <Button
             variant="outlined"
             component="label"
@@ -491,9 +561,9 @@ const MyShopsSection = () => {
           </Button>
           {newShop.imagePreview && (
             <Box sx={{ mt: 2, textAlign: 'center' }}>
-              <img 
-                src={newShop.imagePreview} 
-                alt="Shop preview" 
+              <img
+                src={newShop.imagePreview}
+                alt="Shop preview"
                 style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }}
               />
             </Box>

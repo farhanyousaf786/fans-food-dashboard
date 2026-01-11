@@ -43,7 +43,8 @@ const ShopPanel = () => {
     description: '',
     latitude: '',
     longitude: '',
-    admins: []
+    admins: [],
+    deliveryFee: ''
   });
 
   useEffect(() => {
@@ -140,7 +141,10 @@ const ShopPanel = () => {
         selectedStadiumId,
         stadiumName,
         newShop.latitude ? parseFloat(newShop.latitude) : null,
-        newShop.longitude ? parseFloat(newShop.longitude) : null
+        newShop.longitude ? parseFloat(newShop.longitude) : null,
+        null,
+        null,
+        newShop.deliveryFee ? parseFloat(newShop.deliveryFee) : 0
       );
 
       // First create shop in root collection
@@ -149,6 +153,8 @@ const ShopPanel = () => {
       if (imageUrl) {
         shopData.imageUrl = imageUrl;
       }
+      // Ensure deliveryFee is included
+      shopData.deliveryFee = newShop.deliveryFee ? parseFloat(newShop.deliveryFee) : 0;
       const shopDocRef = await addDoc(shopsRootCollection, shopData);
 
       // Update the shop instance and document with its own ID
@@ -247,7 +253,8 @@ const ShopPanel = () => {
       description: shop.description || '',
       latitude: shop.latitude !== undefined && shop.latitude !== null ? shop.latitude.toString() : '',
       longitude: shop.longitude !== undefined && shop.longitude !== null ? shop.longitude.toString() : '',
-      admins: shop.admins || []
+      admins: shop.admins || [],
+      deliveryFee: shop.deliveryFee !== undefined && shop.deliveryFee !== null ? shop.deliveryFee.toString() : ''
     });
     setOpenEditDialog(true);
   };
@@ -277,6 +284,7 @@ const ShopPanel = () => {
         description: newShop.description,
         latitude: newShop.latitude ? parseFloat(newShop.latitude) : null,
         longitude: newShop.longitude ? parseFloat(newShop.longitude) : null,
+        deliveryFee: newShop.deliveryFee ? parseFloat(newShop.deliveryFee) : 0,
         updatedAt: new Date()
       };
 
@@ -315,7 +323,8 @@ const ShopPanel = () => {
       description: '',
       latitude: '',
       longitude: '',
-      admins: []
+      admins: [],
+      deliveryFee: ''
     });
   };
 
@@ -405,6 +414,7 @@ const ShopPanel = () => {
                       <Typography className="stadium-location"><span>🏟️</span>{shop.stadiumName}</Typography>
                       <Typography className="stadium-location"><span>📍</span>{shop.location}</Typography>
                       <Typography className="stadium-capacity"><span>🚪</span>Gate {shop.gate}, Floor {shop.floor}</Typography>
+                      <Typography className="stadium-capacity"><span>🛵</span>Delivery Fee: {shop.deliveryFee ? shop.deliveryFee.toFixed(2) : '0.00'}</Typography>
                     </div>
                     <Typography className="stadium-about">{shop.description}</Typography>
                   </CardContent>
@@ -496,6 +506,19 @@ const ShopPanel = () => {
                 value={newShop.description}
                 onChange={(e) => setNewShop({ ...newShop, description: e.target.value })}
               />
+              <TextField
+                margin="dense"
+                label="Delivery Fee"
+                type="number"
+                inputProps={{
+                  min: "0",
+                  step: "0.01"
+                }}
+                fullWidth
+                value={newShop.deliveryFee}
+                onChange={(e) => setNewShop({ ...newShop, deliveryFee: e.target.value })}
+                helperText="Enter delivery fee amount (e.g., 5.00)"
+              />
 
 
               {/* Profile Picture Upload */}
@@ -586,7 +609,7 @@ const ShopPanel = () => {
                 onClick={handleCreateShop}
                 variant="contained"
                 className="add-button"
-                disabled={!newShop.name || !newShop.location || !newShop.floor || !newShop.gate || !newShop.latitude || !newShop.longitude}
+                disabled={!newShop.name || !newShop.location || !newShop.floor || !newShop.gate || !newShop.latitude || !newShop.longitude || !newShop.deliveryFee}
               >
                 Create Shop
               </Button>
@@ -657,6 +680,19 @@ const ShopPanel = () => {
                 rows={4}
                 value={newShop.description}
                 onChange={(e) => setNewShop({ ...newShop, description: e.target.value })}
+              />
+              <TextField
+                margin="dense"
+                label="Delivery Fee"
+                type="number"
+                inputProps={{
+                  min: "0",
+                  step: "0.01"
+                }}
+                fullWidth
+                value={newShop.deliveryFee}
+                onChange={(e) => setNewShop({ ...newShop, deliveryFee: e.target.value })}
+                helperText="Enter delivery fee amount (e.g., 5.00)"
               />
 
 
