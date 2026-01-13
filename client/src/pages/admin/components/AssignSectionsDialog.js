@@ -5,13 +5,6 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  OutlinedInput,
-  Checkbox,
-  ListItemText,
   Box,
   Typography,
   Chip,
@@ -20,56 +13,40 @@ import {
   ListItem,
 } from '@mui/material';
 import { ArrowUpward, ArrowDownward, Close } from '@mui/icons-material';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, query, where } from 'firebase/firestore';
 import { db } from '../../../config/firebase';
 
-const AssignSectionsDialog = ({ open, onClose, user }) => {
-  const [stadiums, setStadiums] = useState([]);
+const AssignSectionsDialog = ({ open, onClose, user, stadiumId }) => {
   const [sections, setSections] = useState([]);
-  const [selectedStadium, setSelectedStadium] = useState('');
+  const [shops, setShops] = useState([]);
   const [selectedSections, setSelectedSections] = useState([]);
+  const [selectedShops, setSelectedShops] = useState([]);
   const [loading, setLoading] = useState(false);
 
   // Initialize form with user's current assignments
   useEffect(() => {
     if (user) {
-      setSelectedStadium(user.stadiumId || '');
       setSelectedSections(user.sectionIds || []);
+      setSelectedShops(user.shopIds || []);
     }
   }, [user]);
 
-  // Fetch stadiums on mount
-  useEffect(() => {
-    const fetchStadiums = async () => {
-      try {
-        const stadiumsRef = collection(db, 'stadiums');
-        const stadiumsSnap = await getDocs(stadiumsRef);
-        const stadiumsList = stadiumsSnap.docs.map(doc => ({ 
-          id: doc.id, 
-          ...doc.data() 
-        }));
-        setStadiums(stadiumsList);
-      } catch (error) {
-        console.error('Error fetching stadiums:', error);
-      }
-    };
-    fetchStadiums();
-  }, []);
 
-  // Fetch sections when stadium is selected
+
+  // Fetch sections when stadium is available
   useEffect(() => {
-    if (!selectedStadium) {
+    if (!stadiumId) {
       setSections([]);
       return;
     }
-    
+
     const fetchSections = async () => {
       try {
-        const sectionsRef = collection(db, 'stadiums', selectedStadium, 'sections');
+        const sectionsRef = collection(db, 'stadiums', stadiumId, 'sections');
         const sectionsSnap = await getDocs(sectionsRef);
-        const sectionsList = sectionsSnap.docs.map(doc => ({ 
-          id: doc.id, 
-          ...doc.data() 
+        const sectionsList = sectionsSnap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
         }));
         // Sort by section number
         sectionsList.sort((a, b) => (a.sectionNo || 0) - (b.sectionNo || 0));
@@ -78,14 +55,38 @@ const AssignSectionsDialog = ({ open, onClose, user }) => {
         console.error('Error fetching sections:', error);
       }
     };
-    
-    fetchSections();
-  }, [selectedStadium]);
 
-  const handleStadiumChange = (event) => {
-    setSelectedStadium(event.target.value);
-    setSelectedSections([]); // Reset sections when stadium changes
-  };
+    fetchSections();
+  }, [stadiumId]);
+
+  // Fetch shops when stadium is available
+  useEffect(() => {
+    if (!stadiumId) {
+      setShops([]);
+      return;
+    }
+
+    const fetchShops = async () => {
+      try {
+        const shopsRef = collection(db, 'shops');
+        const q = query(shopsRef, where('stadiumId', '==', stadiumId));
+        const shopsSnap = await getDocs(q);
+        const shopsList = shopsSnap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        // Sort by name
+        shopsList.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        setShops(shopsList);
+      } catch (error) {
+        console.error('Error fetching shops:', error);
+      }
+    };
+
+    fetchShops();
+  }, [stadiumId]);
+
+
 
   const handleSectionToggle = (sectionId) => {
     setSelectedSections((prev) => {
@@ -119,14 +120,29 @@ const AssignSectionsDialog = ({ open, onClose, user }) => {
     setSelectedSections((prev) => prev.filter(id => id !== sectionId));
   };
 
+  const handleShopToggle = (shopId) => {
+    setSelectedShops((prev) => {
+      if (prev.includes(shopId)) {
+        return prev.filter(id => id !== shopId);
+      } else {
+        return [...prev, shopId];
+      }
+    });
+  };
+
+  const handleRemoveShop = (shopId) => {
+    setSelectedShops((prev) => prev.filter(id => id !== shopId));
+  };
+
   const handleSave = async () => {
     if (!user) return;
-    
+
     setLoading(true);
     try {
       await updateDoc(doc(db, 'deliveryUsers', user.id), {
-        stadiumId: selectedStadium,
+        stadiumId: stadiumId,
         sectionIds: selectedSections,
+        shopIds: selectedShops,
         updatedAt: new Date(),
       });
       onClose();
@@ -138,56 +154,39 @@ const AssignSectionsDialog = ({ open, onClose, user }) => {
   };
 
   const handleClose = () => {
-    setSelectedStadium('');
     setSelectedSections([]);
+    setSelectedShops([]);
     onClose();
   };
 
-  const selectedStadiumName = stadiums.find(s => s.id === selectedStadium)?.name || '';
+  const selectedStadiumName = 'Stadium';
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>
-        Assign Stadium & Sections
+        Assign Stadium, Sections & Shops
         {user && (
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             {user.firstName} {user.lastName}
           </Typography>
         )}
       </DialogTitle>
-      
+
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
-          {/* Stadium Selection */}
-          <FormControl fullWidth>
-            <InputLabel>Stadium</InputLabel>
-            <Select
-              value={selectedStadium}
-              onChange={handleStadiumChange}
-              label="Stadium"
-            >
-              <MenuItem value="">
-                <em>None</em>
-              </MenuItem>
-              {stadiums.map((stadium) => (
-                <MenuItem key={stadium.id} value={stadium.id}>
-                  {stadium.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+
 
           {/* Available Sections */}
-          {selectedStadium && (
+          {stadiumId && (
             <Box>
               <Typography variant="subtitle2" gutterBottom>
                 Available Sections (Click to add)
               </Typography>
-              <Box sx={{ 
-                border: '1px solid #e0e0e0', 
-                borderRadius: 1, 
-                p: 1, 
-                maxHeight: 200, 
+              <Box sx={{
+                border: '1px solid #e0e0e0',
+                borderRadius: 1,
+                p: 1,
+                maxHeight: 200,
                 overflowY: 'auto',
                 bgcolor: '#fafafa'
               }}>
@@ -219,9 +218,9 @@ const AssignSectionsDialog = ({ open, onClose, user }) => {
               <Typography variant="subtitle2" gutterBottom>
                 Assigned Sections (Priority Order)
               </Typography>
-              <List sx={{ 
-                border: '1px solid #e0e0e0', 
-                borderRadius: 1, 
+              <List sx={{
+                border: '1px solid #e0e0e0',
+                borderRadius: 1,
                 bgcolor: '#f5f5f5',
                 p: 0
               }}>
@@ -230,29 +229,29 @@ const AssignSectionsDialog = ({ open, onClose, user }) => {
                   return (
                     <ListItem
                       key={sectionId}
-                      sx={{ 
+                      sx={{
                         borderBottom: index < selectedSections.length - 1 ? '1px solid #e0e0e0' : 'none',
                         bgcolor: '#fff',
                         mb: index < selectedSections.length - 1 ? 0.5 : 0
                       }}
                       secondaryAction={
                         <Box sx={{ display: 'flex', gap: 0.5 }}>
-                          <IconButton 
-                            size="small" 
+                          <IconButton
+                            size="small"
                             onClick={() => handleMoveUp(index)}
                             disabled={index === 0}
                           >
                             <ArrowUpward fontSize="small" />
                           </IconButton>
-                          <IconButton 
-                            size="small" 
+                          <IconButton
+                            size="small"
                             onClick={() => handleMoveDown(index)}
                             disabled={index === selectedSections.length - 1}
                           >
                             <ArrowDownward fontSize="small" />
                           </IconButton>
-                          <IconButton 
-                            size="small" 
+                          <IconButton
+                            size="small"
                             onClick={() => handleRemoveSection(sectionId)}
                             color="error"
                           >
@@ -262,9 +261,9 @@ const AssignSectionsDialog = ({ open, onClose, user }) => {
                       }
                     >
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
-                        <Chip 
-                          label={`#${index + 1}`} 
-                          size="small" 
+                        <Chip
+                          label={`#${index + 1}`}
+                          size="small"
                           color="primary"
                           sx={{ minWidth: 40 }}
                         />
@@ -286,8 +285,75 @@ const AssignSectionsDialog = ({ open, onClose, user }) => {
             </Box>
           )}
 
+          {/* Available Shops */}
+          {stadiumId && (
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>
+                Available Shops (Click to add)
+              </Typography>
+              <Box sx={{
+                border: '1px solid #e0e0e0',
+                borderRadius: 1,
+                p: 1,
+                maxHeight: 200,
+                overflowY: 'auto',
+                bgcolor: '#fafafa'
+              }}>
+                {shops.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary" sx={{ p: 1 }}>
+                    No shops available
+                  </Typography>
+                ) : (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {shops
+                      .filter(shop => !selectedShops.includes(shop.id))
+                      .map((shop) => (
+                        <Chip
+                          key={shop.id}
+                          label={shop.name}
+                          onClick={() => handleShopToggle(shop.id)}
+                          sx={{ cursor: 'pointer' }}
+                          color="secondary"
+                        />
+                      ))}
+                  </Box>
+                )}
+              </Box>
+            </Box>
+          )}
+
+          {/* Selected Shops */}
+          {selectedShops.length > 0 && (
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>
+                Assigned Shops
+              </Typography>
+              <Box sx={{
+                border: '1px solid #e0e0e0',
+                borderRadius: 1,
+                p: 1,
+                bgcolor: '#f5f5f5'
+              }}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {selectedShops.map((shopId) => {
+                    const shop = shops.find(s => s.id === shopId);
+                    return (
+                      <Chip
+                        key={shopId}
+                        label={shop ? shop.name : shopId}
+                        onDelete={() => handleRemoveShop(shopId)}
+                        color="secondary"
+                        variant="filled"
+                      />
+                    );
+                  })}
+                </Box>
+              </Box>
+            </Box>
+          )}
+
           {/* Current Assignment Summary */}
-          {selectedStadium && (
+          {stadiumId && (
             <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
               <Typography variant="subtitle2" gutterBottom>
                 Assignment Summary
@@ -298,6 +364,9 @@ const AssignSectionsDialog = ({ open, onClose, user }) => {
               <Typography variant="body2" color="text.secondary">
                 <strong>Sections:</strong> {selectedSections.length} selected
               </Typography>
+              <Typography variant="body2" color="text.secondary">
+                <strong>Shops:</strong> {selectedShops.length} selected
+              </Typography>
             </Box>
           )}
         </Box>
@@ -307,10 +376,10 @@ const AssignSectionsDialog = ({ open, onClose, user }) => {
         <Button onClick={handleClose} disabled={loading}>
           Cancel
         </Button>
-        <Button 
-          onClick={handleSave} 
-          variant="contained" 
-          disabled={loading || !selectedStadium}
+        <Button
+          onClick={handleSave}
+          variant="contained"
+          disabled={loading || !stadiumId}
         >
           {loading ? 'Saving...' : 'Save Assignment'}
         </Button>

@@ -80,6 +80,7 @@ class DeliveryPerson {
     // Add stadium and section assignments
     model.stadiumId = data.stadiumId || null;
     model.sectionIds = data.sectionIds || [];
+    model.shopIds = data.shopIds || [];
 
     return model;
   }

@@ -222,6 +222,7 @@ const DeliveryUsers = ({ stadiumId = null, showAll = false }) => {
         open={assignDialogOpen}
         onClose={handleCloseAssignDialog}
         user={selectedUser}
+        stadiumId={stadiumId}
       />
     </div>
   );
