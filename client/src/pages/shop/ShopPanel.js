@@ -18,7 +18,9 @@ import {
   TextField,
   Switch,
   FormControlLabel,
-  Tooltip
+  Tooltip,
+  Checkbox,
+  MenuItem
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import Shop from '../../models/Shop';
@@ -44,7 +46,23 @@ const ShopPanel = () => {
     latitude: '',
     longitude: '',
     admins: [],
-    deliveryFee: ''
+    deliveryFee: '',
+    insideDelivery: {
+      enabled: false,
+      fee: '',
+      currency: 'ILS',
+      openTime: '09:00',
+      closeTime: '22:00',
+      locations: []
+    },
+    outsideDelivery: {
+      enabled: false,
+      fee: '',
+      currency: 'ILS',
+      openTime: '09:00',
+      closeTime: '22:00',
+      locations: []
+    }
   });
 
   useEffect(() => {
@@ -103,7 +121,31 @@ const ShopPanel = () => {
 
   const handleCloseDialog = () => {
     setOpenAddDialog(false);
-    setNewShop({ name: '', location: '', floor: '', gate: '', description: '', admins: [] });
+    setNewShop({
+      name: '',
+      location: '',
+      floor: '',
+      gate: '',
+      description: '',
+      latitude: '',
+      longitude: '',
+      admins: [],
+      deliveryFee: '',
+      insideDelivery: {
+        enabled: false,
+        fee: '',
+        currency: 'ILS',
+        openTime: '09:00',
+        closeTime: '22:00'
+      },
+      outsideDelivery: {
+        enabled: false,
+        fee: '',
+        currency: 'ILS',
+        openTime: '09:00',
+        closeTime: '22:00'
+      }
+    });
   };
 
   const handleImageChange = (e) => {
@@ -144,7 +186,10 @@ const ShopPanel = () => {
         newShop.longitude ? parseFloat(newShop.longitude) : null,
         null,
         null,
-        newShop.deliveryFee ? parseFloat(newShop.deliveryFee) : 0
+        newShop.deliveryFee ? parseFloat(newShop.deliveryFee) : 0,
+        'ILS',
+        newShop.insideDelivery,
+        newShop.outsideDelivery
       );
 
       // First create shop in root collection
@@ -254,7 +299,21 @@ const ShopPanel = () => {
       latitude: shop.latitude !== undefined && shop.latitude !== null ? shop.latitude.toString() : '',
       longitude: shop.longitude !== undefined && shop.longitude !== null ? shop.longitude.toString() : '',
       admins: shop.admins || [],
-      deliveryFee: shop.deliveryFee !== undefined && shop.deliveryFee !== null ? shop.deliveryFee.toString() : ''
+      deliveryFee: shop.deliveryFee !== undefined && shop.deliveryFee !== null ? shop.deliveryFee.toString() : '',
+      insideDelivery: shop.insideDelivery || {
+        enabled: false,
+        fee: '',
+        currency: 'ILS',
+        openTime: '09:00',
+        closeTime: '22:00'
+      },
+      outsideDelivery: shop.outsideDelivery || {
+        enabled: false,
+        fee: '',
+        currency: 'ILS',
+        openTime: '09:00',
+        closeTime: '22:00'
+      }
     });
     setOpenEditDialog(true);
   };
@@ -285,6 +344,20 @@ const ShopPanel = () => {
         latitude: newShop.latitude ? parseFloat(newShop.latitude) : null,
         longitude: newShop.longitude ? parseFloat(newShop.longitude) : null,
         deliveryFee: newShop.deliveryFee ? parseFloat(newShop.deliveryFee) : 0,
+        insideDelivery: {
+          enabled: newShop.insideDelivery?.enabled || false,
+          fee: newShop.insideDelivery?.fee ? parseFloat(newShop.insideDelivery.fee) : 0,
+          currency: newShop.insideDelivery?.currency || 'ILS',
+          openTime: newShop.insideDelivery?.openTime || '09:00',
+          closeTime: newShop.insideDelivery?.closeTime || '22:00'
+        },
+        outsideDelivery: {
+          enabled: newShop.outsideDelivery?.enabled || false,
+          fee: newShop.outsideDelivery?.fee ? parseFloat(newShop.outsideDelivery.fee) : 0,
+          currency: newShop.outsideDelivery?.currency || 'ILS',
+          openTime: newShop.outsideDelivery?.openTime || '09:00',
+          closeTime: newShop.outsideDelivery?.closeTime || '22:00'
+        },
         updatedAt: new Date()
       };
 
@@ -324,7 +397,23 @@ const ShopPanel = () => {
       latitude: '',
       longitude: '',
       admins: [],
-      deliveryFee: ''
+      deliveryFee: '',
+      insideDelivery: {
+        enabled: false,
+        fee: '',
+        currency: 'ILS',
+        openTime: '09:00',
+        closeTime: '22:00',
+        locations: []
+      },
+      outsideDelivery: {
+        enabled: false,
+        fee: '',
+        currency: 'ILS',
+        openTime: '09:00',
+        closeTime: '22:00',
+        locations: []
+      }
     });
   };
 
@@ -465,9 +554,9 @@ const ShopPanel = () => {
             </div>
           )}
 
-          <Dialog open={openAddDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+          <Dialog open={openAddDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
             <DialogTitle>Add New Shop</DialogTitle>
-            <DialogContent>
+            <DialogContent sx={{ maxHeight: '70vh', overflowY: 'auto' }}>
               <TextField
                 autoFocus
                 margin="dense"
@@ -520,6 +609,309 @@ const ShopPanel = () => {
                 helperText="Enter delivery fee amount (e.g., 5.00)"
               />
 
+              {/* Inside Delivery Section */}
+              <div style={{ marginTop: '24px', padding: '16px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+                <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, color: '#1976d2' }}>
+                  🏠 Inside Delivery (Stadium)
+                </Typography>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={newShop.insideDelivery?.enabled || false}
+                      onChange={(e) => setNewShop({
+                        ...newShop,
+                        insideDelivery: { ...newShop.insideDelivery, enabled: e.target.checked }
+                      })}
+                    />
+                  }
+                  label="Enable Inside Delivery"
+                />
+                {newShop.insideDelivery?.enabled && (
+                  <div style={{ marginTop: '12px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                      <TextField
+                        margin="dense"
+                        label="Fee"
+                        type="number"
+                        inputProps={{ min: "0", step: "0.01" }}
+                        fullWidth
+                        value={newShop.insideDelivery?.fee || ''}
+                        onChange={(e) => setNewShop({
+                          ...newShop,
+                          insideDelivery: { ...newShop.insideDelivery, fee: e.target.value }
+                        })}
+                      />
+                      <TextField
+                        margin="dense"
+                        label="Currency"
+                        select
+                        fullWidth
+                        value={newShop.insideDelivery?.currency || 'ILS'}
+                        onChange={(e) => setNewShop({
+                          ...newShop,
+                          insideDelivery: { ...newShop.insideDelivery, currency: e.target.value }
+                        })}
+                      >
+                        <MenuItem value="ILS">ILS (₪)</MenuItem>
+                        <MenuItem value="USD">USD ($)</MenuItem>
+                        <MenuItem value="EUR">EUR (€)</MenuItem>
+                      </TextField>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <TextField
+                        margin="dense"
+                        label="Open Time"
+                        type="time"
+                        fullWidth
+                        value={newShop.insideDelivery?.openTime || '09:00'}
+                        onChange={(e) => setNewShop({
+                          ...newShop,
+                          insideDelivery: { ...newShop.insideDelivery, openTime: e.target.value }
+                        })}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                      <TextField
+                        margin="dense"
+                        label="Close Time"
+                        type="time"
+                        fullWidth
+                        value={newShop.insideDelivery?.closeTime || '22:00'}
+                        onChange={(e) => setNewShop({
+                          ...newShop,
+                          insideDelivery: { ...newShop.insideDelivery, closeTime: e.target.value }
+                        })}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    </div>
+
+                    {/* Delivery Locations */}
+                    <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #ddd' }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
+                        📍 Delivery Locations
+                      </Typography>
+                      {(newShop.insideDelivery?.locations || []).map((loc, idx) => (
+                        <div key={idx} style={{ marginBottom: '8px', padding: '8px', backgroundColor: '#fff', borderRadius: '4px', border: '1px solid #e0e0e0' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '8px', alignItems: 'flex-start' }}>
+                            <div>
+                              <TextField
+                                margin="dense"
+                                label="Location Name"
+                                size="small"
+                                fullWidth
+                                value={loc.name || ''}
+                                onChange={(e) => {
+                                  const updated = [...(newShop.insideDelivery?.locations || [])];
+                                  updated[idx] = { ...loc, name: e.target.value };
+                                  setNewShop({
+                                    ...newShop,
+                                    insideDelivery: { ...newShop.insideDelivery, locations: updated }
+                                  });
+                                }}
+                              />
+                              <TextField
+                                margin="dense"
+                                label="Description"
+                                size="small"
+                                fullWidth
+                                multiline
+                                rows={2}
+                                value={loc.description || ''}
+                                onChange={(e) => {
+                                  const updated = [...(newShop.insideDelivery?.locations || [])];
+                                  updated[idx] = { ...loc, description: e.target.value };
+                                  setNewShop({
+                                    ...newShop,
+                                    insideDelivery: { ...newShop.insideDelivery, locations: updated }
+                                  });
+                                }}
+                              />
+                            </div>
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                const updated = (newShop.insideDelivery?.locations || []).filter((_, i) => i !== idx);
+                                setNewShop({
+                                  ...newShop,
+                                  insideDelivery: { ...newShop.insideDelivery, locations: updated }
+                                });
+                              }}
+                              sx={{ color: '#dc004e' }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </div>
+                        </div>
+                      ))}
+                      <Button
+                        size="small"
+                        startIcon={<AddIcon />}
+                        onClick={() => {
+                          const updated = [...(newShop.insideDelivery?.locations || []), { name: '', description: '' }];
+                          setNewShop({
+                            ...newShop,
+                            insideDelivery: { ...newShop.insideDelivery, locations: updated }
+                          });
+                        }}
+                        sx={{ mt: 1 }}
+                      >
+                        Add Location
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Outside Delivery Section */}
+              <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+                <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, color: '#d32f2f' }}>
+                  🚚 Outside Delivery
+                </Typography>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={newShop.outsideDelivery?.enabled || false}
+                      onChange={(e) => setNewShop({
+                        ...newShop,
+                        outsideDelivery: { ...newShop.outsideDelivery, enabled: e.target.checked }
+                      })}
+                    />
+                  }
+                  label="Enable Outside Delivery"
+                />
+                {newShop.outsideDelivery?.enabled && (
+                  <div style={{ marginTop: '12px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                      <TextField
+                        margin="dense"
+                        label="Fee"
+                        type="number"
+                        inputProps={{ min: "0", step: "0.01" }}
+                        fullWidth
+                        value={newShop.outsideDelivery?.fee || ''}
+                        onChange={(e) => setNewShop({
+                          ...newShop,
+                          outsideDelivery: { ...newShop.outsideDelivery, fee: e.target.value }
+                        })}
+                      />
+                      <TextField
+                        margin="dense"
+                        label="Currency"
+                        select
+                        fullWidth
+                        value={newShop.outsideDelivery?.currency || 'ILS'}
+                        onChange={(e) => setNewShop({
+                          ...newShop,
+                          outsideDelivery: { ...newShop.outsideDelivery, currency: e.target.value }
+                        })}
+                      >
+                        <MenuItem value="ILS">ILS (₪)</MenuItem>
+                        <MenuItem value="USD">USD ($)</MenuItem>
+                        <MenuItem value="EUR">EUR (€)</MenuItem>
+                      </TextField>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <TextField
+                        margin="dense"
+                        label="Open Time"
+                        type="time"
+                        fullWidth
+                        value={newShop.outsideDelivery?.openTime || '09:00'}
+                        onChange={(e) => setNewShop({
+                          ...newShop,
+                          outsideDelivery: { ...newShop.outsideDelivery, openTime: e.target.value }
+                        })}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                      <TextField
+                        margin="dense"
+                        label="Close Time"
+                        type="time"
+                        fullWidth
+                        value={newShop.outsideDelivery?.closeTime || '22:00'}
+                        onChange={(e) => setNewShop({
+                          ...newShop,
+                          outsideDelivery: { ...newShop.outsideDelivery, closeTime: e.target.value }
+                        })}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    </div>
+
+                    {/* Delivery Locations */}
+                    <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #ddd' }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
+                        📍 Delivery Locations
+                      </Typography>
+                      {(newShop.outsideDelivery?.locations || []).map((loc, idx) => (
+                        <div key={idx} style={{ marginBottom: '8px', padding: '8px', backgroundColor: '#fff', borderRadius: '4px', border: '1px solid #e0e0e0' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '8px', alignItems: 'flex-start' }}>
+                            <div>
+                              <TextField
+                                margin="dense"
+                                label="Location Name"
+                                size="small"
+                                fullWidth
+                                value={loc.name || ''}
+                                onChange={(e) => {
+                                  const updated = [...(newShop.outsideDelivery?.locations || [])];
+                                  updated[idx] = { ...loc, name: e.target.value };
+                                  setNewShop({
+                                    ...newShop,
+                                    outsideDelivery: { ...newShop.outsideDelivery, locations: updated }
+                                  });
+                                }}
+                              />
+                              <TextField
+                                margin="dense"
+                                label="Description"
+                                size="small"
+                                fullWidth
+                                multiline
+                                rows={2}
+                                value={loc.description || ''}
+                                onChange={(e) => {
+                                  const updated = [...(newShop.outsideDelivery?.locations || [])];
+                                  updated[idx] = { ...loc, description: e.target.value };
+                                  setNewShop({
+                                    ...newShop,
+                                    outsideDelivery: { ...newShop.outsideDelivery, locations: updated }
+                                  });
+                                }}
+                              />
+                            </div>
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                const updated = (newShop.outsideDelivery?.locations || []).filter((_, i) => i !== idx);
+                                setNewShop({
+                                  ...newShop,
+                                  outsideDelivery: { ...newShop.outsideDelivery, locations: updated }
+                                });
+                              }}
+                              sx={{ color: '#dc004e' }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </div>
+                        </div>
+                      ))}
+                      <Button
+                        size="small"
+                        startIcon={<AddIcon />}
+                        onClick={() => {
+                          const updated = [...(newShop.outsideDelivery?.locations || []), { name: '', description: '' }];
+                          setNewShop({
+                            ...newShop,
+                            outsideDelivery: { ...newShop.outsideDelivery, locations: updated }
+                          });
+                        }}
+                        sx={{ mt: 1 }}
+                      >
+                        Add Location
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Profile Picture Upload */}
               <div style={{ marginTop: '24px' }}>
@@ -695,6 +1087,309 @@ const ShopPanel = () => {
                 helperText="Enter delivery fee amount (e.g., 5.00)"
               />
 
+              {/* Inside Delivery Section */}
+              <div style={{ marginTop: '24px', padding: '16px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+                <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, color: '#1976d2' }}>
+                  🏠 Inside Delivery (Stadium)
+                </Typography>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={newShop.insideDelivery?.enabled || false}
+                      onChange={(e) => setNewShop({
+                        ...newShop,
+                        insideDelivery: { ...newShop.insideDelivery, enabled: e.target.checked }
+                      })}
+                    />
+                  }
+                  label="Enable Inside Delivery"
+                />
+                {newShop.insideDelivery?.enabled && (
+                  <div style={{ marginTop: '12px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                      <TextField
+                        margin="dense"
+                        label="Fee"
+                        type="number"
+                        inputProps={{ min: "0", step: "0.01" }}
+                        fullWidth
+                        value={newShop.insideDelivery?.fee || ''}
+                        onChange={(e) => setNewShop({
+                          ...newShop,
+                          insideDelivery: { ...newShop.insideDelivery, fee: e.target.value }
+                        })}
+                      />
+                      <TextField
+                        margin="dense"
+                        label="Currency"
+                        select
+                        fullWidth
+                        value={newShop.insideDelivery?.currency || 'ILS'}
+                        onChange={(e) => setNewShop({
+                          ...newShop,
+                          insideDelivery: { ...newShop.insideDelivery, currency: e.target.value }
+                        })}
+                      >
+                        <MenuItem value="ILS">ILS (₪)</MenuItem>
+                        <MenuItem value="USD">USD ($)</MenuItem>
+                        <MenuItem value="EUR">EUR (€)</MenuItem>
+                      </TextField>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <TextField
+                        margin="dense"
+                        label="Open Time"
+                        type="time"
+                        fullWidth
+                        value={newShop.insideDelivery?.openTime || '09:00'}
+                        onChange={(e) => setNewShop({
+                          ...newShop,
+                          insideDelivery: { ...newShop.insideDelivery, openTime: e.target.value }
+                        })}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                      <TextField
+                        margin="dense"
+                        label="Close Time"
+                        type="time"
+                        fullWidth
+                        value={newShop.insideDelivery?.closeTime || '22:00'}
+                        onChange={(e) => setNewShop({
+                          ...newShop,
+                          insideDelivery: { ...newShop.insideDelivery, closeTime: e.target.value }
+                        })}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    </div>
+
+                    {/* Delivery Locations */}
+                    <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #ddd' }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
+                        📍 Delivery Locations
+                      </Typography>
+                      {(newShop.insideDelivery?.locations || []).map((loc, idx) => (
+                        <div key={idx} style={{ marginBottom: '8px', padding: '8px', backgroundColor: '#fff', borderRadius: '4px', border: '1px solid #e0e0e0' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '8px', alignItems: 'flex-start' }}>
+                            <div>
+                              <TextField
+                                margin="dense"
+                                label="Location Name"
+                                size="small"
+                                fullWidth
+                                value={loc.name || ''}
+                                onChange={(e) => {
+                                  const updated = [...(newShop.insideDelivery?.locations || [])];
+                                  updated[idx] = { ...loc, name: e.target.value };
+                                  setNewShop({
+                                    ...newShop,
+                                    insideDelivery: { ...newShop.insideDelivery, locations: updated }
+                                  });
+                                }}
+                              />
+                              <TextField
+                                margin="dense"
+                                label="Description"
+                                size="small"
+                                fullWidth
+                                multiline
+                                rows={2}
+                                value={loc.description || ''}
+                                onChange={(e) => {
+                                  const updated = [...(newShop.insideDelivery?.locations || [])];
+                                  updated[idx] = { ...loc, description: e.target.value };
+                                  setNewShop({
+                                    ...newShop,
+                                    insideDelivery: { ...newShop.insideDelivery, locations: updated }
+                                  });
+                                }}
+                              />
+                            </div>
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                const updated = (newShop.insideDelivery?.locations || []).filter((_, i) => i !== idx);
+                                setNewShop({
+                                  ...newShop,
+                                  insideDelivery: { ...newShop.insideDelivery, locations: updated }
+                                });
+                              }}
+                              sx={{ color: '#dc004e' }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </div>
+                        </div>
+                      ))}
+                      <Button
+                        size="small"
+                        startIcon={<AddIcon />}
+                        onClick={() => {
+                          const updated = [...(newShop.insideDelivery?.locations || []), { name: '', description: '' }];
+                          setNewShop({
+                            ...newShop,
+                            insideDelivery: { ...newShop.insideDelivery, locations: updated }
+                          });
+                        }}
+                        sx={{ mt: 1 }}
+                      >
+                        Add Location
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Outside Delivery Section */}
+              <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+                <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, color: '#d32f2f' }}>
+                  🚚 Outside Delivery
+                </Typography>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={newShop.outsideDelivery?.enabled || false}
+                      onChange={(e) => setNewShop({
+                        ...newShop,
+                        outsideDelivery: { ...newShop.outsideDelivery, enabled: e.target.checked }
+                      })}
+                    />
+                  }
+                  label="Enable Outside Delivery"
+                />
+                {newShop.outsideDelivery?.enabled && (
+                  <div style={{ marginTop: '12px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                      <TextField
+                        margin="dense"
+                        label="Fee"
+                        type="number"
+                        inputProps={{ min: "0", step: "0.01" }}
+                        fullWidth
+                        value={newShop.outsideDelivery?.fee || ''}
+                        onChange={(e) => setNewShop({
+                          ...newShop,
+                          outsideDelivery: { ...newShop.outsideDelivery, fee: e.target.value }
+                        })}
+                      />
+                      <TextField
+                        margin="dense"
+                        label="Currency"
+                        select
+                        fullWidth
+                        value={newShop.outsideDelivery?.currency || 'ILS'}
+                        onChange={(e) => setNewShop({
+                          ...newShop,
+                          outsideDelivery: { ...newShop.outsideDelivery, currency: e.target.value }
+                        })}
+                      >
+                        <MenuItem value="ILS">ILS (₪)</MenuItem>
+                        <MenuItem value="USD">USD ($)</MenuItem>
+                        <MenuItem value="EUR">EUR (€)</MenuItem>
+                      </TextField>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <TextField
+                        margin="dense"
+                        label="Open Time"
+                        type="time"
+                        fullWidth
+                        value={newShop.outsideDelivery?.openTime || '09:00'}
+                        onChange={(e) => setNewShop({
+                          ...newShop,
+                          outsideDelivery: { ...newShop.outsideDelivery, openTime: e.target.value }
+                        })}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                      <TextField
+                        margin="dense"
+                        label="Close Time"
+                        type="time"
+                        fullWidth
+                        value={newShop.outsideDelivery?.closeTime || '22:00'}
+                        onChange={(e) => setNewShop({
+                          ...newShop,
+                          outsideDelivery: { ...newShop.outsideDelivery, closeTime: e.target.value }
+                        })}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    </div>
+
+                    {/* Delivery Locations */}
+                    <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #ddd' }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
+                        📍 Delivery Locations
+                      </Typography>
+                      {(newShop.outsideDelivery?.locations || []).map((loc, idx) => (
+                        <div key={idx} style={{ marginBottom: '8px', padding: '8px', backgroundColor: '#fff', borderRadius: '4px', border: '1px solid #e0e0e0' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '8px', alignItems: 'flex-start' }}>
+                            <div>
+                              <TextField
+                                margin="dense"
+                                label="Location Name"
+                                size="small"
+                                fullWidth
+                                value={loc.name || ''}
+                                onChange={(e) => {
+                                  const updated = [...(newShop.outsideDelivery?.locations || [])];
+                                  updated[idx] = { ...loc, name: e.target.value };
+                                  setNewShop({
+                                    ...newShop,
+                                    outsideDelivery: { ...newShop.outsideDelivery, locations: updated }
+                                  });
+                                }}
+                              />
+                              <TextField
+                                margin="dense"
+                                label="Description"
+                                size="small"
+                                fullWidth
+                                multiline
+                                rows={2}
+                                value={loc.description || ''}
+                                onChange={(e) => {
+                                  const updated = [...(newShop.outsideDelivery?.locations || [])];
+                                  updated[idx] = { ...loc, description: e.target.value };
+                                  setNewShop({
+                                    ...newShop,
+                                    outsideDelivery: { ...newShop.outsideDelivery, locations: updated }
+                                  });
+                                }}
+                              />
+                            </div>
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                const updated = (newShop.outsideDelivery?.locations || []).filter((_, i) => i !== idx);
+                                setNewShop({
+                                  ...newShop,
+                                  outsideDelivery: { ...newShop.outsideDelivery, locations: updated }
+                                });
+                              }}
+                              sx={{ color: '#dc004e' }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </div>
+                        </div>
+                      ))}
+                      <Button
+                        size="small"
+                        startIcon={<AddIcon />}
+                        onClick={() => {
+                          const updated = [...(newShop.outsideDelivery?.locations || []), { name: '', description: '' }];
+                          setNewShop({
+                            ...newShop,
+                            outsideDelivery: { ...newShop.outsideDelivery, locations: updated }
+                          });
+                        }}
+                        sx={{ mt: 1 }}
+                      >
+                        Add Location
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Profile Picture Upload */}
               <div style={{ marginTop: '24px' }}>

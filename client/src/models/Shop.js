@@ -1,5 +1,5 @@
 class Shop {
-    constructor(name, location, floor, gate, description, admins, stadiumId, stadiumName, latitude = null, longitude = null, docId = null, imageUrl = null, deliveryFee = 0, deliveryFeeCurrency = 'ILS') {
+    constructor(name, location, floor, gate, description, admins, stadiumId, stadiumName, latitude = null, longitude = null, docId = null, imageUrl = null, deliveryFee = 0, deliveryFeeCurrency = 'ILS', insideDelivery = {}, outsideDelivery = {}) {
         this.name = name;
         this.location = location;
         this.floor = floor;
@@ -12,8 +12,26 @@ class Shop {
         this.longitude = longitude;
         this.docId = docId;
         this.imageUrl = imageUrl;
-        this.deliveryFee = parseFloat(deliveryFee) || 0; // Delivery fee in local currency
-        this.deliveryFeeCurrency = deliveryFeeCurrency || 'ILS'; // Currency for delivery fee (ILS, USD, EUR)
+        this.deliveryFee = parseFloat(deliveryFee) || 0;
+        this.deliveryFeeCurrency = deliveryFeeCurrency || 'ILS';
+        // Inside delivery options
+        this.insideDelivery = {
+            enabled: insideDelivery?.enabled || false,
+            fee: parseFloat(insideDelivery?.fee) || 0,
+            currency: insideDelivery?.currency || 'ILS',
+            openTime: insideDelivery?.openTime || '09:00',
+            closeTime: insideDelivery?.closeTime || '22:00',
+            locations: insideDelivery?.locations || []
+        };
+        // Outside delivery options
+        this.outsideDelivery = {
+            enabled: outsideDelivery?.enabled || false,
+            fee: parseFloat(outsideDelivery?.fee) || 0,
+            currency: outsideDelivery?.currency || 'ILS',
+            openTime: outsideDelivery?.openTime || '09:00',
+            closeTime: outsideDelivery?.closeTime || '22:00',
+            locations: outsideDelivery?.locations || []
+        };
         // Shop availability flag (open/closed). Default to true for backwards compatibility
         this.shopAvailability = true;
         this.createdAt = new Date();
@@ -39,7 +57,9 @@ class Shop {
             shopAvailability: this.shopAvailability,
             imageUrl: this.imageUrl,
             deliveryFee: this.deliveryFee,
-            deliveryFeeCurrency: this.deliveryFeeCurrency
+            deliveryFeeCurrency: this.deliveryFeeCurrency,
+            insideDelivery: this.insideDelivery,
+            outsideDelivery: this.outsideDelivery
         };
     }
 
@@ -59,7 +79,9 @@ class Shop {
             id,
             data.imageUrl,
             data.deliveryFee,
-            data.deliveryFeeCurrency || 'ILS'
+            data.deliveryFeeCurrency || 'ILS',
+            data.insideDelivery,
+            data.outsideDelivery
         );
         shop.id = id;
         shop.createdAt = data.createdAt?.toDate() || new Date();

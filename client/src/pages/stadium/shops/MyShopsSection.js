@@ -21,7 +21,8 @@ import {
   Select,
   MenuItem,
   FormControl,
-  InputLabel
+  InputLabel,
+  Checkbox
 } from '@mui/material';
 import { Edit, Delete, Add as AddIcon } from '@mui/icons-material';
 import Shop from '../../../models/Shop';
@@ -46,7 +47,23 @@ const MyShopsSection = () => {
     deliveryFee: '',
     deliveryFeeCurrency: 'ILS',
     imageFile: null,
-    imagePreview: null
+    imagePreview: null,
+    insideDelivery: {
+      enabled: false,
+      fee: '',
+      currency: 'ILS',
+      openTime: '09:00',
+      closeTime: '22:00',
+      locations: []
+    },
+    outsideDelivery: {
+      enabled: false,
+      fee: '',
+      currency: 'ILS',
+      openTime: '09:00',
+      closeTime: '22:00',
+      locations: []
+    }
   });
   const [expanded, setExpanded] = useState(true);
 
@@ -99,7 +116,21 @@ const MyShopsSection = () => {
       deliveryFee: '',
       deliveryFeeCurrency: 'ILS',
       imageFile: null,
-      imagePreview: null
+      imagePreview: null,
+      insideDelivery: {
+        enabled: false,
+        fee: '',
+        currency: 'ILS',
+        openTime: '09:00',
+        closeTime: '22:00'
+      },
+      outsideDelivery: {
+        enabled: false,
+        fee: '',
+        currency: 'ILS',
+        openTime: '09:00',
+        closeTime: '22:00'
+      }
     });
   };
 
@@ -141,7 +172,9 @@ const MyShopsSection = () => {
         null, // docId
         imageUrl, // imageUrl
         newShop.deliveryFee ? parseFloat(newShop.deliveryFee) : 0, // deliveryFee
-        newShop.deliveryFeeCurrency || 'ILS' // deliveryFeeCurrency
+        newShop.deliveryFeeCurrency || 'ILS', // deliveryFeeCurrency
+        newShop.insideDelivery, // insideDelivery
+        newShop.outsideDelivery // outsideDelivery
       );
 
       // Add to Firestore
@@ -197,7 +230,23 @@ const MyShopsSection = () => {
         gate: editingShop.gate,
         description: editingShop.description,
         deliveryFee: editingShop.deliveryFee ? parseFloat(editingShop.deliveryFee) : 0,
-        deliveryFeeCurrency: editingShop.deliveryFeeCurrency || 'ILS'
+        deliveryFeeCurrency: editingShop.deliveryFeeCurrency || 'ILS',
+        insideDelivery: {
+          enabled: editingShop.insideDelivery?.enabled || false,
+          fee: editingShop.insideDelivery?.fee ? parseFloat(editingShop.insideDelivery.fee) : 0,
+          currency: editingShop.insideDelivery?.currency || 'ILS',
+          openTime: editingShop.insideDelivery?.openTime || '09:00',
+          closeTime: editingShop.insideDelivery?.closeTime || '22:00',
+          locations: editingShop.insideDelivery?.locations || []
+        },
+        outsideDelivery: {
+          enabled: editingShop.outsideDelivery?.enabled || false,
+          fee: editingShop.outsideDelivery?.fee ? parseFloat(editingShop.outsideDelivery.fee) : 0,
+          currency: editingShop.outsideDelivery?.currency || 'ILS',
+          openTime: editingShop.outsideDelivery?.openTime || '09:00',
+          closeTime: editingShop.outsideDelivery?.closeTime || '22:00',
+          locations: editingShop.outsideDelivery?.locations || []
+        }
       });
 
       // Update local state
@@ -447,6 +496,310 @@ const MyShopsSection = () => {
               <MenuItem value="EUR">€ EUR (Euro)</MenuItem>
             </Select>
           </FormControl>
+
+          {/* Inside Delivery Section */}
+          <Box sx={{ mt: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, color: '#1976d2' }}>
+              🏠 Inside Delivery (Stadium)
+            </Typography>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={editingShop?.insideDelivery?.enabled || false}
+                  onChange={(e) => setEditingShop(prev => ({
+                    ...prev,
+                    insideDelivery: { ...prev.insideDelivery, enabled: e.target.checked }
+                  }))}
+                />
+              }
+              label="Enable Inside Delivery"
+            />
+            {editingShop?.insideDelivery?.enabled && (
+              <Box sx={{ mt: 1.5 }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 1.5 }}>
+                  <TextField
+                    margin="dense"
+                    label="Fee"
+                    type="number"
+                    inputProps={{ min: "0", step: "0.01" }}
+                    fullWidth
+                    value={editingShop?.insideDelivery?.fee || ''}
+                    onChange={(e) => setEditingShop(prev => ({
+                      ...prev,
+                      insideDelivery: { ...prev.insideDelivery, fee: e.target.value }
+                    }))}
+                  />
+                  <FormControl fullWidth margin="dense">
+                    <InputLabel>Currency</InputLabel>
+                    <Select
+                      value={editingShop?.insideDelivery?.currency || 'ILS'}
+                      onChange={(e) => setEditingShop(prev => ({
+                        ...prev,
+                        insideDelivery: { ...prev.insideDelivery, currency: e.target.value }
+                      }))}
+                      label="Currency"
+                    >
+                      <MenuItem value="ILS">ILS (₪)</MenuItem>
+                      <MenuItem value="USD">USD ($)</MenuItem>
+                      <MenuItem value="EUR">EUR (€)</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+                  <TextField
+                    margin="dense"
+                    label="Open Time"
+                    type="time"
+                    fullWidth
+                    value={editingShop?.insideDelivery?.openTime || '09:00'}
+                    onChange={(e) => setEditingShop(prev => ({
+                      ...prev,
+                      insideDelivery: { ...prev.insideDelivery, openTime: e.target.value }
+                    }))}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                  <TextField
+                    margin="dense"
+                    label="Close Time"
+                    type="time"
+                    fullWidth
+                    value={editingShop?.insideDelivery?.closeTime || '22:00'}
+                    onChange={(e) => setEditingShop(prev => ({
+                      ...prev,
+                      insideDelivery: { ...prev.insideDelivery, closeTime: e.target.value }
+                    }))}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Box>
+
+                {/* Delivery Locations */}
+                <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px solid #ddd' }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
+                    📍 Delivery Locations
+                  </Typography>
+                  {(editingShop?.insideDelivery?.locations || []).map((loc, idx) => (
+                    <Box key={idx} sx={{ mb: 1, p: 1, bgcolor: '#fff', borderRadius: 0.5, border: '1px solid #e0e0e0' }}>
+                      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 1, alignItems: 'flex-start' }}>
+                        <Box>
+                          <TextField
+                            margin="dense"
+                            label="Location Name"
+                            size="small"
+                            fullWidth
+                            value={loc.name || ''}
+                            onChange={(e) => {
+                              const updated = [...(editingShop.insideDelivery?.locations || [])];
+                              updated[idx] = { ...loc, name: e.target.value };
+                              setEditingShop(prev => ({
+                                ...prev,
+                                insideDelivery: { ...prev.insideDelivery, locations: updated }
+                              }));
+                            }}
+                          />
+                          <TextField
+                            margin="dense"
+                            label="Description"
+                            size="small"
+                            fullWidth
+                            multiline
+                            rows={2}
+                            value={loc.description || ''}
+                            onChange={(e) => {
+                              const updated = [...(editingShop.insideDelivery?.locations || [])];
+                              updated[idx] = { ...loc, description: e.target.value };
+                              setEditingShop(prev => ({
+                                ...prev,
+                                insideDelivery: { ...prev.insideDelivery, locations: updated }
+                              }));
+                            }}
+                          />
+                        </Box>
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            const updated = (editingShop.insideDelivery?.locations || []).filter((_, i) => i !== idx);
+                            setEditingShop(prev => ({
+                              ...prev,
+                              insideDelivery: { ...prev.insideDelivery, locations: updated }
+                            }));
+                          }}
+                          sx={{ color: '#dc004e' }}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </Box>
+                  ))}
+                  <Button
+                    size="small"
+                    startIcon={<AddIcon />}
+                    onClick={() => {
+                      const updated = [...(editingShop.insideDelivery?.locations || []), { name: '', description: '' }];
+                      setEditingShop(prev => ({
+                        ...prev,
+                        insideDelivery: { ...prev.insideDelivery, locations: updated }
+                      }));
+                    }}
+                    sx={{ mt: 1 }}
+                  >
+                    Add Location
+                  </Button>
+                </Box>
+              </Box>
+            )}
+          </Box>
+
+          {/* Outside Delivery Section */}
+          <Box sx={{ mt: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, color: '#d32f2f' }}>
+              🚚 Outside Delivery
+            </Typography>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={editingShop?.outsideDelivery?.enabled || false}
+                  onChange={(e) => setEditingShop(prev => ({
+                    ...prev,
+                    outsideDelivery: { ...prev.outsideDelivery, enabled: e.target.checked }
+                  }))}
+                />
+              }
+              label="Enable Outside Delivery"
+            />
+            {editingShop?.outsideDelivery?.enabled && (
+              <Box sx={{ mt: 1.5 }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 1.5 }}>
+                  <TextField
+                    margin="dense"
+                    label="Fee"
+                    type="number"
+                    inputProps={{ min: "0", step: "0.01" }}
+                    fullWidth
+                    value={editingShop?.outsideDelivery?.fee || ''}
+                    onChange={(e) => setEditingShop(prev => ({
+                      ...prev,
+                      outsideDelivery: { ...prev.outsideDelivery, fee: e.target.value }
+                    }))}
+                  />
+                  <FormControl fullWidth margin="dense">
+                    <InputLabel>Currency</InputLabel>
+                    <Select
+                      value={editingShop?.outsideDelivery?.currency || 'ILS'}
+                      onChange={(e) => setEditingShop(prev => ({
+                        ...prev,
+                        outsideDelivery: { ...prev.outsideDelivery, currency: e.target.value }
+                      }))}
+                      label="Currency"
+                    >
+                      <MenuItem value="ILS">ILS (₪)</MenuItem>
+                      <MenuItem value="USD">USD ($)</MenuItem>
+                      <MenuItem value="EUR">EUR (€)</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+                  <TextField
+                    margin="dense"
+                    label="Open Time"
+                    type="time"
+                    fullWidth
+                    value={editingShop?.outsideDelivery?.openTime || '09:00'}
+                    onChange={(e) => setEditingShop(prev => ({
+                      ...prev,
+                      outsideDelivery: { ...prev.outsideDelivery, openTime: e.target.value }
+                    }))}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                  <TextField
+                    margin="dense"
+                    label="Close Time"
+                    type="time"
+                    fullWidth
+                    value={editingShop?.outsideDelivery?.closeTime || '22:00'}
+                    onChange={(e) => setEditingShop(prev => ({
+                      ...prev,
+                      outsideDelivery: { ...prev.outsideDelivery, closeTime: e.target.value }
+                    }))}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Box>
+
+                {/* Delivery Locations */}
+                <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px solid #ddd' }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
+                    📍 Delivery Locations
+                  </Typography>
+                  {(editingShop?.outsideDelivery?.locations || []).map((loc, idx) => (
+                    <Box key={idx} sx={{ mb: 1, p: 1, bgcolor: '#fff', borderRadius: 0.5, border: '1px solid #e0e0e0' }}>
+                      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 1, alignItems: 'flex-start' }}>
+                        <Box>
+                          <TextField
+                            margin="dense"
+                            label="Location Name"
+                            size="small"
+                            fullWidth
+                            value={loc.name || ''}
+                            onChange={(e) => {
+                              const updated = [...(editingShop.outsideDelivery?.locations || [])];
+                              updated[idx] = { ...loc, name: e.target.value };
+                              setEditingShop(prev => ({
+                                ...prev,
+                                outsideDelivery: { ...prev.outsideDelivery, locations: updated }
+                              }));
+                            }}
+                          />
+                          <TextField
+                            margin="dense"
+                            label="Description"
+                            size="small"
+                            fullWidth
+                            multiline
+                            rows={2}
+                            value={loc.description || ''}
+                            onChange={(e) => {
+                              const updated = [...(editingShop.outsideDelivery?.locations || [])];
+                              updated[idx] = { ...loc, description: e.target.value };
+                              setEditingShop(prev => ({
+                                ...prev,
+                                outsideDelivery: { ...prev.outsideDelivery, locations: updated }
+                              }));
+                            }}
+                          />
+                        </Box>
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            const updated = (editingShop.outsideDelivery?.locations || []).filter((_, i) => i !== idx);
+                            setEditingShop(prev => ({
+                              ...prev,
+                              outsideDelivery: { ...prev.outsideDelivery, locations: updated }
+                            }));
+                          }}
+                          sx={{ color: '#dc004e' }}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </Box>
+                  ))}
+                  <Button
+                    size="small"
+                    startIcon={<AddIcon />}
+                    onClick={() => {
+                      const updated = [...(editingShop.outsideDelivery?.locations || []), { name: '', description: '' }];
+                      setEditingShop(prev => ({
+                        ...prev,
+                        outsideDelivery: { ...prev.outsideDelivery, locations: updated }
+                      }));
+                    }}
+                    sx={{ mt: 1 }}
+                  >
+                    Add Location
+                  </Button>
+                </Box>
+              </Box>
+            )}
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseEditDialog}>Cancel</Button>
@@ -546,11 +899,316 @@ const MyShopsSection = () => {
               <MenuItem value="EUR">€ EUR (Euro)</MenuItem>
             </Select>
           </FormControl>
+
+          {/* Inside Delivery Section */}
+          <Box sx={{ mt: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, color: '#1976d2' }}>
+              🏠 Inside Delivery (Stadium)
+            </Typography>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={newShop.insideDelivery?.enabled || false}
+                  onChange={(e) => setNewShop({
+                    ...newShop,
+                    insideDelivery: { ...newShop.insideDelivery, enabled: e.target.checked }
+                  })}
+                />
+              }
+              label="Enable Inside Delivery"
+            />
+            {newShop.insideDelivery?.enabled && (
+              <Box sx={{ mt: 1.5 }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 1.5 }}>
+                  <TextField
+                    margin="dense"
+                    label="Fee"
+                    type="number"
+                    inputProps={{ min: "0", step: "0.01" }}
+                    fullWidth
+                    value={newShop.insideDelivery?.fee || ''}
+                    onChange={(e) => setNewShop({
+                      ...newShop,
+                      insideDelivery: { ...newShop.insideDelivery, fee: e.target.value }
+                    })}
+                  />
+                  <FormControl fullWidth margin="dense">
+                    <InputLabel>Currency</InputLabel>
+                    <Select
+                      value={newShop.insideDelivery?.currency || 'ILS'}
+                      onChange={(e) => setNewShop({
+                        ...newShop,
+                        insideDelivery: { ...newShop.insideDelivery, currency: e.target.value }
+                      })}
+                      label="Currency"
+                    >
+                      <MenuItem value="ILS">ILS (₪)</MenuItem>
+                      <MenuItem value="USD">USD ($)</MenuItem>
+                      <MenuItem value="EUR">EUR (€)</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+                  <TextField
+                    margin="dense"
+                    label="Open Time"
+                    type="time"
+                    fullWidth
+                    value={newShop.insideDelivery?.openTime || '09:00'}
+                    onChange={(e) => setNewShop({
+                      ...newShop,
+                      insideDelivery: { ...newShop.insideDelivery, openTime: e.target.value }
+                    })}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                  <TextField
+                    margin="dense"
+                    label="Close Time"
+                    type="time"
+                    fullWidth
+                    value={newShop.insideDelivery?.closeTime || '22:00'}
+                    onChange={(e) => setNewShop({
+                      ...newShop,
+                      insideDelivery: { ...newShop.insideDelivery, closeTime: e.target.value }
+                    })}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Box>
+
+                {/* Delivery Locations */}
+                <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px solid #ddd' }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
+                    📍 Delivery Locations
+                  </Typography>
+                  {(newShop.insideDelivery?.locations || []).map((loc, idx) => (
+                    <Box key={idx} sx={{ mb: 1, p: 1, bgcolor: '#fff', borderRadius: 0.5, border: '1px solid #e0e0e0' }}>
+                      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 1, alignItems: 'flex-start' }}>
+                        <Box>
+                          <TextField
+                            margin="dense"
+                            label="Location Name"
+                            size="small"
+                            fullWidth
+                            value={loc.name || ''}
+                            onChange={(e) => {
+                              const updated = [...(newShop.insideDelivery?.locations || [])];
+                              updated[idx] = { ...loc, name: e.target.value };
+                              setNewShop({
+                                ...newShop,
+                                insideDelivery: { ...newShop.insideDelivery, locations: updated }
+                              });
+                            }}
+                          />
+                          <TextField
+                            margin="dense"
+                            label="Description"
+                            size="small"
+                            fullWidth
+                            multiline
+                            rows={2}
+                            value={loc.description || ''}
+                            onChange={(e) => {
+                              const updated = [...(newShop.insideDelivery?.locations || [])];
+                              updated[idx] = { ...loc, description: e.target.value };
+                              setNewShop({
+                                ...newShop,
+                                insideDelivery: { ...newShop.insideDelivery, locations: updated }
+                              });
+                            }}
+                          />
+                        </Box>
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            const updated = (newShop.insideDelivery?.locations || []).filter((_, i) => i !== idx);
+                            setNewShop({
+                              ...newShop,
+                              insideDelivery: { ...newShop.insideDelivery, locations: updated }
+                            });
+                          }}
+                          sx={{ color: '#dc004e' }}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </Box>
+                  ))}
+                  <Button
+                    size="small"
+                    startIcon={<AddIcon />}
+                    onClick={() => {
+                      const updated = [...(newShop.insideDelivery?.locations || []), { name: '', description: '' }];
+                      setNewShop({
+                        ...newShop,
+                        insideDelivery: { ...newShop.insideDelivery, locations: updated }
+                      });
+                    }}
+                    sx={{ mt: 1 }}
+                  >
+                    Add Location
+                  </Button>
+                </Box>
+              </Box>
+            )}
+          </Box>
+
+          {/* Outside Delivery Section */}
+          <Box sx={{ mt: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, color: '#d32f2f' }}>
+              🚚 Outside Delivery
+            </Typography>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={newShop.outsideDelivery?.enabled || false}
+                  onChange={(e) => setNewShop({
+                    ...newShop,
+                    outsideDelivery: { ...newShop.outsideDelivery, enabled: e.target.checked }
+                  })}
+                />
+              }
+              label="Enable Outside Delivery"
+            />
+            {newShop.outsideDelivery?.enabled && (
+              <Box sx={{ mt: 1.5 }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 1.5 }}>
+                  <TextField
+                    margin="dense"
+                    label="Fee"
+                    type="number"
+                    inputProps={{ min: "0", step: "0.01" }}
+                    fullWidth
+                    value={newShop.outsideDelivery?.fee || ''}
+                    onChange={(e) => setNewShop({
+                      ...newShop,
+                      outsideDelivery: { ...newShop.outsideDelivery, fee: e.target.value }
+                    })}
+                  />
+                  <FormControl fullWidth margin="dense">
+                    <InputLabel>Currency</InputLabel>
+                    <Select
+                      value={newShop.outsideDelivery?.currency || 'ILS'}
+                      onChange={(e) => setNewShop({
+                        ...newShop,
+                        outsideDelivery: { ...newShop.outsideDelivery, currency: e.target.value }
+                      })}
+                      label="Currency"
+                    >
+                      <MenuItem value="ILS">ILS (₪)</MenuItem>
+                      <MenuItem value="USD">USD ($)</MenuItem>
+                      <MenuItem value="EUR">EUR (€)</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+                  <TextField
+                    margin="dense"
+                    label="Open Time"
+                    type="time"
+                    fullWidth
+                    value={newShop.outsideDelivery?.openTime || '09:00'}
+                    onChange={(e) => setNewShop({
+                      ...newShop,
+                      outsideDelivery: { ...newShop.outsideDelivery, openTime: e.target.value }
+                    })}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                  <TextField
+                    margin="dense"
+                    label="Close Time"
+                    type="time"
+                    fullWidth
+                    value={newShop.outsideDelivery?.closeTime || '22:00'}
+                    onChange={(e) => setNewShop({
+                      ...newShop,
+                      outsideDelivery: { ...newShop.outsideDelivery, closeTime: e.target.value }
+                    })}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Box>
+
+                {/* Delivery Locations */}
+                <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px solid #ddd' }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
+                    📍 Delivery Locations
+                  </Typography>
+                  {(newShop.outsideDelivery?.locations || []).map((loc, idx) => (
+                    <Box key={idx} sx={{ mb: 1, p: 1, bgcolor: '#fff', borderRadius: 0.5, border: '1px solid #e0e0e0' }}>
+                      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 1, alignItems: 'flex-start' }}>
+                        <Box>
+                          <TextField
+                            margin="dense"
+                            label="Location Name"
+                            size="small"
+                            fullWidth
+                            value={loc.name || ''}
+                            onChange={(e) => {
+                              const updated = [...(newShop.outsideDelivery?.locations || [])];
+                              updated[idx] = { ...loc, name: e.target.value };
+                              setNewShop({
+                                ...newShop,
+                                outsideDelivery: { ...newShop.outsideDelivery, locations: updated }
+                              });
+                            }}
+                          />
+                          <TextField
+                            margin="dense"
+                            label="Description"
+                            size="small"
+                            fullWidth
+                            multiline
+                            rows={2}
+                            value={loc.description || ''}
+                            onChange={(e) => {
+                              const updated = [...(newShop.outsideDelivery?.locations || [])];
+                              updated[idx] = { ...loc, description: e.target.value };
+                              setNewShop({
+                                ...newShop,
+                                outsideDelivery: { ...newShop.outsideDelivery, locations: updated }
+                              });
+                            }}
+                          />
+                        </Box>
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            const updated = (newShop.outsideDelivery?.locations || []).filter((_, i) => i !== idx);
+                            setNewShop({
+                              ...newShop,
+                              outsideDelivery: { ...newShop.outsideDelivery, locations: updated }
+                            });
+                          }}
+                          sx={{ color: '#dc004e' }}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </Box>
+                  ))}
+                  <Button
+                    size="small"
+                    startIcon={<AddIcon />}
+                    onClick={() => {
+                      const updated = [...(newShop.outsideDelivery?.locations || []), { name: '', description: '' }];
+                      setNewShop({
+                        ...newShop,
+                        outsideDelivery: { ...newShop.outsideDelivery, locations: updated }
+                      });
+                    }}
+                    sx={{ mt: 1 }}
+                  >
+                    Add Location
+                  </Button>
+                </Box>
+              </Box>
+            )}
+          </Box>
+
           <Button
             variant="outlined"
             component="label"
             fullWidth
-            sx={{ mb: 2 }}
+            sx={{ mb: 2, mt: 2 }}
           >
             Upload Shop Image
             <input
