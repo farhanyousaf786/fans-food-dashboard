@@ -71,12 +71,40 @@ class Shop {
             deliveryFeeCurrency: this.deliveryFeeCurrency,
             insideDelivery: this.insideDelivery,
             outsideDelivery: this.outsideDelivery,
-            paymentOptions: this.paymentOptions
+            'payment-options': {
+                model: this.paymentOptions.model,
+                'platform-fee': this.paymentOptions.platformFee,
+                'vendor-fee': this.paymentOptions.vendorFee,
+                'hotel-fee': this.paymentOptions.hotelFee,
+                'delivery-destination': this.paymentOptions.deliveryDestination,
+                'tip-destination': this.paymentOptions.tipDestination,
+                'delivery-split': this.paymentOptions.deliverySplit || null,
+                'tip-split': this.paymentOptions.tipSplit || null,
+                'vendor-id': this.paymentOptions.vendorId,
+                'hotel-id': this.paymentOptions.hotelId
+            }
         };
     }
 
     // Create Shop instance from Firestore data
     static fromFirestore(data, id) {
+        // Convert hyphenated payment-options to camelCase
+        let paymentOptions = null;
+        if (data['payment-options']) {
+            paymentOptions = {
+                model: data['payment-options'].model || '2-way',
+                platformFee: data['payment-options']['platform-fee'] || 0,
+                vendorFee: data['payment-options']['vendor-fee'] || 1.0,
+                hotelFee: data['payment-options']['hotel-fee'] || 0,
+                deliveryDestination: data['payment-options']['delivery-destination'] || 'platform',
+                tipDestination: data['payment-options']['tip-destination'] || 'platform',
+                deliverySplit: data['payment-options']['delivery-split'] || null,
+                tipSplit: data['payment-options']['tip-split'] || null,
+                vendorId: data['payment-options']['vendor-id'] || '',
+                hotelId: data['payment-options']['hotel-id'] || null
+            };
+        }
+
         const shop = new Shop(
             data.name,
             data.location,
@@ -94,7 +122,7 @@ class Shop {
             data.deliveryFeeCurrency || 'ILS',
             data.insideDelivery,
             data.outsideDelivery,
-            data.paymentOptions
+            paymentOptions
         );
         shop.id = id;
         shop.createdAt = data.createdAt?.toDate() || new Date();

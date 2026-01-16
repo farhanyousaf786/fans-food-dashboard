@@ -26,6 +26,7 @@ import {
 } from '@mui/material';
 import { Edit, Delete, Add as AddIcon } from '@mui/icons-material';
 import Shop from '../../../models/Shop';
+import PaymentOptionsForm from './components/PaymentOptionsForm';
 import './MyShopsSection.css';
 
 const MyShopsSection = () => {
@@ -268,15 +269,17 @@ const MyShopsSection = () => {
           closeTime: editingShop.outsideDelivery?.closeTime || '22:00',
           locations: editingShop.outsideDelivery?.locations || []
         },
-        paymentOptions: {
+        'payment-options': {
           model: editingShop.paymentOptions?.model || '2-way',
-          platformFee: editingShop.paymentOptions?.platformFee ? parseFloat(editingShop.paymentOptions.platformFee) : 0.12,
-          vendorFee: editingShop.paymentOptions?.vendorFee ? parseFloat(editingShop.paymentOptions.vendorFee) : 0.88,
-          hotelFee: editingShop.paymentOptions?.hotelFee ? parseFloat(editingShop.paymentOptions.hotelFee) : 0,
-          deliveryDestination: editingShop.paymentOptions?.deliveryDestination || 'platform',
-          tipDestination: editingShop.paymentOptions?.tipDestination || 'platform',
-          vendorId: editingShop.paymentOptions?.vendorId || '',
-          hotelId: editingShop.paymentOptions?.hotelId || null
+          'platform-fee': editingShop.paymentOptions?.platformFee ? parseFloat(editingShop.paymentOptions.platformFee) : 0,
+          'vendor-fee': editingShop.paymentOptions?.vendorFee ? parseFloat(editingShop.paymentOptions.vendorFee) : 1.0,
+          'hotel-fee': editingShop.paymentOptions?.hotelFee ? parseFloat(editingShop.paymentOptions.hotelFee) : 0,
+          'delivery-destination': editingShop.paymentOptions?.deliveryDestination || 'platform',
+          'tip-destination': editingShop.paymentOptions?.tipDestination || 'platform',
+          'delivery-split': editingShop.paymentOptions?.deliverySplit || null,
+          'tip-split': editingShop.paymentOptions?.tipSplit || null,
+          'vendor-id': editingShop.paymentOptions?.vendorId || '',
+          'hotel-id': editingShop.paymentOptions?.hotelId || null
         }
       });
 
@@ -832,131 +835,15 @@ const MyShopsSection = () => {
             )}
           </Box>
 
+
           {/* Payment Options Section */}
-          <Box sx={{ mt: 2, p: 2, bgcolor: '#e3f2fd', borderRadius: 1 }}>
-            <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, color: '#1976d2' }}>
-              💳 Payment Options
-            </Typography>
-
-            <FormControl fullWidth margin="dense" sx={{ mb: 2 }}>
-              <InputLabel>Payment Model</InputLabel>
-              <Select
-                value={editingShop?.paymentOptions?.model || '2-way'}
-                onChange={(e) => setEditingShop(prev => ({
-                  ...prev,
-                  paymentOptions: { ...prev.paymentOptions, model: e.target.value }
-                }))}
-                label="Payment Model"
-              >
-                <MenuItem value="2-way">2-Way (Platform + Vendor)</MenuItem>
-                <MenuItem value="cog-based">COG-Based</MenuItem>
-                <MenuItem value="3-way">3-Way (Platform + Vendor + Hotel)</MenuItem>
-              </Select>
-            </FormControl>
-
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 1, mb: 2 }}>
-              <TextField
-                margin="dense"
-                label="Platform Fee (%)"
-                type="number"
-                inputProps={{ min: "0", max: "1", step: "0.01" }}
-                value={editingShop?.paymentOptions?.platformFee || 0.12}
-                onChange={(e) => setEditingShop(prev => ({
-                  ...prev,
-                  paymentOptions: { ...prev.paymentOptions, platformFee: parseFloat(e.target.value) }
-                }))}
-                helperText="e.g., 0.12 for 12%"
-              />
-              <TextField
-                margin="dense"
-                label="Vendor Fee (%)"
-                type="number"
-                inputProps={{ min: "0", max: "1", step: "0.01" }}
-                value={editingShop?.paymentOptions?.vendorFee || 0.88}
-                onChange={(e) => setEditingShop(prev => ({
-                  ...prev,
-                  paymentOptions: { ...prev.paymentOptions, vendorFee: parseFloat(e.target.value) }
-                }))}
-                helperText="e.g., 0.88 for 88%"
-              />
-              <TextField
-                margin="dense"
-                label="Hotel Fee (%)"
-                type="number"
-                inputProps={{ min: "0", max: "1", step: "0.01" }}
-                value={editingShop?.paymentOptions?.hotelFee || 0}
-                onChange={(e) => setEditingShop(prev => ({
-                  ...prev,
-                  paymentOptions: { ...prev.paymentOptions, hotelFee: parseFloat(e.target.value) }
-                }))}
-                helperText="e.g., 0.10 for 10%"
-                disabled={editingShop?.paymentOptions?.model !== '3-way'}
-              />
-            </Box>
-
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 2 }}>
-              <FormControl fullWidth margin="dense">
-                <InputLabel>Delivery Destination</InputLabel>
-                <Select
-                  value={editingShop?.paymentOptions?.deliveryDestination || 'platform'}
-                  onChange={(e) => setEditingShop(prev => ({
-                    ...prev,
-                    paymentOptions: { ...prev.paymentOptions, deliveryDestination: e.target.value }
-                  }))}
-                  label="Delivery Destination"
-                >
-                  <MenuItem value="platform">Platform</MenuItem>
-                  <MenuItem value="vendor">Vendor</MenuItem>
-                  <MenuItem value="hotel">Hotel</MenuItem>
-                </Select>
-              </FormControl>
-
-              <FormControl fullWidth margin="dense">
-                <InputLabel>Tip Destination</InputLabel>
-                <Select
-                  value={editingShop?.paymentOptions?.tipDestination || 'platform'}
-                  onChange={(e) => setEditingShop(prev => ({
-                    ...prev,
-                    paymentOptions: { ...prev.paymentOptions, tipDestination: e.target.value }
-                  }))}
-                  label="Tip Destination"
-                >
-                  <MenuItem value="platform">Platform</MenuItem>
-                  <MenuItem value="vendor">Vendor</MenuItem>
-                  <MenuItem value="delivery">Delivery Person</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-
-            <TextField
-              margin="dense"
-              label="Vendor ID (Stripe Account)"
-              fullWidth
-              value={editingShop?.paymentOptions?.vendorId || ''}
-              onChange={(e) => setEditingShop(prev => ({
-                ...prev,
-                paymentOptions: { ...prev.paymentOptions, vendorId: e.target.value }
-              }))}
-              placeholder="acct_vendor123"
-              helperText="Stripe Connect account ID for the vendor"
-              sx={{ mb: 2 }}
-            />
-
-            {editingShop?.paymentOptions?.model === '3-way' && (
-              <TextField
-                margin="dense"
-                label="Hotel ID (Stripe Account)"
-                fullWidth
-                value={editingShop?.paymentOptions?.hotelId || ''}
-                onChange={(e) => setEditingShop(prev => ({
-                  ...prev,
-                  paymentOptions: { ...prev.paymentOptions, hotelId: e.target.value }
-                }))}
-                placeholder="acct_hotel456"
-                helperText="Stripe Connect account ID for the hotel"
-              />
-            )}
-          </Box>
+          <PaymentOptionsForm
+            paymentOptions={editingShop?.paymentOptions || {}}
+            onChange={(newPaymentOptions) => setEditingShop(prev => ({
+              ...prev,
+              paymentOptions: newPaymentOptions
+            }))}
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseEditDialog}>Cancel</Button>
@@ -1361,131 +1248,15 @@ const MyShopsSection = () => {
             )}
           </Box>
 
+
           {/* Payment Options Section */}
-          <Box sx={{ mt: 2, p: 2, bgcolor: '#e3f2fd', borderRadius: 1 }}>
-            <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, color: '#1976d2' }}>
-              💳 Payment Options
-            </Typography>
-
-            <FormControl fullWidth margin="dense" sx={{ mb: 2 }}>
-              <InputLabel>Payment Model</InputLabel>
-              <Select
-                value={newShop.paymentOptions?.model || '2-way'}
-                onChange={(e) => setNewShop({
-                  ...newShop,
-                  paymentOptions: { ...newShop.paymentOptions, model: e.target.value }
-                })}
-                label="Payment Model"
-              >
-                <MenuItem value="2-way">2-Way (Platform + Vendor)</MenuItem>
-                <MenuItem value="cog-based">COG-Based</MenuItem>
-                <MenuItem value="3-way">3-Way (Platform + Vendor + Hotel)</MenuItem>
-              </Select>
-            </FormControl>
-
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 1, mb: 2 }}>
-              <TextField
-                margin="dense"
-                label="Platform Fee (%)"
-                type="number"
-                inputProps={{ min: "0", max: "1", step: "0.01" }}
-                value={newShop.paymentOptions?.platformFee || 0.12}
-                onChange={(e) => setNewShop({
-                  ...newShop,
-                  paymentOptions: { ...newShop.paymentOptions, platformFee: parseFloat(e.target.value) }
-                })}
-                helperText="e.g., 0.12 for 12%"
-              />
-              <TextField
-                margin="dense"
-                label="Vendor Fee (%)"
-                type="number"
-                inputProps={{ min: "0", max: "1", step: "0.01" }}
-                value={newShop.paymentOptions?.vendorFee || 0.88}
-                onChange={(e) => setNewShop({
-                  ...newShop,
-                  paymentOptions: { ...newShop.paymentOptions, vendorFee: parseFloat(e.target.value) }
-                })}
-                helperText="e.g., 0.88 for 88%"
-              />
-              <TextField
-                margin="dense"
-                label="Hotel Fee (%)"
-                type="number"
-                inputProps={{ min: "0", max: "1", step: "0.01" }}
-                value={newShop.paymentOptions?.hotelFee || 0}
-                onChange={(e) => setNewShop({
-                  ...newShop,
-                  paymentOptions: { ...newShop.paymentOptions, hotelFee: parseFloat(e.target.value) }
-                })}
-                helperText="e.g., 0.10 for 10%"
-                disabled={newShop.paymentOptions?.model !== '3-way'}
-              />
-            </Box>
-
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 2 }}>
-              <FormControl fullWidth margin="dense">
-                <InputLabel>Delivery Destination</InputLabel>
-                <Select
-                  value={newShop.paymentOptions?.deliveryDestination || 'platform'}
-                  onChange={(e) => setNewShop({
-                    ...newShop,
-                    paymentOptions: { ...newShop.paymentOptions, deliveryDestination: e.target.value }
-                  })}
-                  label="Delivery Destination"
-                >
-                  <MenuItem value="platform">Platform</MenuItem>
-                  <MenuItem value="vendor">Vendor</MenuItem>
-                  <MenuItem value="hotel">Hotel</MenuItem>
-                </Select>
-              </FormControl>
-
-              <FormControl fullWidth margin="dense">
-                <InputLabel>Tip Destination</InputLabel>
-                <Select
-                  value={newShop.paymentOptions?.tipDestination || 'platform'}
-                  onChange={(e) => setNewShop({
-                    ...newShop,
-                    paymentOptions: { ...newShop.paymentOptions, tipDestination: e.target.value }
-                  })}
-                  label="Tip Destination"
-                >
-                  <MenuItem value="platform">Platform</MenuItem>
-                  <MenuItem value="vendor">Vendor</MenuItem>
-                  <MenuItem value="delivery">Delivery Person</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-
-            <TextField
-              margin="dense"
-              label="Vendor ID (Stripe Account)"
-              fullWidth
-              value={newShop.paymentOptions?.vendorId || ''}
-              onChange={(e) => setNewShop({
-                ...newShop,
-                paymentOptions: { ...newShop.paymentOptions, vendorId: e.target.value }
-              })}
-              placeholder="acct_vendor123"
-              helperText="Stripe Connect account ID for the vendor"
-              sx={{ mb: 2 }}
-            />
-
-            {newShop.paymentOptions?.model === '3-way' && (
-              <TextField
-                margin="dense"
-                label="Hotel ID (Stripe Account)"
-                fullWidth
-                value={newShop.paymentOptions?.hotelId || ''}
-                onChange={(e) => setNewShop({
-                  ...newShop,
-                  paymentOptions: { ...newShop.paymentOptions, hotelId: e.target.value }
-                })}
-                placeholder="acct_hotel456"
-                helperText="Stripe Connect account ID for the hotel"
-              />
-            )}
-          </Box>
+          <PaymentOptionsForm
+            paymentOptions={newShop.paymentOptions || {}}
+            onChange={(newPaymentOptions) => setNewShop({
+              ...newShop,
+              paymentOptions: newPaymentOptions
+            })}
+          />
 
           <Button
             variant="outlined"
