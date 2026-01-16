@@ -40,19 +40,22 @@ const EditMenuDialog = ({ open, onClose, onSubmit, menuItem, shopData }) => {
         isAvailable: true,
         preparationTime: 15,
         foodType: [],
+        hasCOG: false,
+        costOfGoods: 0,
     });
 
     useEffect(() => {
         if (menuItem) {
             setEditedItem({
                 ...menuItem,
-                price: menuItem.price.toString()
+                price: menuItem.price.toString(),
+                costOfGoods: menuItem.costOfGoods ? menuItem.costOfGoods.toString() : '0'
             });
         }
     }, [menuItem]);
 
     const handleInputChange = (e) => {
-        const { name, value, checked } = e.target;
+        const { name, value, checked, type } = e.target;
         if (name === 'customization') {
             setEditedItem(prev => ({
                 ...prev,
@@ -66,14 +69,14 @@ const EditMenuDialog = ({ open, onClose, onSubmit, menuItem, shopData }) => {
         } else {
             setEditedItem(prev => ({
                 ...prev,
-                [name]: name === 'isAvailable' ? checked : value
+                [name]: (type === 'checkbox' || name === 'isAvailable' || name === 'hasCOG') ? checked : value
             }));
         }
     };
 
     const handleImageUpload = async (e) => {
         if (!e.target.files?.length) return;
-        
+
         const files = Array.from(e.target.files);
         const newImages = files.map(file => ({
             file,
@@ -83,7 +86,7 @@ const EditMenuDialog = ({ open, onClose, onSubmit, menuItem, shopData }) => {
         // Keep existing image URLs and add new ones
         const currentImages = editedItem.images || [];
         const existingUrls = currentImages.filter(img => typeof img === 'string');
-        
+
         setEditedItem(prev => ({
             ...prev,
             images: [...existingUrls, ...newImages]
@@ -144,7 +147,9 @@ const EditMenuDialog = ({ open, onClose, onSubmit, menuItem, shopData }) => {
             const updatedItem = {
                 ...editedItem,
                 images: imageUrls,
-                price: parseFloat(editedItem.price)
+                price: parseFloat(editedItem.price),
+                costOfGoods: editedItem.costOfGoods ? parseFloat(editedItem.costOfGoods) : 0,
+                hasCOG: !!editedItem.hasCOG
             };
 
             await onSubmit(updatedItem);
@@ -224,6 +229,59 @@ const EditMenuDialog = ({ open, onClose, onSubmit, menuItem, shopData }) => {
                                 startAdornment: '$'
                             }}
                         />
+
+                        {/* Cost of Goods (COG) Section */}
+                        <Box sx={{ border: '1px solid #ddd', borderRadius: '8px', p: 2, bgcolor: '#fff3e0' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                                <Typography variant="subtitle1" fontWeight="500">
+                                    💰 Cost of Goods (COG)
+                                </Typography>
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            name="hasCOG"
+                                            checked={editedItem.hasCOG || false}
+                                            onChange={(e) => handleInputChange({
+                                                target: {
+                                                    name: 'hasCOG',
+                                                    checked: e.target.checked
+                                                }
+                                            })}
+                                            color="warning"
+                                        />
+                                    }
+                                    label="Track COG"
+                                />
+                            </Box>
+
+                            {editedItem.hasCOG && (
+                                <Box>
+                                    <TextField
+                                        fullWidth
+                                        label="Cost of Goods"
+                                        name="costOfGoods"
+                                        type="number"
+                                        value={editedItem.costOfGoods || ''}
+                                        onChange={handleInputChange}
+                                        InputProps={{
+                                            startAdornment: <span>$</span>,
+                                            inputProps: {
+                                                min: 0,
+                                                step: 0.01
+                                            }
+                                        }}
+                                        helperText="Enter the cost to produce/acquire this item (used for profit calculations)"
+                                    />
+                                    <Box sx={{ mt: 1, p: 1, bgcolor: '#fff9c4', borderRadius: '4px' }}>
+                                        <Typography variant="caption" color="text.secondary">
+                                            💡 <strong>Profit Margin:</strong> {editedItem.price && editedItem.costOfGoods
+                                                ? `$${(parseFloat(editedItem.price) - parseFloat(editedItem.costOfGoods)).toFixed(2)} (${(((parseFloat(editedItem.price) - parseFloat(editedItem.costOfGoods)) / parseFloat(editedItem.price)) * 100).toFixed(1)}%)`
+                                                : 'Enter price and COG to calculate'}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            )}
+                        </Box>
 
                         <TextField
                             label="Category"
@@ -331,7 +389,7 @@ const EditMenuDialog = ({ open, onClose, onSubmit, menuItem, shopData }) => {
                             <Typography variant="h6" gutterBottom>
                                 Customization Options
                             </Typography>
-                            
+
                             {/* Toppings */}
                             <Box sx={{ mb: 3 }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>

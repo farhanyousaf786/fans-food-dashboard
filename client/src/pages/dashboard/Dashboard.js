@@ -74,7 +74,9 @@ const Dashboard = () => {
     },
     currency: 'USD',
     offerActive: false,
-    discountPercentage: 10
+    discountPercentage: 10,
+    hasCOG: false,
+    costOfGoods: 0
   });
 
   useEffect(() => {
@@ -186,7 +188,7 @@ const Dashboard = () => {
   };
 
   const handleInputChange = (e) => {
-    const { name, value, checked } = e.target;
+    const { name, value, checked, type } = e.target;
 
     if (name.startsWith("foodType.")) {
       // Handle individual foodType checkbox updates
@@ -223,10 +225,13 @@ const Dashboard = () => {
         customization: value,
       }));
     } else {
-      // Handle other field updates
+      // Handle other field updates - generically handle checkboxes/switches
+      const isBooleanField = name === 'hasCOG' || name === 'offerActive' || name === 'isAvailable' || type === 'checkbox';
+      const finalValue = isBooleanField ? (checked !== undefined ? checked : !!value) : value;
+
       setNewMenuItem((prev) => ({
         ...prev,
-        [name]: name === "isAvailable" ? checked : value,
+        [name]: finalValue,
       }));
     }
   };
@@ -288,7 +293,9 @@ const Dashboard = () => {
         },
         formData.currency || 'USD',
         formData.isCombo || false,
-        formData.comboItemIds || []
+        formData.comboItemIds || [],
+        formData.hasCOG || false,
+        formData.costOfGoods ? parseFloat(formData.costOfGoods) : 0
       );
 
       if (newMenuItem.offerActive) {

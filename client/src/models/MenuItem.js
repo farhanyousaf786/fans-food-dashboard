@@ -26,7 +26,9 @@ class MenuItem {
         },
         currency = 'USD',
         isCombo = false,
-        comboItemIds = []
+        comboItemIds = [],
+        hasCOG = false,
+        costOfGoods = 0
     ) {
         this.name = name;
         this.nameMap = nameMap || {};
@@ -47,6 +49,8 @@ class MenuItem {
         this.currency = currency;
         this.isCombo = isCombo;
         this.comboItemIds = comboItemIds || [];
+        this.hasCOG = hasCOG;
+        this.costOfGoods = costOfGoods;
         this.createdAt = new Date();
         this.updatedAt = new Date();
     }
@@ -71,6 +75,8 @@ class MenuItem {
             currency: this.currency,
             isCombo: this.isCombo,
             comboItemIds: this.comboItemIds,
+            hasCOG: !!this.hasCOG,
+            costOfGoods: Number(this.costOfGoods || 0),
             docId: this.docId,
             createdAt: this.createdAt instanceof Date ? Timestamp.fromDate(this.createdAt) : this.createdAt,
             updatedAt: this.updatedAt instanceof Date ? Timestamp.fromDate(this.updatedAt) : this.updatedAt
@@ -103,7 +109,9 @@ class MenuItem {
             },
             data.currency || 'USD',
             data.isCombo || false,
-            data.comboItemIds || []
+            data.comboItemIds || [],
+            !!data.hasCOG,
+            Number(data.costOfGoods || 0)
         );
         // Also store the Firestore document ID on the instance for convenience
         if (id) menuItem.id = id;

@@ -70,7 +70,9 @@ const MenuList = ({ shopData }) => {
     },
     currency: 'USD',
     offerActive: false,
-    discountPercentage: 10
+    discountPercentage: 10,
+    hasCOG: false,
+    costOfGoods: 0
   });
 
   useEffect(() => {
@@ -80,7 +82,7 @@ const MenuList = ({ shopData }) => {
     const q = query(menuItemsRef, where('shopIds', 'array-contains', shopData.id));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const items = snapshot.docs.map(doc => 
+      const items = snapshot.docs.map(doc =>
         MenuItemModel.fromFirestore(doc.data(), doc.id)
       );
       setMenuItems(items);
@@ -94,12 +96,12 @@ const MenuList = ({ shopData }) => {
   useEffect(() => {
     const fetchStadiumShops = async () => {
       if (!shopData?.stadiumId) return;
-      
+
       try {
         const shopsRef = collection(db, 'shops');
         const q = query(shopsRef, where('stadiumId', '==', shopData.stadiumId));
         const querySnapshot = await getDocs(q);
-        
+
         const shops = querySnapshot.docs.map(doc => ({
           id: doc.id,
           name: doc.data().name,
@@ -107,7 +109,7 @@ const MenuList = ({ shopData }) => {
           floor: doc.data().floor,
           gate: doc.data().gate
         }));
-        
+
         setStadiumShops(shops);
       } catch (error) {
         console.error('Error fetching stadium shops:', error);
@@ -122,7 +124,7 @@ const MenuList = ({ shopData }) => {
     if (!shopIds || !Array.isArray(shopIds) || stadiumShops.length === 0) {
       return [];
     }
-    
+
     return shopIds.map(shopId => {
       const shop = stadiumShops.find(s => s.id === shopId);
       return shop ? shop.name : `Shop ${shopId.slice(-4)}`;
@@ -143,6 +145,7 @@ const MenuList = ({ shopData }) => {
     setSelectedItem(item);
     // Populate editMenuItem with the selected item's data
     setEditMenuItem({
+      ...item,
       name: item.name || "",
       nameMap: item.nameMap || { en: item.name || '' },
       description: item.description || "",
@@ -168,7 +171,9 @@ const MenuList = ({ shopData }) => {
       },
       currency: item.currency || 'USD',
       offerActive: false,
-      discountPercentage: 10
+      discountPercentage: 10,
+      hasCOG: !!item.hasCOG,
+      costOfGoods: item.costOfGoods || 0
     });
     setEditDialogOpen(true);
   };
@@ -184,12 +189,12 @@ const MenuList = ({ shopData }) => {
       console.log('🔄 UPDATE: selectedItem:', selectedItem);
       console.log('🔄 UPDATE: shopData:', shopData);
       console.log('🔄 UPDATE: updatedItem:', updatedItem);
-      
+
       if (!selectedItem?.id && !selectedItem?.docId) {
         console.error('🔄 UPDATE: Missing selectedItem id/docId');
         throw new Error('Missing menu item ID');
       }
-      
+
       if (!shopData?.stadiumId) {
         console.error('🔄 UPDATE: Missing shopData stadiumId');
         throw new Error('Missing stadium ID');
@@ -241,9 +246,14 @@ const MenuList = ({ shopData }) => {
           kosher: false,
           vegan: false
         },
-        updatedItem.currency || 'USD'
+        updatedItem.currency || 'USD',
+        updatedItem.isCombo || false,
+        updatedItem.comboItemIds || [],
+        updatedItem.hasCOG || false,
+        updatedItem.costOfGoods ? parseFloat(updatedItem.costOfGoods) : 0
       );
 
+      console.log('🔄 UPDATE: Firestore Data to Save:', menuItem.toFirestore());
       await updateDoc(menuItemRef, menuItem.toFirestore());
       setSuccess('Menu item updated successfully!');
       setTimeout(() => setSuccess(''), 3000);
@@ -261,13 +271,13 @@ const MenuList = ({ shopData }) => {
       console.log('🗑️ DELETE: Starting delete process...');
       console.log('🗑️ DELETE: Selected item:', selectedItem);
       console.log('🗑️ DELETE: Shop data:', shopData);
-      
+
       // Check if we have the required data
       if (!selectedItem?.id && !selectedItem?.docId) {
         console.error('🗑️ DELETE: Missing selectedItem id/docId');
         throw new Error('Missing menu item ID');
       }
-      
+
       if (!shopData?.id) {
         console.error('🗑️ DELETE: Missing shopData id');
         throw new Error('Missing shop data');
@@ -296,7 +306,7 @@ const MenuList = ({ shopData }) => {
       // Delete the menu item document from the root menuItems collection
       const menuItemRef = doc(db, 'menuItems', itemId);
       await deleteDoc(menuItemRef);
-      
+
       console.log('✅ DELETE: Menu item deleted successfully');
       setSuccess('Menu item deleted successfully!');
       setTimeout(() => setSuccess(''), 3000);
@@ -356,191 +366,191 @@ const MenuList = ({ shopData }) => {
             return (a.name || '').localeCompare(b.name || '');
           })
           .map((item) => (
-          <Grid item xs={12} sm={6} md={4} key={item.id} sx={{ display: 'flex' }}>
-            <Card sx={{ 
-              display: 'flex', 
-              height: 200, 
-              width: '100%',
-              overflow: 'hidden',
-              minHeight: 200,
-              maxHeight: 200,
-              flexShrink: 0
-            }}>
-              {/* Combo Images Grid or Single Image */}
-              {item.isCombo && item.images?.length > 1 ? (
-                <Box sx={{ 
-                  width: 140, 
-                  height: 200, 
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gridTemplateRows: '1fr 1fr',
-                  gap: 0.5,
-                  p: 0.5,
-                  bgcolor: '#f5f5f5',
-                  flexShrink: 0
-                }}>
-                  {item.images.slice(0, 4).map((img, index) => (
-                    <Box
-                      key={index}
-                      sx={{
-                        backgroundImage: `url(${img})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                        borderRadius: '4px',
-                        minHeight: 0
-                      }}
-                    />
-                  ))}
-                  {item.images.length > 4 && (
-                    <Box sx={{
-                      position: 'absolute',
-                      bottom: 4,
-                      right: 4,
-                      bgcolor: 'rgba(0,0,0,0.7)',
-                      color: 'white',
-                      borderRadius: '4px',
-                      px: 0.5,
-                      fontSize: '0.7rem'
-                    }}>
-                      +{item.images.length - 4}
-                    </Box>
-                  )}
-                </Box>
-              ) : (
-                <CardMedia
-                  component="img"
-                  image={item.images?.[0] || '/placeholder.jpg'}
-                  alt={item.name}
-                  sx={{ 
-                    width: 140, 
-                    height: 200, 
-                    objectFit: 'cover',
+            <Grid item xs={12} sm={6} md={4} key={item.id} sx={{ display: 'flex' }}>
+              <Card sx={{
+                display: 'flex',
+                height: 200,
+                width: '100%',
+                overflow: 'hidden',
+                minHeight: 200,
+                maxHeight: 200,
+                flexShrink: 0
+              }}>
+                {/* Combo Images Grid or Single Image */}
+                {item.isCombo && item.images?.length > 1 ? (
+                  <Box sx={{
+                    width: 140,
+                    height: 200,
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gridTemplateRows: '1fr 1fr',
+                    gap: 0.5,
+                    p: 0.5,
+                    bgcolor: '#f5f5f5',
                     flexShrink: 0
-                  }}
-                />
-              )}
-              <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, p: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                      <Typography variant="h6" sx={{ 
-                        fontSize: '1.1rem', 
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        flex: 1
+                  }}>
+                    {item.images.slice(0, 4).map((img, index) => (
+                      <Box
+                        key={index}
+                        sx={{
+                          backgroundImage: `url(${img})`,
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
+                          borderRadius: '4px',
+                          minHeight: 0
+                        }}
+                      />
+                    ))}
+                    {item.images.length > 4 && (
+                      <Box sx={{
+                        position: 'absolute',
+                        bottom: 4,
+                        right: 4,
+                        bgcolor: 'rgba(0,0,0,0.7)',
+                        color: 'white',
+                        borderRadius: '4px',
+                        px: 0.5,
+                        fontSize: '0.7rem'
                       }}>
-                        {item.name}
-                      </Typography>
-                      {item.isCombo && (
-                        <Box sx={{
-                          bgcolor: '#4caf50',
-                          color: 'white',
-                          px: 1,
-                          py: 0.25,
-                          borderRadius: '12px',
-                          fontSize: '0.7rem',
-                          fontWeight: 'bold',
-                          flexShrink: 0
-                        }}>
-                          🍽️ COMBO
-                        </Box>
-                      )}
-                    </Box>
-                    {item.description && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          {item.description.split(' ').slice(0, 5).join(' ')}
-                          {item.description.split(' ').length > 5 ? '...' : ''}
-                        </Typography>
-                        <Button 
-                          size="small" 
-                          sx={{ minWidth: 'auto', p: 0, color: 'primary.main', fontSize: '0.75rem' }}
-                          onClick={() => {
-                            setSelectedItem(item);
-                            setReadMoreDialogOpen(true);
-                          }}
-                        >
-                          Read More
-                        </Button>
+                        +{item.images.length - 4}
                       </Box>
                     )}
                   </Box>
-                  <Box sx={{ display: 'flex', gap: 0.5 }}>
-                    <IconButton size="small" onClick={() => handleEdit(item)} sx={{ padding: '4px' }}>
-                      <Edit sx={{ fontSize: 18 }} />
-                    </IconButton>
-                    <IconButton size="small" onClick={() => handleDelete(item)} sx={{ padding: '4px', color: 'error.main' }}>
-                      <Delete sx={{ fontSize: 18 }} />
-                    </IconButton>
-                  </Box>
-                </Box>
-
-                {/* Shop Availability Section */}
-                {item.shopIds && item.shopIds.length > 0 && (
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', mb: 0.5, display: 'block' }}>
-                      Available in:
-                    </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {getShopNames(item.shopIds).slice(0, 2).map((shopName, index) => (
-                        <Chip
-                          key={index}
-                          label={shopName}
-                          size="small"
-                          variant="outlined"
-                          sx={{ 
-                            height: 20, 
-                            fontSize: '0.65rem',
-                            bgcolor: shopName === shopData?.name ? '#e3f2fd' : 'transparent',
-                            borderColor: shopName === shopData?.name ? '#2196f3' : '#ddd',
-                            color: shopName === shopData?.name ? '#1976d2' : 'text.secondary'
-                          }}
-                        />
-                      ))}
-                      {getShopNames(item.shopIds).length > 2 && (
-                        <Chip
-                          label={`+${getShopNames(item.shopIds).length - 2} more`}
-                          size="small"
-                          variant="outlined"
-                          sx={{ 
-                            height: 20, 
-                            fontSize: '0.65rem',
-                            color: 'text.secondary',
-                            borderColor: '#ddd'
-                          }}
-                        />
+                ) : (
+                  <CardMedia
+                    component="img"
+                    image={item.images?.[0] || '/placeholder.jpg'}
+                    alt={item.name}
+                    sx={{
+                      width: 140,
+                      height: 200,
+                      objectFit: 'cover',
+                      flexShrink: 0
+                    }}
+                  />
+                )}
+                <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, p: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <Typography variant="h6" sx={{
+                          fontSize: '1.1rem',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          flex: 1
+                        }}>
+                          {item.name}
+                        </Typography>
+                        {item.isCombo && (
+                          <Box sx={{
+                            bgcolor: '#4caf50',
+                            color: 'white',
+                            px: 1,
+                            py: 0.25,
+                            borderRadius: '12px',
+                            fontSize: '0.7rem',
+                            fontWeight: 'bold',
+                            flexShrink: 0
+                          }}>
+                            🍽️ COMBO
+                          </Box>
+                        )}
+                      </Box>
+                      {item.description && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            {item.description.split(' ').slice(0, 5).join(' ')}
+                            {item.description.split(' ').length > 5 ? '...' : ''}
+                          </Typography>
+                          <Button
+                            size="small"
+                            sx={{ minWidth: 'auto', p: 0, color: 'primary.main', fontSize: '0.75rem' }}
+                            onClick={() => {
+                              setSelectedItem(item);
+                              setReadMoreDialogOpen(true);
+                            }}
+                          >
+                            Read More
+                          </Button>
+                        </Box>
                       )}
                     </Box>
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      <IconButton size="small" onClick={() => handleEdit(item)} sx={{ padding: '4px' }}>
+                        <Edit sx={{ fontSize: 18 }} />
+                      </IconButton>
+                      <IconButton size="small" onClick={() => handleDelete(item)} sx={{ padding: '4px', color: 'error.main' }}>
+                        <Delete sx={{ fontSize: 18 }} />
+                      </IconButton>
+                    </Box>
                   </Box>
-                )}
-               
-                <Box sx={{ mt: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="h6" color="primary" sx={{ fontSize: '1.1rem' }}>
-                    {item.currency === 'NIS' ? '₪' : '$'}{parseFloat(item.price).toFixed(2)}
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 0.5 }}>
-                    <Chip
-                      icon={<Circle sx={{ fontSize: 10 }} />}
-                      label={item.isAvailable ? 'Available' : 'Unavailable'}
-                      color={item.isAvailable ? 'success' : 'default'}
-                      size="small"
-                      variant="outlined"
-                      sx={{ height: 24 }}
-                    />
-                    <Chip
-                      icon={<AccessTime sx={{ fontSize: 10 }} />}
-                      label={`${item.preparationTime} min`}
-                      size="small"
-                      variant="outlined"
-                      sx={{ height: 24 }}
-                    />
+
+                  {/* Shop Availability Section */}
+                  {item.shopIds && item.shopIds.length > 0 && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', mb: 0.5, display: 'block' }}>
+                        Available in:
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {getShopNames(item.shopIds).slice(0, 2).map((shopName, index) => (
+                          <Chip
+                            key={index}
+                            label={shopName}
+                            size="small"
+                            variant="outlined"
+                            sx={{
+                              height: 20,
+                              fontSize: '0.65rem',
+                              bgcolor: shopName === shopData?.name ? '#e3f2fd' : 'transparent',
+                              borderColor: shopName === shopData?.name ? '#2196f3' : '#ddd',
+                              color: shopName === shopData?.name ? '#1976d2' : 'text.secondary'
+                            }}
+                          />
+                        ))}
+                        {getShopNames(item.shopIds).length > 2 && (
+                          <Chip
+                            label={`+${getShopNames(item.shopIds).length - 2} more`}
+                            size="small"
+                            variant="outlined"
+                            sx={{
+                              height: 20,
+                              fontSize: '0.65rem',
+                              color: 'text.secondary',
+                              borderColor: '#ddd'
+                            }}
+                          />
+                        )}
+                      </Box>
+                    </Box>
+                  )}
+
+                  <Box sx={{ mt: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="h6" color="primary" sx={{ fontSize: '1.1rem' }}>
+                      {item.currency === 'NIS' ? '₪' : '$'}{parseFloat(item.price).toFixed(2)}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      <Chip
+                        icon={<Circle sx={{ fontSize: 10 }} />}
+                        label={item.isAvailable ? 'Available' : 'Unavailable'}
+                        color={item.isAvailable ? 'success' : 'default'}
+                        size="small"
+                        variant="outlined"
+                        sx={{ height: 24 }}
+                      />
+                      <Chip
+                        icon={<AccessTime sx={{ fontSize: 10 }} />}
+                        label={`${item.preparationTime} min`}
+                        size="small"
+                        variant="outlined"
+                        sx={{ height: 24 }}
+                      />
+                    </Box>
                   </Box>
                 </Box>
-              </Box>
-            </Card>
-          </Grid>
-        ))}
+              </Card>
+            </Grid>
+          ))}
       </Grid>
 
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
@@ -577,8 +587,8 @@ const MenuList = ({ shopData }) => {
       </Dialog>
 
       {/* Read More Dialog */}
-      <Dialog 
-        open={readMoreDialogOpen} 
+      <Dialog
+        open={readMoreDialogOpen}
         onClose={() => setReadMoreDialogOpen(false)}
         maxWidth="sm"
         fullWidth
@@ -668,7 +678,7 @@ const MenuList = ({ shopData }) => {
               <Grid container spacing={2}>
                 {Object.entries(selectedItem.customization).map(([type, options]) => (
                   <Grid item xs={12} sm={6} key={type}>
-                    <Typography variant="body2" sx={{ 
+                    <Typography variant="body2" sx={{
                       textTransform: 'capitalize',
                       fontWeight: 'bold',
                       mb: 1
