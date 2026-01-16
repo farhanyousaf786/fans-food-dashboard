@@ -1,5 +1,5 @@
 class Shop {
-    constructor(name, location, floor, gate, description, admins, stadiumId, stadiumName, latitude = null, longitude = null, docId = null, imageUrl = null, deliveryFee = 0, deliveryFeeCurrency = 'ILS', insideDelivery = {}, outsideDelivery = {}) {
+    constructor(name, location, floor, gate, description, admins, stadiumId, stadiumName, latitude = null, longitude = null, docId = null, imageUrl = null, deliveryFee = 0, deliveryFeeCurrency = 'ILS', insideDelivery = {}, outsideDelivery = {}, paymentOptions = {}) {
         this.name = name;
         this.location = location;
         this.floor = floor;
@@ -32,6 +32,17 @@ class Shop {
             closeTime: outsideDelivery?.closeTime || '22:00',
             locations: outsideDelivery?.locations || []
         };
+        // Payment options
+        this.paymentOptions = {
+            model: paymentOptions?.model || '2-way',
+            platformFee: parseFloat(paymentOptions?.platformFee) || 0.12,
+            vendorFee: parseFloat(paymentOptions?.vendorFee) || 0.88,
+            hotelFee: parseFloat(paymentOptions?.hotelFee) || 0,
+            deliveryDestination: paymentOptions?.deliveryDestination || 'platform',
+            tipDestination: paymentOptions?.tipDestination || 'platform',
+            vendorId: paymentOptions?.vendorId || '',
+            hotelId: paymentOptions?.hotelId || null
+        };
         // Shop availability flag (open/closed). Default to true for backwards compatibility
         this.shopAvailability = true;
         this.createdAt = new Date();
@@ -59,7 +70,8 @@ class Shop {
             deliveryFee: this.deliveryFee,
             deliveryFeeCurrency: this.deliveryFeeCurrency,
             insideDelivery: this.insideDelivery,
-            outsideDelivery: this.outsideDelivery
+            outsideDelivery: this.outsideDelivery,
+            paymentOptions: this.paymentOptions
         };
     }
 
@@ -81,7 +93,8 @@ class Shop {
             data.deliveryFee,
             data.deliveryFeeCurrency || 'ILS',
             data.insideDelivery,
-            data.outsideDelivery
+            data.outsideDelivery,
+            data.paymentOptions
         );
         shop.id = id;
         shop.createdAt = data.createdAt?.toDate() || new Date();
