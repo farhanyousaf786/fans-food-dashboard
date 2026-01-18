@@ -187,9 +187,9 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
 
       // Find the original combo items from availableItems using comboItemIds
       if (menuItem.comboItemIds && menuItem.comboItemIds.length > 0) {
-        const comboItems = availableItems.filter(item =>
-          menuItem.comboItemIds.includes(item.id)
-        );
+        const comboItems = menuItem.comboItemIds.map(id =>
+          availableItems.find(item => item.id === id)
+        ).filter(Boolean);
         setSelectedComboItems(comboItems);
       }
     }
@@ -282,20 +282,30 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
   };
 
   // Simple Combo Functions
-  const handleComboItemSelection = (item) => {
-    const isSelected = selectedComboItems.some(selected => selected.id === item.id);
-
-    if (isSelected) {
-      setSelectedComboItems(prev => prev.filter(selected => selected.id !== item.id));
-    } else {
-      setSelectedComboItems(prev => [...prev, item]);
-    }
+  const updateComboQuantity = (item, delta) => {
+    setSelectedComboItems(prev => {
+      if (delta > 0) {
+        return [...prev, item];
+      } else {
+        const index = prev.findIndex(i => i.id === item.id);
+        if (index !== -1) {
+          const newItems = [...prev];
+          newItems.splice(index, 1);
+          return newItems;
+        }
+        return prev;
+      }
+    });
   };
 
   const handleCreateCombo = () => {
     if (selectedComboItems.length < 2) return;
 
     // Generate combo names exactly as before
+    // For name generation, we should probably group items by count to avoid "Burger + Burger" -> "Burger x2"
+    // But for now, simple join is fine or maybe "Burger + Burger" is what user expects?
+    // Let's stick to existing logic which lists them all. "Burger + Burger + Coke"
+    // Actually, distinct names might be better for the name generation, but let's keep it simple first.
     const comboNameEn = selectedComboItems.map(item => item.nameMap?.en || item.name).join(' + ');
     const comboNameHe = selectedComboItems.map(item => item.nameMap?.he || item.nameMap?.en || item.name).join(' + ');
 
@@ -400,13 +410,14 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
               {isComboMode && (
                 <Box>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Select items to create a combo meal
+                    Select items to create a combo meal. You can add multiple quantities of the same item.
                   </Typography>
 
                   {/* Available Items List */}
                   <Box sx={{ maxHeight: '300px', overflowY: 'auto', mb: 2 }}>
                     {availableItems.map((item) => {
-                      const isSelected = selectedComboItems.some(selected => selected.id === item.id);
+                      const count = selectedComboItems.filter(selected => selected.id === item.id).length;
+                      const isSelected = count > 0;
                       return (
                         <Box
                           key={item.id}
@@ -418,18 +429,33 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
                             border: '1px solid',
                             borderColor: isSelected ? '#4caf50' : '#e0e0e0',
                             borderRadius: '6px',
-                            cursor: 'pointer',
+                            cursor: 'default',
                             bgcolor: isSelected ? '#f1f8e9' : '#fff',
                             '&:hover': { bgcolor: isSelected ? '#f1f8e9' : '#f5f5f5' }
                           }}
-                          onClick={() => handleComboItemSelection(item)}
                         >
-                          <Checkbox
-                            checked={isSelected}
-                            onChange={() => handleComboItemSelection(item)}
-                            sx={{ mr: 1 }}
-                            color="success"
-                          />
+                          {/* Quantity Controls */}
+                          <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, bgcolor: 'white', borderRadius: '20px', border: '1px solid #ddd' }}>
+                            <IconButton
+                              size="small"
+                              onClick={() => updateComboQuantity(item, -1)}
+                              color={count > 0 ? "error" : "default"}
+                              disabled={count === 0}
+                            >
+                              <RemoveCircleOutline fontSize="small" />
+                            </IconButton>
+                            <Typography sx={{ mx: 1, minWidth: '20px', textAlign: 'center', fontWeight: 'bold' }}>
+                              {count}
+                            </Typography>
+                            <IconButton
+                              size="small"
+                              onClick={() => updateComboQuantity(item, 1)}
+                              color="success"
+                            >
+                              <AddCircleOutline fontSize="small" />
+                            </IconButton>
+                          </Box>
+
                           <Box sx={{ flex: 1 }}>
                             <Typography variant="body2" fontWeight="500">
                               {item.nameMap?.en || item.name}
@@ -455,11 +481,11 @@ const AddMenuDialog = ({ open, onClose, onSubmit, menuItem, onChange, setMenuIte
                         Selected ({selectedComboItems.length}):
                       </Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                        {selectedComboItems.map((item) => (
+                        {selectedComboItems.map((item, index) => (
                           <Chip
-                            key={item.id}
+                            key={`${item.id}-${index}`}
                             label={item.nameMap?.en || item.name}
-                            onDelete={() => handleComboItemSelection(item)}
+                            onDelete={() => updateComboQuantity(item, -1)}
                             size="small"
                             color="success"
                             variant="outlined"
