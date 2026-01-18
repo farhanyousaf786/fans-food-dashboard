@@ -35,9 +35,9 @@ class Shop {
         // Payment options
         this.paymentOptions = {
             model: paymentOptions?.model || '2-way',
-            platformFee: parseFloat(paymentOptions?.platformFee) || 0.12,
-            vendorFee: parseFloat(paymentOptions?.vendorFee) || 0.88,
-            hotelFee: parseFloat(paymentOptions?.hotelFee) || 0,
+            platformFee: !isNaN(parseFloat(paymentOptions?.platformFee)) ? parseFloat(paymentOptions.platformFee) : 0.12,
+            vendorFee: !isNaN(parseFloat(paymentOptions?.vendorFee)) ? parseFloat(paymentOptions.vendorFee) : 0.88,
+            hotelFee: !isNaN(parseFloat(paymentOptions?.hotelFee)) ? parseFloat(paymentOptions.hotelFee) : 0,
             deliveryDestination: paymentOptions?.deliveryDestination || 'platform',
             tipDestination: paymentOptions?.tipDestination || 'platform',
             vendorId: paymentOptions?.vendorId || '',

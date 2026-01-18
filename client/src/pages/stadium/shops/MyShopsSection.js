@@ -271,9 +271,9 @@ const MyShopsSection = () => {
         },
         'payment-options': {
           model: editingShop.paymentOptions?.model || '2-way',
-          'platform-fee': editingShop.paymentOptions?.platformFee ? parseFloat(editingShop.paymentOptions.platformFee) : 0,
-          'vendor-fee': editingShop.paymentOptions?.vendorFee ? parseFloat(editingShop.paymentOptions.vendorFee) : 1.0,
-          'hotel-fee': editingShop.paymentOptions?.hotelFee ? parseFloat(editingShop.paymentOptions.hotelFee) : 0,
+          'platform-fee': !isNaN(parseFloat(editingShop.paymentOptions?.platformFee)) ? parseFloat(editingShop.paymentOptions.platformFee) : 0,
+          'vendor-fee': !isNaN(parseFloat(editingShop.paymentOptions?.vendorFee)) ? parseFloat(editingShop.paymentOptions.vendorFee) : 1.0,
+          'hotel-fee': !isNaN(parseFloat(editingShop.paymentOptions?.hotelFee)) ? parseFloat(editingShop.paymentOptions.hotelFee) : 0,
           'delivery-destination': editingShop.paymentOptions?.deliveryDestination || 'platform',
           'tip-destination': editingShop.paymentOptions?.tipDestination || 'platform',
           'delivery-split': editingShop.paymentOptions?.deliverySplit || null,
