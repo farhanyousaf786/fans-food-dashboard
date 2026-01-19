@@ -6,10 +6,11 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import 'date-fns';
-import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, getDocs, getDoc } from 'firebase/firestore';
 import * as XLSX from 'xlsx';
 import { db } from '../../config/firebase';
 import Order from '../../models/Order';
+import PickUpPoint from '../../models/PickUpPoint';
 import OrderCard from './components/OrderCard';
 import OrderDetails from './components/OrderDetails';
 import OrderFilters from './components/OrderFilters';
@@ -49,6 +50,24 @@ const Orders = () => {
   const [userRole, setUserRole] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
   const [deliveryUsers, setDeliveryUsers] = useState({});
+  const [pickupPoints, setPickupPoints] = useState({}); // Store pickup points by ID
+
+  const getCurrencySymbol = (curr) => {
+    if (curr === 'ILS' || curr === 'NIS') return '₪';
+    if (curr === 'USD') return '$';
+    if (curr === 'EUR') return '€';
+    if (curr === 'GBP') return '£';
+    return curr || '$';
+  };
+
+  const getNameString = (val) => {
+    if (!val) return 'N/A';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'object') {
+      return val[i18n.language] || val['en'] || val['he'] || Object.values(val)[0] || 'N/A';
+    }
+    return String(val);
+  };
 
   // Get user role and shop data
   useEffect(() => {
@@ -92,14 +111,14 @@ const Orders = () => {
       try {
         const shopsRef = collection(db, 'shops');
         let shopsQuery;
-        
+
         // Only fetch shops from the current stadium
         if (shopData?.stadiumId) {
           shopsQuery = query(shopsRef, where('stadiumId', '==', shopData.stadiumId));
         } else {
           shopsQuery = query(shopsRef); // Fallback to all shops if no stadium context
         }
-        
+
         const shopsSnap = await getDocs(shopsQuery);
         const shopsList = shopsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setAllShops(shopsList);
@@ -164,6 +183,43 @@ const Orders = () => {
 
     return () => unsubscribe();
   }, [selectedShopFilter, selectedDateRange, shopData]);
+
+  // Fetch pickup points for orders with pickupId
+  useEffect(() => {
+    const fetchPickupPoints = async () => {
+      const pickupIds = [...new Set(
+        orders
+          .filter(order => order.pickupId)
+          .map(order => order.pickupId)
+      )];
+
+      if (pickupIds.length === 0) return;
+
+      const newPickupPoints = { ...pickupPoints };
+
+      for (const pickupId of pickupIds) {
+        // Skip if already fetched
+        if (newPickupPoints[pickupId]) continue;
+
+        try {
+          const pickupRef = doc(db, 'pickupPoints', pickupId);
+          const pickupSnap = await getDoc(pickupRef);
+
+          if (pickupSnap.exists()) {
+            const pickupPoint = PickUpPoint.fromFirestore(pickupSnap, pickupSnap.id);
+            newPickupPoints[pickupId] = pickupPoint;
+          }
+        } catch (error) {
+          console.error(`Error fetching pickup point ${pickupId}:`, error);
+        }
+      }
+
+      setPickupPoints(newPickupPoints);
+    };
+
+    fetchPickupPoints();
+  }, [orders]);
+
 
 
 
@@ -294,6 +350,15 @@ const Orders = () => {
         const dayVendorNet = dayVendorGross - dayVendorStripeFee;
         const dayTotalPayout = dayTotal - dayStripeFee;
 
+        const getCurrencySymbol = (curr) => {
+          if (curr === 'ILS' || curr === 'NIS') return '₪';
+          if (curr === 'USD') return '$';
+          if (curr === 'EUR') return '€';
+          if (curr === 'GBP') return '£';
+          return curr || '$';
+        };
+        const cs = dayOrders.length > 0 ? getCurrencySymbol(dayOrders[0].currency) : '₪';
+
         excelData.push({
           'Date': `${date} - Daily Totals (${dayOrders.length} orders)`,
           'Order ID': '',
@@ -301,18 +366,18 @@ const Orders = () => {
           'Seat Info': '',
           'Items': '',
           'Total Items': '',
-          'Customer Total Payment': `₪${dayTotal.toFixed(2)}`,
-          'Order Subtotal': `₪${daySubtotal.toFixed(2)}`,
-          'Delivery Fee': `₪${dayDeliveryFee.toFixed(2)}`,
-          'Tip Gross': `₪${dayTipGross.toFixed(2)}`,
-          'Total Stripe Fee': `₪${dayStripeFee.toFixed(2)}`,
-          'FanMunch Stripe Fee': `₪${dayFanMunchStripeFee.toFixed(2)}`,
-          'Vendor Stripe Fee': `₪${dayVendorStripeFee.toFixed(2)}`,
-          'Total Payout': `₪${dayTotalPayout.toFixed(2)}`,
-          'FanMunch Gross Revenue': `₪${dayFanMunchGross.toFixed(2)}`,
-          'FanMunch Net Revenue': `₪${dayFanMunchNet.toFixed(2)}`,
-          'Vendor Gross Revenue': `₪${dayVendorGross.toFixed(2)}`,
-          'Vendor Net Revenue': `₪${dayVendorNet.toFixed(2)}`,
+          'Customer Total Payment': `${cs}${dayTotal.toFixed(2)}`,
+          'Order Subtotal': `${cs}${daySubtotal.toFixed(2)}`,
+          'Delivery Fee': `${cs}${dayDeliveryFee.toFixed(2)}`,
+          'Tip Gross': `${cs}${dayTipGross.toFixed(2)}`,
+          'Total Stripe Fee': `${cs}${dayStripeFee.toFixed(2)}`,
+          'FanMunch Stripe Fee': `${cs}${dayFanMunchStripeFee.toFixed(2)}`,
+          'Vendor Stripe Fee': `${cs}${dayVendorStripeFee.toFixed(2)}`,
+          'Total Payout': `${cs}${dayTotalPayout.toFixed(2)}`,
+          'FanMunch Gross Revenue': `${cs}${dayFanMunchGross.toFixed(2)}`,
+          'FanMunch Net Revenue': `${cs}${dayFanMunchNet.toFixed(2)}`,
+          'Vendor Gross Revenue': `${cs}${dayVendorGross.toFixed(2)}`,
+          'Vendor Net Revenue': `${cs}${dayVendorNet.toFixed(2)}`,
           'Row #': ''
         });
         rowNumber++;
@@ -345,22 +410,108 @@ const Orders = () => {
         let totalQuantity = 0;
         if (order.cart && order.cart.length > 0) {
           itemsList = order.cart.map(item => {
-            const name = item.name || 'Unknown Item';
+            const getNameString = (val) => {
+              if (!val) return 'Unknown';
+              if (typeof val === 'string') return val;
+              return val.en || val.he || val.name || val.description || 'Unknown';
+            };
+            const name = getNameString(item.name);
             const qty = item.quantity || 1;
             totalQuantity += qty;
-            return `${name} (x${qty})`;
+
+            let itemStr = `${name} (x${qty})`;
+
+            // Add options if any
+            if (item.selectedOptions && item.selectedOptions.length > 0) {
+              const opts = item.selectedOptions.map(o => getNameString(o)).join('/');
+              itemStr += ` [${opts}]`;
+            }
+
+            // Add combo breakdown if any
+            if (item.isCombo && item.comboSelectedOption) {
+              const comboItems = item.comboSelectedOption.map(si => getNameString(si.itemName)).join(' + ');
+              itemStr += ` {${comboItems}}`;
+            }
+
+            return itemStr;
           }).join(', ');
         } else {
           itemsList = 'No items';
         }
 
-        // Seat Info
-        const seatInfo = order.seatInfo ?
-          `Section ${order.seatInfo.section || ''}, Row ${order.seatInfo.row || ''}, Seat ${order.seatInfo.seatNo || ''}`.trim()
-          : 'No seat info';
+        // Location Info - Display based on delivery type
+        let locationStr = 'No location info';
+        const deliveryType = order.deliveryType || 'inside'; // Default to inside if not specified
+
+        const getNameString = (val) => {
+          if (!val) return '';
+          if (typeof val === 'string') return val;
+          return val.en || val.he || val.name || val.description || '';
+        };
+
+        if (deliveryType === 'outside') {
+          // Outside delivery - show outside delivery data
+          if (order.outsideDelivery?.location) {
+            locationStr = `Outside: ${getNameString(order.outsideDelivery.location)}`;
+          } else if (order.seatInfo) {
+            // Fallback to seat info if outsideDelivery is not available
+            const parts = [];
+            const si = order.seatInfo;
+            if (si.section) parts.push(`Sec ${si.section}`);
+            if (si.row) parts.push(`Row ${si.row}`);
+            if (si.seatNo) parts.push(`Seat ${si.seatNo}`);
+            if (si.entrance) parts.push(`Entrance ${si.entrance}`);
+            locationStr = parts.length > 0 ? `Outside: ${parts.join(', ')}` : 'Outside Delivery';
+          } else {
+            locationStr = 'Outside Delivery';
+          }
+        } else if (deliveryType === 'pickup') {
+          // Pickup - show pickup point data fetched via pickupId
+          if (order.pickupId && pickupPoints[order.pickupId]) {
+            const pickupPoint = pickupPoints[order.pickupId];
+            locationStr = `Pickup: ${getNameString(pickupPoint.name)}`;
+            // Optionally add area or location details
+            if (pickupPoint.area) {
+              locationStr += ` (${getNameString(pickupPoint.area)})`;
+            }
+          } else if (order.pickupId) {
+            // pickupId exists but not yet loaded
+            locationStr = 'Pickup Order (Loading...)';
+          } else {
+            locationStr = 'Pickup Order';
+          }
+        } else {
+          // Inside delivery - show inside delivery data
+          if (order.insideDelivery?.location) {
+            locationStr = getNameString(order.insideDelivery.location);
+          } else if (order.seatInfo) {
+            const parts = [];
+            const si = order.seatInfo;
+            if (si.room) parts.push(`Room ${si.room}`);
+            if (si.floor) parts.push(`Floor ${si.floor}`);
+            if (si.stand) parts.push(`Stand ${si.stand}`);
+            if (si.area) parts.push(`Area ${si.area}`);
+            if (si.section) parts.push(`Sec ${si.section}`);
+            if (si.row) parts.push(`Row ${si.row}`);
+            if (si.seatNo) parts.push(`Seat ${si.seatNo}`);
+            if (si.entrance) parts.push(`Entrance ${si.entrance}`);
+            locationStr = parts.join(', ') || 'Inside Delivery';
+          } else {
+            locationStr = 'Inside Delivery';
+          }
+        }
 
         // --- GENERATE ROW BASED ON FORMAT ---
         let orderRow = {};
+
+        const getCurrencySymbol = (curr) => {
+          if (curr === 'ILS' || curr === 'NIS') return '₪';
+          if (curr === 'USD') return '$';
+          if (curr === 'EUR') return '€';
+          if (curr === 'GBP') return '£';
+          return curr || '$';
+        };
+        const cs = getCurrencySymbol(order.currency);
 
         if (exportFormat === 'vendor') {
           // Vendor: Date, Order ID, Name, Total $ of order, Product name, Net Profit, Gross profit
@@ -368,10 +519,10 @@ const Orders = () => {
             'Date': order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '',
             'Order ID': order.orderId || order.id || '',
             'Customer Name': order.userInfo?.userName || 'Unknown User',
-            'Total Order Value': `₪${total.toFixed(2)}`,
+            'Total Order Value': `${cs}${total.toFixed(2)}`,
             'Product Names': itemsList,
-            'Vendor Gross Profit': `₪${vendorGrossRevenue.toFixed(2)}`,
-            'Vendor Net Profit': `₪${vendorRevenue.toFixed(2)}`
+            'Vendor Gross Profit': `${cs}${vendorGrossRevenue.toFixed(2)}`,
+            'Vendor Net Profit': `${cs}${vendorRevenue.toFixed(2)}`
           };
         } else if (exportFormat === 'field_manager') {
           // Field manager: Date, Order ID, Name, Total $ of order, Product name, Tip, Delivery guy name.
@@ -382,10 +533,10 @@ const Orders = () => {
             'Date': order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '',
             'Order ID': order.orderId || order.id || '',
             'Customer Name': order.userInfo?.userName || 'Unknown User',
-            'Seat Info': seatInfo,
-            'Total Order Value': `₪${total.toFixed(2)}`,
+            'Location': locationStr,
+            'Total Order Value': `${cs}${total.toFixed(2)}`,
             'Product Names': itemsList,
-            'Tip': `₪${tipAmount.toFixed(2)}`,
+            'Tip': `${cs}${tipAmount.toFixed(2)}`,
             'Delivery Guy Name': deliveryName
           };
         } else if (exportFormat === 'delivery_personnel') {
@@ -413,10 +564,10 @@ const Orders = () => {
             'Delivery Person Name': deliveryName,
             'Delivery Person Email': deliveryEmail,
             'Customer Name': order.userInfo?.userName || 'Unknown User',
-            'Seat Info': seatInfo,
-            'Total Order Value': `₪${total.toFixed(2)}`,
-            'Tip Amount': `₪${tipAmount.toFixed(2)}`,
-            'Delivery Fee': `₪${deliveryFee.toFixed(2)}`,
+            'Location': locationStr,
+            'Total Order Value': `${cs}${total.toFixed(2)}`,
+            'Tip Amount': `${cs}${tipAmount.toFixed(2)}`,
+            'Delivery Fee': `${cs}${deliveryFee.toFixed(2)}`,
             'Product Names': itemsList
           };
         } else {
@@ -425,21 +576,21 @@ const Orders = () => {
             'Date': order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '',
             'Order ID': order.orderId || order.id || '',
             'User Name': order.userInfo?.userName || 'Unknown User',
-            'Seat Info': seatInfo,
+            'Location': locationStr,
             'Items': itemsList,
             'Total Items': totalQuantity,
-            'Customer Total Payment': `₪${total.toFixed(2)}`,
-            'Order Subtotal': `₪${(order.subtotal || 0).toFixed(2)}`,
-            'Delivery Fee': `₪${deliveryFee.toFixed(2)}`,
-            'Tip Gross': `₪${tipAmount.toFixed(2)}`,
-            'Total Stripe Fee': `₪${stripeFee.toFixed(2)}`,
-            'FanMunch Stripe Fee': `₪${fanMunchStripeFee.toFixed(2)}`,
-            'Vendor Stripe Fee': `₪${vendorStripeFee.toFixed(2)}`,
-            'Total Payout': `₪${totalAfterStripeFee.toFixed(2)}`,
-            'FanMunch Gross Revenue': `₪${fanMunchGrossRevenue.toFixed(2)}`,
-            'FanMunch Net Revenue': `₪${fanMunchRevenue.toFixed(2)}`,
-            'Vendor Gross Revenue': `₪${vendorGrossRevenue.toFixed(2)}`,
-            'Vendor Net Revenue': `₪${vendorRevenue.toFixed(2)}`,
+            'Customer Total Payment': `${cs}${total.toFixed(2)}`,
+            'Order Subtotal': `${cs}${(order.subtotal || 0).toFixed(2)}`,
+            'Delivery Fee': `${cs}${deliveryFee.toFixed(2)}`,
+            'Tip Gross': `${cs}${tipAmount.toFixed(2)}`,
+            'Total Stripe Fee': `${cs}${stripeFee.toFixed(2)}`,
+            'FanMunch Stripe Fee': `${cs}${fanMunchStripeFee.toFixed(2)}`,
+            'Vendor Stripe Fee': `${cs}${vendorStripeFee.toFixed(2)}`,
+            'Total Payout': `${cs}${totalAfterStripeFee.toFixed(2)}`,
+            'FanMunch Gross Revenue': `${cs}${fanMunchGrossRevenue.toFixed(2)}`,
+            'FanMunch Net Revenue': `${cs}${fanMunchRevenue.toFixed(2)}`,
+            'Vendor Gross Revenue': `${cs}${vendorGrossRevenue.toFixed(2)}`,
+            'Vendor Net Revenue': `${cs}${vendorRevenue.toFixed(2)}`,
             'Row #': rowNumber
           };
         }
@@ -452,6 +603,16 @@ const Orders = () => {
     // Add Delivery Personnel Summary (only for delivery_personnel format)
     if (exportFormat === 'delivery_personnel') {
       const deliverySummary = {};
+
+      const getCurrencySymbol = (curr) => {
+        if (curr === 'ILS' || curr === 'NIS') return '₪';
+        if (curr === 'USD') return '$';
+        if (curr === 'EUR') return '€';
+        if (curr === 'GBP') return '£';
+        return curr || '$';
+      };
+
+      const summaryCS = filteredOrders.length > 0 ? getCurrencySymbol(filteredOrders[0].currency) : '₪';
 
       filteredOrders.forEach(order => {
         const deliveryUserId = order.deliveryUserId || order.deliveryUserID || order.deliveryUser || order.assignedDeliveryUser;
@@ -501,7 +662,7 @@ const Orders = () => {
           'Customer Name': `${summary.orderCount} orders`,
           'Seat Info': '',
           'Total Order Value': '',
-          'Tip Amount': `₪${summary.totalTips.toFixed(2)}`,
+          'Tip Amount': `${summaryCS}${summary.totalTips.toFixed(2)}`,
           'Delivery Fee': '',
           'Product Names': ''
         });
@@ -519,7 +680,7 @@ const Orders = () => {
         'Customer Name': `${grandTotalOrders} orders`,
         'Seat Info': '',
         'Total Order Value': '',
-        'Tip Amount': `₪${grandTotalTips.toFixed(2)}`,
+        'Tip Amount': `${summaryCS}${grandTotalTips.toFixed(2)}`,
         'Delivery Fee': '',
         'Product Names': ''
       });
@@ -779,6 +940,7 @@ const Orders = () => {
           restaurantName={shopData?.name || 'Restaurant'}
           deliveryUsers={deliveryUsers}
           currentUser={currentUser}
+          pickupPoints={pickupPoints}
         />
 
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
@@ -934,5 +1096,6 @@ const Orders = () => {
     </Container>
   );
 };
+
 
 export default Orders;

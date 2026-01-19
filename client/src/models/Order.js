@@ -11,7 +11,14 @@ class Order {
         orderId = '',
         userInfo = {},
         seatInfo = {},
-        paymentMethod = 0 // 0: Cash, 1: Card
+        paymentMethod = 0, // 0: Cash, 1: Card
+        insideDelivery = {},
+        deliveryMethod = 'delivery',
+        deliveryType = 'inside',
+        orderCode = '',
+        currency = 'ILS',
+        outsideDelivery = {},
+        pickupId = null
     ) {
         this.cart = cart;
         this.subtotal = subtotal;
@@ -25,6 +32,13 @@ class Order {
         this.userInfo = userInfo;
         this.seatInfo = seatInfo;
         this.paymentMethod = paymentMethod;
+        this.insideDelivery = insideDelivery;
+        this.deliveryMethod = deliveryMethod;
+        this.deliveryType = deliveryType;
+        this.orderCode = orderCode;
+        this.currency = currency;
+        this.outsideDelivery = outsideDelivery;
+        this.pickupId = pickupId;
         this.createdAt = new Date();
         this.updatedAt = new Date();
     }
@@ -53,8 +67,17 @@ class Order {
                 row: this.seatInfo?.row || '',
                 seatNo: this.seatInfo?.seatNo || '',
                 section: this.seatInfo?.section || '',
-                seatDetails: this.seatInfo?.seatDetails || ''
+                seatDetails: this.seatInfo?.seatDetails || '',
+                floor: this.seatInfo?.floor || '',
+                room: this.seatInfo?.room || ''
             },
+            insideDelivery: this.insideDelivery,
+            outsideDelivery: this.outsideDelivery || {},
+            pickupId: this.pickupId || null,
+            deliveryMethod: this.deliveryMethod,
+            deliveryType: this.deliveryType,
+            orderCode: this.orderCode,
+            currency: this.currency,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt
         };
@@ -64,6 +87,12 @@ class Order {
         // Convert Firestore timestamps to JavaScript dates
         const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : new Date();
         const updatedAt = data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date();
+
+        // Detect currency from multiple possible locations (top-level, insideDelivery, or first cart item)
+        const detectedCurrency = data.currency ||
+            data.insideDelivery?.currency ||
+            (data.cart && data.cart.length > 0 ? data.cart[0].currency : null) ||
+            'ILS';
 
         const order = new Order(
             data.cart || [],
@@ -77,7 +106,14 @@ class Order {
             data.orderId || '',
             data.userInfo || {},
             data.seatInfo || {},
-            data.paymentMethod || 0
+            data.paymentMethod || 0,
+            data.insideDelivery || {},
+            data.deliveryMethod || 'delivery',
+            data.deliveryType || 'inside',
+            data.orderCode || '',
+            detectedCurrency,
+            data.outsideDelivery || {},
+            data.pickupId || null
         );
         order.createdAt = createdAt;
         order.updatedAt = updatedAt;

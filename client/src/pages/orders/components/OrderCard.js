@@ -5,7 +5,7 @@ import {
   Paper, useTheme, Dialog, DialogTitle, DialogContent
 } from '@mui/material';
 import {
-  MoreVert, Payment, ShoppingCart, LocationOn, AccessTime
+  MoreVert, Payment, ShoppingCart, LocationOn, AccessTime, Phone
 } from '@mui/icons-material';
 import Order from '../../../models/Order';
 import { styled } from '@mui/material/styles';
@@ -31,15 +31,51 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
   const theme = useTheme();
   const { t } = useTranslation();
   const isRTL = theme.direction === 'rtl';
-  
+
   const formatDate = (date) => {
-    return new Date(date).toLocaleString(isRTL ? 'he-IL' : 'en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
+    if (!date) return t('common.unknownDate');
+    try {
+      return new Date(date).toLocaleString(isRTL ? 'he-IL' : 'en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    } catch (e) {
+      return t('common.unknownDate');
+    }
+  };
+
+  const getName = (val, defaultVal = 'Unknown') => {
+    if (!val) return defaultVal;
+    if (typeof val === 'string') return val;
+    if (typeof val === 'object') {
+      return val.en || val.he || val.name || val.description || defaultVal;
+    }
+    return String(val);
+  };
+
+  const getLocationParts = () => {
+    const parts = [];
+    if (order.insideDelivery?.location) {
+      parts.push(getName(order.insideDelivery.location));
+    }
+    const { section, row, seatNo, room, floor, area, stand, entrance } = order.seatInfo || {};
+    if (room) parts.push(`Room: ${getName(room)}`);
+    if (floor) parts.push(`Floor: ${getName(floor)}`);
+    if (stand) parts.push(`Stand: ${getName(stand)}`);
+    if (area) parts.push(`Area: ${getName(area)}`);
+    if (section) parts.push(`${t('common.section')} ${getName(section)}`);
+    if (row) parts.push(`${t('common.row')} ${getName(row)}`);
+    if (seatNo) parts.push(`${t('common.seat')} ${getName(seatNo)}`);
+    if (entrance) parts.push(`Entrance: ${getName(entrance)}`);
+
+    if (order.outsideDelivery?.location) {
+      parts.push(`Outside: ${getName(order.outsideDelivery.location)}`);
+    }
+
+    return parts;
   };
 
   return (
@@ -48,10 +84,16 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
         <Box className="order-header" sx={{ mb: 2 }}>
           <Box>
             <Typography variant="h6" className="order-customer" sx={{ color: 'primary.main', fontWeight: 600, fontSize: '1.1rem' }}>
-              {order.userInfo?.userName || t('common.customer')}
+              {getName(order.userInfo?.userName, t('common.customer'))}
             </Typography>
+            {order.userInfo?.userPhoneNo && (
+              <Box component="a" href={`tel:${order.userInfo.userPhoneNo}`} sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'text.secondary', mb: 0.5 }}>
+                <Phone sx={{ fontSize: 14, mr: 0.5 }} />
+                <Typography variant="caption">{order.userInfo.userPhoneNo}</Typography>
+              </Box>
+            )}
             <Typography variant="caption" className="order-id" color="text.secondary" dir="ltr" sx={{ display: 'block' }}>
-              {t('orders.orderNumber', { number: order.id })}
+              {t('orders.orderNumber', { number: getName(order.orderCode || order.id) })}
             </Typography>
             {shopName && (
               <Typography variant="caption" sx={{ display: 'block', color: 'success.main', fontWeight: 600, mt: 0.5 }}>
@@ -65,9 +107,9 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
         </Box>
 
         <Box className="status-row" sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Chip 
-            label={t(`orderStatus.${order.status}`)} 
-            color={getStatusColor(order.status)} 
+          <Chip
+            label={t(`orderStatus.${order.status}`)}
+            color={getStatusColor(order.status)}
             size="small"
           />
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -80,24 +122,42 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
 
         {/* Seat Info */}
         <Box sx={{ mb: 2, bgcolor: 'success.light', p: 2, borderRadius: 2 }}>
-          <Typography variant="subtitle2" sx={{ color: 'inherit', fontWeight: 600 }} gutterBottom>
-            {t('common.seatInformation')}
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'inherit' }}>
-            {t('common.section')} {order.seatInfo?.section || '-'}, 
-            {t('common.row')} {order.seatInfo?.row || '-'}, 
-            {t('common.seat')} {order.seatInfo?.seatNo || '-'}
-          </Typography>
-          {order.seatInfo?.seatDetails && (
-            <Box sx={{ 
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Typography variant="subtitle2" sx={{ color: 'inherit', fontWeight: 600 }}>
+              {order.deliveryMethod === 'pickup' ? '🏪 Pickup' : '🚚 Delivery'}
+            </Typography>
+            {order.deliveryType && order.deliveryMethod === 'delivery' && (
+              <Chip
+                label={getName(order.deliveryType === 'inside' ? 'Inside' : 'Outside')}
+                size="small"
+                sx={{ bgcolor: 'white', fontWeight: 600 }}
+              />
+            )}
+          </Box>
+
+          {order.deliveryMethod !== 'pickup' && (
+            <Box sx={{ mt: 0.5 }}>
+              {getLocationParts().map((part, i) => (
+                <Typography key={i} variant="body2" sx={{ color: 'inherit', fontWeight: 500, display: 'block' }}>
+                  {part}
+                </Typography>
+              ))}
+              {getLocationParts().length === 0 && (
+                <Typography variant="body2" sx={{ color: 'inherit', fontWeight: 500 }}>-</Typography>
+              )}
+            </Box>
+          )}
+
+          {(order.seatInfo?.seatDetails || order.insideDelivery?.notes) && (
+            <Box sx={{
               display: 'flex',
               justifyContent: 'center',
               mt: 1.5
             }}>
-              <Typography 
-                variant="caption" 
+              <Typography
+                variant="caption"
                 onClick={() => setOpenDialog(true)}
-                sx={{ 
+                sx={{
                   color: theme.palette.primary.main,
                   bgcolor: '#fff',
                   py: 0.5,
@@ -119,11 +179,18 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
                   }
                 }}
               >
-                {isRTL 
-                  ? [...order.seatInfo.seatDetails.split(' ')].reverse().slice(0, 5).reverse().join(' ')
-                  : order.seatInfo.seatDetails.split(' ').slice(0, 5).join(' ')
-                }
-                {order.seatInfo.seatDetails.split(' ').length > 5 && '...'}
+                📝 {(() => {
+                  const combinedNotes = [
+                    getName(order.seatInfo?.seatDetails, ''),
+                    getName(order.insideDelivery?.notes, '')
+                  ].filter(Boolean).join(' | ');
+
+                  const words = combinedNotes.split(' ');
+                  if (words.length <= 5) return combinedNotes;
+                  return isRTL
+                    ? [...words].reverse().slice(0, 5).reverse().join(' ') + '...'
+                    : words.slice(0, 5).join(' ') + '...';
+                })()}
               </Typography>
             </Box>
           )}
@@ -135,9 +202,36 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
             {t('common.orderItems')}
           </Typography>
           {order.cart?.map((item, index) => (
-            <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-              <Typography variant="body2">{item.name}</Typography>
-              <Typography variant="body2" color="text.secondary">×{item.quantity}</Typography>
+            <Box key={index} sx={{ mb: 1.5, pb: 1, borderBottom: '1px dashed #eee', '&:last-child': { borderBottom: 'none' } }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="body2" fontWeight="500">{getName(item.name)}</Typography>
+                <Typography variant="body2" color="text.secondary">×{item.quantity}</Typography>
+              </Box>
+
+              {/* Options */}
+              {item.selectedOptions && item.selectedOptions.length > 0 && (
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', ml: 1, mt: 0.5 }}>
+                  + {item.selectedOptions.map(opt => getName(opt)).join(', ')}
+                </Typography>
+              )}
+
+              {/* Combo breakdown */}
+              {item.isCombo && item.comboSelectedOption && (
+                <Box sx={{ ml: 1, mt: 0.5, pl: 1, borderLeft: '2px solid #eee' }}>
+                  {item.comboSelectedOption.map((subItem, subIndex) => (
+                    <Box key={subIndex} sx={{ mb: 0.5 }}>
+                      <Typography variant="caption" display="block" sx={{ fontWeight: 500 }}>
+                        • {getName(subItem.itemName)}
+                      </Typography>
+                      {subItem.options && subItem.options.length > 0 && (subItem.options[0] !== 'Default' || subItem.options.length > 1) && (
+                        <Typography variant="caption" display="block" color="text.secondary" sx={{ ml: 1.5 }}>
+                          {subItem.options.map(opt => getName(opt)).join(', ')}
+                        </Typography>
+                      )}
+                    </Box>
+                  ))}
+                </Box>
+              )}
             </Box>
           ))}
         </Box>
@@ -148,7 +242,14 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
               {t('common.totalAmount')}
             </Typography>
             <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-              ₪{order.total}
+              {(() => {
+                const curr = order.currency;
+                if (curr === 'ILS' || curr === 'NIS') return '₪';
+                if (curr === 'USD') return '$';
+                if (curr === 'EUR') return '€';
+                if (curr === 'GBP') return '£';
+                return curr || '$';
+              })()}{order.total}
             </Typography>
           </Box>
         </Box>
@@ -157,7 +258,7 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
           size="small"
           fullWidth
           variant="contained"
-          sx={{ 
+          sx={{
             mt: 2,
             py: 1,
             bgcolor: 'primary.main',
@@ -176,8 +277,8 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
       </CardContent>
 
       {/* Seat Details Dialog */}
-      <Dialog 
-        open={openDialog} 
+      <Dialog
+        open={openDialog}
         onClose={() => setOpenDialog(false)}
         PaperProps={{
           sx: {
@@ -187,8 +288,8 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
           }
         }}
       >
-        <DialogTitle sx={{ 
-          bgcolor: theme.palette.primary.main, 
+        <DialogTitle sx={{
+          bgcolor: theme.palette.primary.main,
           color: 'white',
           fontSize: '1rem',
           py: 1.5
@@ -196,12 +297,14 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
           Seat Details
         </DialogTitle>
         <DialogContent sx={{ p: 3, minWidth: 300 }}>
-          <Typography sx={{ 
+          <Typography sx={{
             fontSize: '1rem',
             lineHeight: 1.6,
             color: 'text.primary'
           }}>
-            {order.seatInfo.seatDetails}
+            {getName(order.seatInfo?.seatDetails, '')}
+            {order.seatInfo?.seatDetails && order.insideDelivery?.notes && <br />}
+            {getName(order.insideDelivery?.notes, '')}
           </Typography>
         </DialogContent>
       </Dialog>
