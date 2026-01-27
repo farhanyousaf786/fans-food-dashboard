@@ -16,17 +16,18 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  Alert
+  Alert,
+  Switch,
+  FormControlLabel
 } from '@mui/material';
 import {
   MoreVert,
   Edit,
-  Delete,
   AccessTime,
   Circle,
   Warning
 } from '@mui/icons-material';
-import { collection, query, onSnapshot, doc, deleteDoc, updateDoc, where, getDocs } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, updateDoc, where, getDocs } from 'firebase/firestore';
 import { ref, deleteObject, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../../../config/firebase';
 import MenuItemModel from '../../../../models/MenuItem';
@@ -178,29 +179,19 @@ const MenuList = ({ shopData }) => {
     setEditDialogOpen(true);
   };
 
-  const handleDelete = (item) => {
-    setSelectedItem(item);
-    setDeleteDialogOpen(true);
-  };
 
   const handleUpdateMenuItem = async (updatedItem) => {
     try {
       console.log('🔄 UPDATE: Starting update process...');
-      console.log('🔄 UPDATE: selectedItem:', selectedItem);
-      console.log('🔄 UPDATE: shopData:', shopData);
-      console.log('🔄 UPDATE: updatedItem:', updatedItem);
 
       if (!selectedItem?.id && !selectedItem?.docId) {
-        console.error('🔄 UPDATE: Missing selectedItem id/docId');
         throw new Error('Missing menu item ID');
       }
 
       if (!shopData?.stadiumId) {
-        console.error('🔄 UPDATE: Missing shopData stadiumId');
         throw new Error('Missing stadium ID');
       }
 
-      // Use either docId or id for the document reference
       const itemId = selectedItem.docId || selectedItem.id;
       const menuItemRef = doc(db, 'menuItems', itemId);
 
@@ -226,26 +217,17 @@ const MenuList = ({ shopData }) => {
         flatDescription,
         updatedItem.descriptionMap || {},
         parseFloat(updatedItem.price),
-        updatedItem.category, // categoryId
+        updatedItem.category,
         imageUrls.length > 0 ? imageUrls : updatedItem.images || [],
         updatedItem.isAvailable,
         parseInt(updatedItem.preparationTime),
-        updatedItem.selectedShops || [], // Use selectedShops array for multi-shop support
+        updatedItem.selectedShops || [],
         shopData.stadiumId,
         itemId,
-        updatedItem.customization || {
-          toppings: [],
-          extras: [],
-          sauces: [],
-          sizes: []
-        },
+        updatedItem.customization || { toppings: [], extras: [], sauces: [], sizes: [] },
         updatedItem.allergens || [],
         updatedItem.nutritionalInfo || {},
-        updatedItem.foodType || {
-          halal: false,
-          kosher: false,
-          vegan: false
-        },
+        updatedItem.foodType || { halal: false, kosher: false, vegan: false },
         updatedItem.currency || 'USD',
         updatedItem.isCombo || false,
         updatedItem.comboItemIds || [],
@@ -253,7 +235,6 @@ const MenuList = ({ shopData }) => {
         updatedItem.costOfGoods ? parseFloat(updatedItem.costOfGoods) : 0
       );
 
-      console.log('🔄 UPDATE: Firestore Data to Save:', menuItem.toFirestore());
       await updateDoc(menuItemRef, menuItem.toFirestore());
       setSuccess('Menu item updated successfully!');
       setTimeout(() => setSuccess(''), 3000);
@@ -266,56 +247,16 @@ const MenuList = ({ shopData }) => {
     }
   };
 
-  const handleConfirmDelete = async () => {
+  const handleToggleAvailability = async (item, newValue) => {
     try {
-      console.log('🗑️ DELETE: Starting delete process...');
-      console.log('🗑️ DELETE: Selected item:', selectedItem);
-      console.log('🗑️ DELETE: Shop data:', shopData);
-
-      // Check if we have the required data
-      if (!selectedItem?.id && !selectedItem?.docId) {
-        console.error('🗑️ DELETE: Missing selectedItem id/docId');
-        throw new Error('Missing menu item ID');
-      }
-
-      if (!shopData?.id) {
-        console.error('🗑️ DELETE: Missing shopData id');
-        throw new Error('Missing shop data');
-      }
-
-      // Use either docId or id for the document reference
-      const itemId = selectedItem.docId || selectedItem.id;
-      console.log('🗑️ DELETE: Using item ID:', itemId);
-
-      // Delete associated images from storage
-      if (selectedItem.images?.length > 0) {
-        console.log('🗑️ DELETE: Deleting images...');
-        for (const imageUrl of selectedItem.images) {
-          if (imageUrl.startsWith('https://firebasestorage.googleapis.com')) {
-            try {
-              const imageRef = ref(storage, imageUrl);
-              await deleteObject(imageRef);
-              console.log('🗑️ DELETE: Image deleted:', imageUrl);
-            } catch (imageError) {
-              console.warn('🗑️ DELETE: Failed to delete image:', imageUrl, imageError);
-            }
-          }
-        }
-      }
-
-      // Delete the menu item document from the root menuItems collection
+      const itemId = item.docId || item.id;
       const menuItemRef = doc(db, 'menuItems', itemId);
-      await deleteDoc(menuItemRef);
-
-      console.log('✅ DELETE: Menu item deleted successfully');
-      setSuccess('Menu item deleted successfully!');
-      setTimeout(() => setSuccess(''), 3000);
-      setDeleteDialogOpen(false);
-      setSelectedItem(null);
-      handleMenuClose();
+      await updateDoc(menuItemRef, {
+        isAvailable: newValue
+      });
     } catch (error) {
-      console.error('❌ DELETE: Error deleting menu item:', error);
-      setError(error.message || 'Failed to delete menu item');
+      console.error("Error updating availability:", error);
+      setError("Failed to update availability status");
       setTimeout(() => setError(''), 3000);
     }
   };
@@ -359,10 +300,8 @@ const MenuList = ({ shopData }) => {
       <Grid container spacing={3} className="menu-items-grid">
         {menuItems
           .sort((a, b) => {
-            // Show combo items first
             if (a.isCombo && !b.isCombo) return -1;
             if (!a.isCombo && b.isCombo) return 1;
-            // Then sort by name
             return (a.name || '').localeCompare(b.name || '');
           })
           .map((item) => (
@@ -480,9 +419,6 @@ const MenuList = ({ shopData }) => {
                       <IconButton size="small" onClick={() => handleEdit(item)} sx={{ padding: '4px' }}>
                         <Edit sx={{ fontSize: 18 }} />
                       </IconButton>
-                      <IconButton size="small" onClick={() => handleDelete(item)} sx={{ padding: '4px', color: 'error.main' }}>
-                        <Delete sx={{ fontSize: 18 }} />
-                      </IconButton>
                     </Box>
                   </Box>
 
@@ -529,14 +465,25 @@ const MenuList = ({ shopData }) => {
                     <Typography variant="h6" color="primary" sx={{ fontSize: '1.1rem' }}>
                       {item.currency === 'NIS' ? '₪' : '$'}{parseFloat(item.price).toFixed(2)}
                     </Typography>
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      <Chip
-                        icon={<Circle sx={{ fontSize: 10 }} />}
-                        label={item.isAvailable ? 'Available' : 'Unavailable'}
-                        color={item.isAvailable ? 'success' : 'default'}
-                        size="small"
-                        variant="outlined"
-                        sx={{ height: 24 }}
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            size="small"
+                            checked={item.isAvailable}
+                            onChange={(e) => handleToggleAvailability(item, e.target.checked)}
+                            color="success"
+                          />
+                        }
+                        label={item.isAvailable ? "Available" : "Unavailable"}
+                        labelPlacement="start"
+                        sx={{
+                          margin: 0,
+                          '& .MuiTypography-root': {
+                            fontSize: '0.75rem',
+                            color: item.isAvailable ? 'success.main' : 'text.secondary'
+                          }
+                        }}
                       />
                       <Chip
                         icon={<AccessTime sx={{ fontSize: 10 }} />}
@@ -553,11 +500,6 @@ const MenuList = ({ shopData }) => {
           ))}
       </Grid>
 
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-        <MenuItem onClick={handleEdit}><Edit sx={{ mr: 1, fontSize: 20 }} />Edit Item</MenuItem>
-        <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}><Delete sx={{ mr: 1, fontSize: 20 }} />Delete Item</MenuItem>
-      </Menu>
-
       <AddMenuDialog
         open={editDialogOpen}
         onClose={() => {
@@ -572,21 +514,6 @@ const MenuList = ({ shopData }) => {
         isEditing={true}
       />
 
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Warning color="warning" />
-          Confirm Delete
-        </DialogTitle>
-        <DialogContent>
-          Are you sure you want to delete "{selectedItem?.name}"? This action cannot be undone.
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleConfirmDelete} color="error" variant="contained">Delete</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Read More Dialog */}
       <Dialog
         open={readMoreDialogOpen}
         onClose={() => setReadMoreDialogOpen(false)}

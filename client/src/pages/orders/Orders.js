@@ -51,6 +51,9 @@ const Orders = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [deliveryUsers, setDeliveryUsers] = useState({});
   const [pickupPoints, setPickupPoints] = useState({}); // Store pickup points by ID
+  const [includeAvgSpending, setIncludeAvgSpending] = useState(false);
+  const [includeProductStats, setIncludeProductStats] = useState(false);
+  const [includeDailyBreakdown, setIncludeDailyBreakdown] = useState(false);
 
   const getCurrencySymbol = (curr) => {
     if (curr === 'ILS' || curr === 'NIS') return '₪';
@@ -309,7 +312,7 @@ const Orders = () => {
     }
 
     // Sort orders by date
-    const sortedOrders = filteredOrders.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    const sortedOrders = filteredOrders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     // Group orders by date
     const ordersByDate = {};
@@ -324,6 +327,8 @@ const Orders = () => {
     // Prepare data for Excel
     const excelData = [];
     let rowNumber = 1;
+
+
 
     Object.keys(ordersByDate).forEach(date => {
       // Add spacing between dates
@@ -598,6 +603,126 @@ const Orders = () => {
         excelData.push(orderRow);
         rowNumber++;
       });
+
+      // --- DAILY STATS BREAKDOWN ---
+      if (includeDailyBreakdown && (includeAvgSpending || includeProductStats)) {
+        const dailyCS = dayOrders.length > 0 ? getCurrencySymbol(dayOrders[0].currency) : '₪';
+
+        excelData.push({});
+
+        if (includeAvgSpending) {
+          excelData.push({
+            'Date': `=== DAILY STATS (${date}) ===`
+          });
+
+          const userSpending = {};
+          let totalRevenue = 0;
+          let totalOrders = 0;
+
+          dayOrders.forEach(order => {
+            const userId = order.userInfo?.userId || order.userInfo?.userEmail || order.userInfo?.userPhoneNo || `Unknown-${order.id}`;
+            const userName = order.userInfo?.userName || 'Unknown User';
+
+            if (!userSpending[userId]) {
+              userSpending[userId] = {
+                name: userName,
+                spent: 0,
+                orders: 0
+              };
+            }
+
+            const orderTotal = order.total || 0;
+            userSpending[userId].spent += orderTotal;
+            userSpending[userId].orders += 1;
+            totalRevenue += orderTotal;
+            totalOrders += 1;
+          });
+
+          const uniqueUsersCount = Object.keys(userSpending).length;
+          const avgSpendingPerUser = uniqueUsersCount > 0 ? totalRevenue / uniqueUsersCount : 0;
+          const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+          const repeatingUsersCount = Object.values(userSpending).filter(u => u.orders > 1).length;
+
+          excelData.push({
+            'Date': 'Total Revenue',
+            'Order ID': `${dailyCS}${totalRevenue.toFixed(2)}`
+          });
+
+          excelData.push({
+            'Date': 'Total Orders',
+            'Order ID': totalOrders
+          });
+
+          excelData.push({
+            'Date': 'Unique Users',
+            'Order ID': uniqueUsersCount
+          });
+
+          excelData.push({
+            'Date': 'Repeating Users',
+            'Order ID': repeatingUsersCount
+          });
+
+          excelData.push({
+            'Date': 'Avg Spending/User',
+            'Order ID': `${dailyCS}${avgSpendingPerUser.toFixed(2)}`
+          });
+
+          excelData.push({
+            'Date': 'Avg Order Value',
+            'Order ID': `${dailyCS}${avgOrderValue.toFixed(2)}`
+          });
+        }
+
+        if (includeProductStats) {
+          if (includeAvgSpending) {
+            excelData.push({});
+          }
+
+          excelData.push({
+            'Date': `=== DAILY PRODUCT STATS (${date}) ===`
+          });
+
+          const productStats = {};
+
+          dayOrders.forEach(order => {
+            if (order.cart && order.cart.length > 0) {
+              order.cart.forEach(item => {
+                const productName = getNameString(item.name);
+                const qty = item.quantity || 1;
+                const price = item.price || 0;
+
+                if (!productStats[productName]) {
+                  productStats[productName] = {
+                    count: 0,
+                    revenue: 0
+                  };
+                }
+
+                productStats[productName].count += qty;
+                productStats[productName].revenue += (price * qty);
+              });
+            }
+          });
+
+          excelData.push({
+            'Date': 'Product Name',
+            'Order ID': 'Quantity Sold',
+            'User Name': 'Total Revenue'
+          });
+
+          // Sort by quantity desc
+          Object.keys(productStats)
+            .sort((a, b) => productStats[b].count - productStats[a].count)
+            .forEach(name => {
+              excelData.push({
+                'Date': name,
+                'Order ID': productStats[name].count,
+                'User Name': `${dailyCS}${productStats[name].revenue.toFixed(2)}`
+              });
+            });
+        }
+      }
     });
 
     // Add Delivery Personnel Summary (only for delivery_personnel format)
@@ -684,6 +809,137 @@ const Orders = () => {
         'Delivery Fee': '',
         'Product Names': ''
       });
+    }
+
+
+
+    // --- ADDITIONAL STATISTICS (Moved back to Bottom) ---
+    if (includeAvgSpending || includeProductStats) {
+      const summaryCS = orders.length > 0 ? getCurrencySymbol(orders[0].currency) : '₪';
+
+      // Add initial spacing
+      excelData.push({});
+      excelData.push({});
+
+      if (includeAvgSpending) {
+        excelData.push({
+          'Date': '=== AVERAGE SPENDING STATS ==='
+        });
+
+        const userSpending = {};
+        let totalRevenue = 0;
+        let totalOrders = 0;
+
+        filteredOrders.forEach(order => {
+          const userId = order.userInfo?.userId || order.userInfo?.userEmail || order.userInfo?.userPhoneNo || `Unknown-${order.id}`;
+          const userName = order.userInfo?.userName || 'Unknown User';
+
+          if (!userSpending[userId]) {
+            userSpending[userId] = {
+              name: userName,
+              spent: 0,
+              orders: 0
+            };
+          }
+
+          const orderTotal = order.total || 0;
+          userSpending[userId].spent += orderTotal;
+          userSpending[userId].orders += 1;
+          totalRevenue += orderTotal;
+          totalOrders += 1;
+        });
+
+        const uniqueUsersCount = Object.keys(userSpending).length;
+        const avgSpendingPerUser = uniqueUsersCount > 0 ? totalRevenue / uniqueUsersCount : 0;
+        const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+        excelData.push({
+          'Date': 'Metric',
+          'Order ID': 'Value'
+        });
+
+        excelData.push({
+          'Date': 'Total Revenue',
+          'Order ID': `${summaryCS}${totalRevenue.toFixed(2)}`
+        });
+
+        excelData.push({
+          'Date': 'Total Orders',
+          'Order ID': totalOrders
+        });
+
+        excelData.push({
+          'Date': 'Unique Users',
+          'Order ID': uniqueUsersCount
+        });
+
+        const repeatingUsersCount = Object.values(userSpending).filter(u => u.orders > 1).length;
+
+        excelData.push({
+          'Date': 'Repeating Users',
+          'Order ID': repeatingUsersCount
+        });
+
+        excelData.push({
+          'Date': 'Avg Spending/User',
+          'Order ID': `${summaryCS}${avgSpendingPerUser.toFixed(2)}`
+        });
+
+        excelData.push({
+          'Date': 'Avg Order Value',
+          'Order ID': `${summaryCS}${avgOrderValue.toFixed(2)}`
+        });
+      }
+
+      if (includeProductStats) {
+        if (includeAvgSpending) {
+          excelData.push({});
+          excelData.push({});
+        }
+
+        excelData.push({
+          'Date': '=== PRODUCT ORDER STATS ==='
+        });
+
+        const productStats = {};
+
+        filteredOrders.forEach(order => {
+          if (order.cart && order.cart.length > 0) {
+            order.cart.forEach(item => {
+              const productName = getNameString(item.name);
+              const qty = item.quantity || 1;
+              const price = item.price || 0;
+
+              if (!productStats[productName]) {
+                productStats[productName] = {
+                  count: 0,
+                  revenue: 0
+                };
+              }
+
+              productStats[productName].count += qty;
+              productStats[productName].revenue += (price * qty);
+            });
+          }
+        });
+
+        excelData.push({
+          'Date': 'Product Name',
+          'Order ID': 'Quantity Sold',
+          'User Name': 'Total Revenue'
+        });
+
+        // Sort by quantity desc
+        Object.keys(productStats)
+          .sort((a, b) => productStats[b].count - productStats[a].count)
+          .forEach(name => {
+            excelData.push({
+              'Date': name,
+              'Order ID': productStats[name].count,
+              'User Name': `${summaryCS}${productStats[name].revenue.toFixed(2)}`
+            });
+          });
+      }
     }
 
     // Create workbook and worksheet
@@ -1077,6 +1333,41 @@ const Orders = () => {
                       No orders found in current view
                     </Typography>
                   )}
+                </Box>
+              </Box>
+
+              {/* Additional Statistics */}
+              <Box>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>Additional Statistics:</Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={includeAvgSpending}
+                        onChange={(e) => setIncludeAvgSpending(e.target.checked)}
+                      />
+                    }
+                    label="Average Spending of Users"
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={includeProductStats}
+                        onChange={(e) => setIncludeProductStats(e.target.checked)}
+                      />
+                    }
+                    label="Number of Orders per Product"
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={includeDailyBreakdown}
+                        onChange={(e) => setIncludeDailyBreakdown(e.target.checked)}
+                        disabled={!includeAvgSpending && !includeProductStats}
+                      />
+                    }
+                    label="Show Stats Breakdown per Day"
+                  />
                 </Box>
               </Box>
             </Box>
