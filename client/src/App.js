@@ -22,7 +22,7 @@ import UserManagement from './pages/admin/components/UserManagement';
 // Create theme instance with RTL support
 const getTheme = (direction = 'ltr') => {
   const isRTL = direction === 'rtl';
-  
+
   return createTheme({
     direction,
     palette: {
@@ -41,8 +41,8 @@ const getTheme = (direction = 'ltr') => {
       },
     },
     typography: {
-      fontFamily: isRTL 
-        ? '"Heebo", "Arial", sans-serif' 
+      fontFamily: isRTL
+        ? '"Heebo", "Arial", sans-serif'
         : '"Lato", "Helvetica", "Arial", sans-serif',
       button: {
         textTransform: 'none',
@@ -62,26 +62,33 @@ const getTheme = (direction = 'ltr') => {
 
 const DashboardLayout = ({ children }) => {
   const { language } = useLanguage();
+  const [mobileOpen, setMobileOpen] = React.useState(false);
   const isRTL = language === 'he';
   const location = window.location.pathname;
   const isShopRoute = location === '/shop';
   const isAdminRoute = location === '/admin';
   const isStadiumRoute = location.startsWith('/stadium');
   const hideSidebar = isShopRoute || isAdminRoute || isStadiumRoute;
-  
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
+
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      <Header />
-      {!hideSidebar && <Sidebar />}
-      <Box 
-        component="main" 
-        sx={{ 
+      <Header onMenuClick={handleDrawerToggle} />
+      {!hideSidebar && <Sidebar mobileOpen={mobileOpen} onClose={handleDrawerToggle} />}
+      <Box
+        component="main"
+        sx={{
           flexGrow: 1,
           p: 0,
           mt: '70px',
           backgroundColor: '#f8f9fa',
-          width: '100%',
-          overflow: 'auto'
+          width: { xs: '100%', md: `calc(100% - ${!hideSidebar ? '240px' : '0px'})` },
+          overflow: 'auto',
+          marginLeft: { md: !hideSidebar && !isRTL ? '240px' : 0 },
+          marginRight: { md: !hideSidebar && isRTL ? '240px' : 0 }
         }}
       >
         {children}
@@ -93,10 +100,10 @@ const DashboardLayout = ({ children }) => {
 const PrivateRoute = ({ children, requiredRole }) => {
   const navigate = useNavigate();
   const userString = localStorage.getItem('user');
-  
+
   console.log('🔐 PRIVATE ROUTE: Checking authentication...');
   console.log('🔐 PRIVATE ROUTE: User string from localStorage:', userString);
-  
+
   let user = null;
   try {
     user = userString ? JSON.parse(userString) : null;
@@ -139,7 +146,7 @@ const HomeRedirect = () => {
 function AppContent() {
   const { language } = useLanguage();
   const theme = getTheme(language === 'he' ? 'rtl' : 'ltr');
-  
+
   // Update document direction when language changes
   React.useEffect(() => {
     document.documentElement.lang = language;

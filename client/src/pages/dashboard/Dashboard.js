@@ -45,12 +45,8 @@ const Dashboard = () => {
   const [shopData, setShopData] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [openPromotionDialog, setOpenPromotionDialog] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalOrders: 0,
-    revenue: 0,
-    customers: 0,
-  });
+
+
   const [newMenuItem, setNewMenuItem] = useState({
     name: "",
     nameMap: { en: '', he: '' },
@@ -79,52 +75,7 @@ const Dashboard = () => {
     costOfGoods: 0
   });
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const ordersRef = collection(db, "orders");
-        let ordersQuery;
 
-        // Filter by stadium if shopData has stadiumId
-        if (shopData?.stadiumId) {
-          ordersQuery = query(
-            ordersRef,
-            where("stadiumId", "==", shopData.stadiumId),
-            orderBy("createdAt", "desc")
-          );
-        } else {
-          ordersQuery = query(ordersRef, orderBy("createdAt", "desc"));
-        }
-
-        const ordersSnap = await getDocs(ordersQuery);
-
-        let totalRevenue = 0;
-        const customers = new Set();
-
-        ordersSnap.forEach((doc) => {
-          const order = doc.data();
-          totalRevenue += order.total || 0;
-          if (order.userInfo?.userId) {
-            customers.add(order.userInfo.userId);
-          }
-        });
-
-        setStats({
-          totalOrders: ordersSnap.size,
-          revenue: totalRevenue,
-          customers: customers.size,
-        });
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching stats:", error);
-        setLoading(false);
-      }
-    };
-
-    if (shopData) {
-      fetchStats();
-    }
-  }, [shopData]);
 
   useEffect(() => {
     if (location.state?.shopData) {
@@ -321,38 +272,9 @@ const Dashboard = () => {
     }
   };
 
-  const statsCards = [
-    {
-      title: "Total Orders",
-      value: stats.totalOrders,
-      icon: <OrdersIcon />,
-      color: "#3D70FF",
-      lightColor: "#e8f5e9",
-    },
-    {
-      title: "Revenue",
-      value: `₪${stats.revenue.toFixed(2)}`,
-      icon: <MoneyIcon />,
-      color: "#2196f3",
-      lightColor: "#e3f2fd",
-    },
-    {
-      title: "Customers",
-      value: stats.customers,
-      icon: <PeopleIcon />,
-      color: "#ff9800",
-      lightColor: "#fff3e0",
-    },
 
-  ];
 
-  if (loading) {
-    return (
-      <Box sx={{ mt: 4 }}>
-        <LinearProgress />
-      </Box>
-    );
-  }
+
 
   return (
     <Box sx={{ pt: 3, pl: 0, pr: 3 }}>
@@ -361,7 +283,9 @@ const Dashboard = () => {
           sx={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "flex-start",
+            alignItems: { xs: 'stretch', md: 'flex-start' },
+            flexDirection: { xs: 'column', md: 'row' },
+            gap: { xs: 2, md: 0 },
             mb: 4,
           }}
         >
@@ -390,12 +314,13 @@ const Dashboard = () => {
             )}
           </Box>
           {shopData && (
-            <Box sx={{ display: "flex", gap: 2 }}>
+            <Box sx={{ display: "flex", gap: 2, flexDirection: { xs: 'column', sm: 'row' }, width: { xs: '100%', md: 'auto' } }}>
               <Button
                 variant="contained"
                 startIcon={<Add />}
                 onClick={handleAddMenu}
                 sx={{
+                  width: { xs: '100%', sm: 'auto' },
                   bgcolor: "#3D70FF",
                   "&:hover": { bgcolor: "#3161EA" },
                   px: 3,
@@ -414,6 +339,7 @@ const Dashboard = () => {
                 startIcon={<PromotionIcon />}
                 onClick={handleAddPromotion}
                 sx={{
+                  width: { xs: '100%', sm: 'auto' },
                   bgcolor: "#FF6B35",
                   "&:hover": { bgcolor: "#E55A2B" },
                   px: 3,
@@ -431,94 +357,7 @@ const Dashboard = () => {
           )}
         </Box>
 
-        <Grid container spacing={4}>
-          {statsCards.map((card, index) => (
-            <Grid item xs={12} sm={6} md={3} key={index}>
-              <Card
-                elevation={0}
-                sx={{
-                  height: "100%",
-                  backgroundColor: card.lightColor,
-                  borderRadius: 3,
-                  position: "relative",
-                  overflow: "hidden",
-                  "&:hover": {
-                    transform: "translateY(-4px)",
-                    transition: "all 0.3s ease",
-                    boxShadow: "0 12px 24px 0 rgba(0,0,0,0.09)",
-                  },
-                  "&::before": {
-                    content: '""',
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: "100%",
-                    background: `linear-gradient(45deg, ${card.color}15, ${card.color}05)`,
-                    zIndex: 0,
-                  },
-                }}
-              >
-                <CardContent sx={{ position: "relative", zIndex: 1, p: 3 }}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      mb: 3,
-                    }}
-                  >
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        color: "text.secondary",
-                        fontSize: "0.875rem",
-                        fontWeight: 600,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.1em",
-                        mr: 2, // Add margin to the right
-                      }}
-                    >
-                      {card.title}
-                    </Typography>
-                    <Box
-                      sx={{
-                        backgroundColor: card.color,
-                        borderRadius: "50%",
-                        width: 40, // Smaller size
-                        height: 40, // Smaller size
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        boxShadow: `0 8px 16px ${card.color}40`,
-                        ml: "auto", // Push to the right
-                      }}
-                    >
-                      {React.cloneElement(card.icon, {
-                        sx: {
-                          color: "#fff",
-                          fontSize: 20, // Smaller icon
-                        },
-                      })}
-                    </Box>
-                  </Box>
-                  <Typography
-                    variant="h3"
-                    sx={{
-                      color: card.color,
-                      fontWeight: 700,
-                      fontSize: { xs: "1.75rem", md: "2rem" },
-                      lineHeight: 1.2,
-                      letterSpacing: "-0.01em",
-                    }}
-                  >
-                    {card.value}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+
       </Box>
 
       <Box>

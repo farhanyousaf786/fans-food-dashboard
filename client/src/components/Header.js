@@ -6,8 +6,9 @@ import { auth, db } from '../config/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import PersonIcon from '@mui/icons-material/Person';
 import LanguageSelector from './LanguageSelector';
+import MenuIcon from '@mui/icons-material/Menu';
 
-const Header = () => {
+const Header = ({ onMenuClick }) => {
     const theme = useTheme();
     const navigate = useNavigate();
     const { language } = useLanguage();
@@ -22,12 +23,12 @@ const Header = () => {
                 // Get user data from role-based collections
                 // Try admins collection first
                 let userDoc = await getDoc(doc(db, 'admins', user.uid));
-                
+
                 // If not found in admins, check shopowners collection
                 if (!userDoc.exists()) {
                     userDoc = await getDoc(doc(db, 'shopowners', user.uid));
                 }
-                
+
                 if (userDoc.exists()) {
                     const userData = userDoc.data();
                     // Get user's name from Firestore
@@ -58,9 +59,18 @@ const Header = () => {
                 justifyContent: 'space-between'
             }}
         >
-            <Typography 
-                variant="h5" 
-                sx={{ 
+            <IconButton
+                color="inherit"
+                aria-label="open drawer"
+                edge="start"
+                onClick={onMenuClick}
+                sx={{ mr: 2, display: { md: 'none' }, color: theme.palette.primary.main }}
+            >
+                <MenuIcon />
+            </IconButton>
+            <Typography
+                variant="h5"
+                sx={{
                     fontWeight: 'bold',
                     color: theme.palette.primary.main,
                     fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem' }, // Responsive font size
@@ -76,11 +86,11 @@ const Header = () => {
             >
                 Fan Munch Dashboard
             </Typography>
-            
+
             {/* Mobile title - abbreviated */}
-            <Typography 
-                variant="h6" 
-                sx={{ 
+            <Typography
+                variant="h6"
+                sx={{
                     fontWeight: 'bold',
                     color: theme.palette.primary.main,
                     fontSize: '1rem',
@@ -96,21 +106,21 @@ const Header = () => {
             >
                 Fan Munch
             </Typography>
-            
-            <Box sx={{ 
+
+            <Box sx={{
                 marginLeft: isRTL ? 0 : 'auto',
                 marginRight: isRTL ? 'auto' : 0,
-                display: 'flex', 
-                alignItems: 'center', 
+                display: 'flex',
+                alignItems: 'center',
                 gap: { xs: 1, sm: 2 }, // Less gap on mobile
                 flexDirection: isRTL ? 'row-reverse' : 'row'
             }}>
                 <LanguageSelector />
-                
-                <Box sx={{ 
-                    display: 'flex', 
-                    flexDirection: isRTL ? 'row-reverse' : 'row', 
-                    alignItems: 'center', 
+
+                <Box sx={{
+                    display: 'flex',
+                    flexDirection: isRTL ? 'row-reverse' : 'row',
+                    alignItems: 'center',
                     gap: { xs: 0.5, sm: 1 } // Less gap on mobile
                 }}>
                     <Avatar
@@ -129,23 +139,23 @@ const Header = () => {
                             }
                         }}
                         onClick={() => {
-    // Use navigate first, then reload to ensure screen updates
-    navigate('/profile');
-    setTimeout(() => window.location.reload(), 100);
-}}
+                            // Use navigate first, then reload to ensure screen updates
+                            navigate('/profile');
+                            setTimeout(() => window.location.reload(), 100);
+                        }}
                     >
                         {!userImage && <PersonIcon sx={{ fontSize: { xs: 18, sm: 24 } }} />}
                     </Avatar>
                     {userName && (
-                        <Box sx={{ 
+                        <Box sx={{
                             display: { xs: 'none', sm: 'flex' }, // Hide username on mobile
-                            alignItems: 'center', 
+                            alignItems: 'center',
                             gap: 1,
                             marginRight: isRTL ? 1 : 0,
                             marginLeft: isRTL ? 0 : 1
                         }}>
-                            <Typography 
-                                sx={{ 
+                            <Typography
+                                sx={{
                                     color: theme.palette.primary.main,
                                     fontWeight: 600,
                                     fontSize: { xs: '0.8rem', sm: '0.9rem' },

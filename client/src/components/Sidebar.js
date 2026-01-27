@@ -34,14 +34,14 @@ import logo from '../assets/logo.png';
 
 const drawerWidth = 240;
 
-const Sidebar = () => {
+const Sidebar = ({ mobileOpen, onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { language } = useLanguage();
   const { t, i18n } = useTranslation();
   const isRTL = language === 'he';
   const [userStadiumId, setUserStadiumId] = useState(null);
-  
+
   // Get current user role from localStorage
   const getCurrentUserRole = () => {
     try {
@@ -51,7 +51,7 @@ const Sidebar = () => {
       return null;
     }
   };
-  
+
   const userRole = getCurrentUserRole();
 
   // Fetch user's first stadium for dynamic linking
@@ -61,7 +61,7 @@ const Sidebar = () => {
         const stadiumsCollection = collection(db, 'stadiums');
         const stadiumsSnapshot = await getDocs(stadiumsCollection);
         const stadiums = stadiumsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
+
         if (stadiums.length > 0) {
           // For now, just use the first stadium. You can modify this logic based on user permissions
           setUserStadiumId(stadiums[0].id);
@@ -77,37 +77,37 @@ const Sidebar = () => {
   const handleLogout = async () => {
     try {
       console.log('🚪 LOGOUT: Starting logout process...');
-      
+
       // Get current user and device info
       const currentUser = auth.currentUser;
       const deviceId = localStorage.getItem('deviceId');
       console.log('🆔 LOGOUT: Current user ID:', currentUser?.uid);
       console.log('🆔 LOGOUT: Device ID:', deviceId);
-      
+
       if (currentUser && deviceId) {
         // Remove FCM token for this device - check both collections
         console.log('🔍 LOGOUT: Fetching user document from Firestore...');
-        
+
         // Try to find user in admins collection first
         let userDoc = await getDoc(doc(db, 'admins', currentUser.uid));
         let collection = 'admins';
-        
+
         // If not found in admins, check shopowners collection
         if (!userDoc.exists()) {
           userDoc = await getDoc(doc(db, 'shopowners', currentUser.uid));
           collection = 'shopowners';
         }
-        
+
         if (userDoc.exists()) {
           const userData = userDoc.data();
           const user = User.fromFirestore(userData, currentUser.uid);
           console.log('🔍 LOGOUT: Current FCM tokens before removal:', user.fcmTokens);
-          
+
           // Remove FCM token for current device
           console.log('🗑️ LOGOUT: Removing FCM token for device:', deviceId);
           user.removeFCMToken(deviceId);
           console.log('🗑️ LOGOUT: FCM tokens after removal:', user.fcmTokens);
-          
+
           // Update user document in correct collection
           await updateDoc(doc(db, collection, currentUser.uid), {
             fcmTokens: user.fcmTokens,
@@ -120,7 +120,7 @@ const Sidebar = () => {
       } else {
         console.log('⚠️ LOGOUT: No current user or device ID found');
       }
-      
+
       await signOut(auth);
       localStorage.removeItem('user');
       console.log('✅ LOGOUT: Firebase sign out completed');
@@ -145,9 +145,9 @@ const Sidebar = () => {
 
   // Admin-only menu items
   const adminMenuItems = [
-    { 
-      text: 'Shops and Delivery', 
-      icon: <DeliveryIcon />, 
+    {
+      text: 'Shops and Delivery',
+      icon: <DeliveryIcon />,
       path: userStadiumId ? `/stadium/${userStadiumId}` : '/dashboard',
       disabled: !userStadiumId
     },
@@ -155,140 +155,167 @@ const Sidebar = () => {
   ];
 
   // Combine menu items based on user role
-  const menuItems = userRole === 'admin' 
+  const menuItems = userRole === 'admin'
     ? [...baseMenuItems, ...adminMenuItems]
     : baseMenuItems;
 
-  return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width: drawerWidth,
-        flexShrink: 0,
-        '& .MuiDrawer-paper': {
-          width: drawerWidth,
-          boxSizing: 'border-box',
-          backgroundColor: '#3D70FF',
-          border: 'none',
-          top: '70px',
-          height: 'calc(100vh - 70px)',
-          right: isRTL ? 0 : 'auto',
-          left: isRTL ? 'auto' : 0,
-          transition: 'right 0.3s, left 0.3s'
-        },
-      }}
-      anchor={isRTL ? 'right' : 'left'}
-    >
-      <Box sx={{ overflow: 'auto', mt: 8 }}>
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
+  const drawerContent = (
+    <Box sx={{ overflow: 'auto', mt: { xs: 0, md: 8 } }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          py: 3,
+          mt: 2
+        }}
+      >
+        <Box sx={{ pt: 1.5, pb: 3, px: 3, display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{
+            width: 80,
+            height: 80,
+            borderRadius: '50%',
+            backgroundColor: '#fff',
+            display: 'flex',
             alignItems: 'center',
-            py: 3,
-            mt: 2
+            justifyContent: 'center',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+            cursor: 'pointer',
+            '&:hover': {
+              transform: 'scale(1.05)',
+              transition: 'transform 0.2s ease-in-out'
+            }
           }}
-        >
-          <Box sx={{ pt: 1.5, pb: 3, px: 3, display: 'flex', justifyContent: 'center' }}>
-            <Box sx={{
-              width: 80,
-              height: 80,
-              borderRadius: '50%',
-              backgroundColor: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
-              cursor: 'pointer',
-              '&:hover': {
-                transform: 'scale(1.05)',
-                transition: 'transform 0.2s ease-in-out'
-              }
-            }}
             onClick={() => {
               navigate('/');
               window.location.reload();
             }}
-            >
-              <img 
-                src={logo} 
-                alt="FansFood Logo" 
-                style={{ 
-                  width: '70px', 
-                  height: '70px', 
-                  objectFit: 'contain'
-                }} 
-              />
-            </Box>
+          >
+            <img
+              src={logo}
+              alt="FansFood Logo"
+              style={{
+                width: '70px',
+                height: '70px',
+                objectFit: 'contain'
+              }}
+            />
           </Box>
         </Box>
-        <List>
-          {menuItems.map((item) => (
-            <ListItem key={item.text} disablePadding>
-              <ListItemButton
-                component={Link}
-                to={item.path}
-                selected={location.pathname === item.path}
-                disabled={item.disabled}
-                onClick={() => {
-                  // Use navigate instead of window.location for proper screen update
-                  if (item.path === '/add-category') {
-                    navigate(item.path);
-                    // Force a small delay to ensure component mounts
-                    setTimeout(() => window.location.reload(), 100);
-                  } else if (item.path === '/profile') {
-                    navigate(item.path);
-                    // Force a small delay to ensure component mounts
-                    setTimeout(() => window.location.reload(), 100);
-                  }
-                }}
-                sx={{
-                  color: item.disabled ? 'rgba(255,255,255,0.5)' : 'white',
-                  '&.Mui-selected': {
-                    backgroundColor: '#fff',
-                    color: '#3D70FF',
-                    '&:hover': {
-                      backgroundColor: '#fff',
-                    },
-                  },
-                  '&:hover': {
-                    backgroundColor: item.disabled ? 'transparent' : 'rgba(255,255,255,0.1)',
-                  },
-                  '&.Mui-disabled': {
-                    opacity: 0.5,
-                  },
-                }}
-              >
-                <ListItemIcon
-                  sx={{
-                    color: location.pathname === item.path ? '#3D70FF' : (item.disabled ? 'rgba(255,255,255,0.5)' : 'white'),
-                  }}
-                >
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText primary={item.text} />
-              </ListItemButton>
-            </ListItem>
-          ))}
-          <ListItem disablePadding>
+      </Box>
+      <List>
+        {menuItems.map((item) => (
+          <ListItem key={item.text} disablePadding>
             <ListItemButton
-              onClick={handleLogout}
+              component={Link}
+              to={item.path}
+              selected={location.pathname === item.path}
+              disabled={item.disabled}
+              onClick={() => {
+                if (window.innerWidth < 900 && onClose) onClose(); // Close on mobile navigation
+                if (item.path === '/add-category' || item.path === '/profile') {
+                  navigate(item.path);
+                  setTimeout(() => window.location.reload(), 100);
+                }
+              }}
               sx={{
-                color: 'white',
+                color: item.disabled ? 'rgba(255,255,255,0.5)' : 'white',
+                '&.Mui-selected': {
+                  backgroundColor: '#fff',
+                  color: '#3D70FF',
+                  '&:hover': {
+                    backgroundColor: '#fff',
+                  },
+                },
                 '&:hover': {
-                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  backgroundColor: item.disabled ? 'transparent' : 'rgba(255,255,255,0.1)',
+                },
+                '&.Mui-disabled': {
+                  opacity: 0.5,
                 },
               }}
             >
-              <ListItemIcon sx={{ color: 'white' }}>
-                <LogoutIcon />
+              <ListItemIcon
+                sx={{
+                  color: location.pathname === item.path ? '#3D70FF' : (item.disabled ? 'rgba(255,255,255,0.5)' : 'white'),
+                }}
+              >
+                {item.icon}
               </ListItemIcon>
-              <ListItemText primary="Logout" />
+              <ListItemText primary={item.text} />
             </ListItemButton>
           </ListItem>
-        </List>
-      </Box>
-    </Drawer>
+        ))}
+        <ListItem disablePadding>
+          <ListItemButton
+            onClick={handleLogout}
+            sx={{
+              color: 'white',
+              '&:hover': {
+                backgroundColor: 'rgba(255,255,255,0.1)',
+              },
+            }}
+          >
+            <ListItemIcon sx={{ color: 'white' }}>
+              <LogoutIcon />
+            </ListItemIcon>
+            <ListItemText primary="Logout" />
+          </ListItemButton>
+        </ListItem>
+      </List>
+    </Box>
+  );
+
+  return (
+    <Box
+      component="nav"
+      sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
+      aria-label="mailbox folders"
+    >
+      {/* Mobile Drawer */}
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={onClose}
+        ModalProps={{ keepMounted: true }}
+        sx={{
+          display: { xs: 'block', md: 'none' },
+          '& .MuiDrawer-paper': {
+            boxSizing: 'border-box',
+            width: drawerWidth,
+            backgroundColor: '#3D70FF',
+            border: 'none',
+            backgroundImage: 'none'
+          },
+        }}
+        anchor={isRTL ? 'right' : 'left'}
+      >
+        {drawerContent}
+      </Drawer>
+
+      {/* Desktop Drawer */}
+      <Drawer
+        variant="permanent"
+        sx={{
+          display: { xs: 'none', md: 'block' },
+          '& .MuiDrawer-paper': {
+            width: drawerWidth,
+            boxSizing: 'border-box',
+            backgroundColor: '#3D70FF',
+            border: 'none',
+            top: '70px',
+            height: 'calc(100vh - 70px)',
+            right: isRTL ? 0 : 'auto',
+            left: isRTL ? 'auto' : 0,
+            transition: 'right 0.3s, left 0.3s'
+          },
+        }}
+        open
+        anchor={isRTL ? 'right' : 'left'}
+      >
+        {drawerContent}
+      </Drawer>
+    </Box>
   );
 };
 

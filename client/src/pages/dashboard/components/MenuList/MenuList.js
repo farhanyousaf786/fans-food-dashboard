@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Grid,
+  Stack,
   Card,
   CardMedia,
   CardContent,
@@ -297,7 +298,7 @@ const MenuList = ({ shopData }) => {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 
-      <Grid container spacing={3} className="menu-items-grid">
+      <Stack spacing={2} className="menu-items-list">
         {menuItems
           .sort((a, b) => {
             if (a.isCombo && !b.isCombo) return -1;
@@ -305,167 +306,164 @@ const MenuList = ({ shopData }) => {
             return (a.name || '').localeCompare(b.name || '');
           })
           .map((item) => (
-            <Grid item xs={12} sm={6} md={4} key={item.id} sx={{ display: 'flex' }}>
+            <Box key={item.id} width="100%">
               <Card sx={{
                 display: 'flex',
-                height: 200,
+                p: { xs: 1.5, sm: 2 },
+                gap: { xs: 1.5, sm: 2 },
                 width: '100%',
-                overflow: 'hidden',
-                minHeight: 200,
-                maxHeight: 200,
-                flexShrink: 0
+                alignItems: 'flex-start',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  bgcolor: 'action.hover',
+                  transform: 'translateY(-1px)'
+                }
               }}>
-                {/* Combo Images Grid or Single Image */}
-                {item.isCombo && item.images?.length > 1 ? (
-                  <Box sx={{
-                    width: 140,
-                    height: 200,
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gridTemplateRows: '1fr 1fr',
-                    gap: 0.5,
-                    p: 0.5,
-                    bgcolor: '#f5f5f5',
-                    flexShrink: 0
-                  }}>
-                    {item.images.slice(0, 4).map((img, index) => (
-                      <Box
-                        key={index}
-                        sx={{
-                          backgroundImage: `url(${img})`,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
-                          borderRadius: '4px',
-                          minHeight: 0
-                        }}
-                      />
-                    ))}
-                    {item.images.length > 4 && (
-                      <Box sx={{
-                        position: 'absolute',
-                        bottom: 4,
-                        right: 4,
-                        bgcolor: 'rgba(0,0,0,0.7)',
-                        color: 'white',
-                        borderRadius: '4px',
-                        px: 0.5,
-                        fontSize: '0.7rem'
+                {/* Left: Image Section */}
+                <Box sx={{
+                  display: { xs: 'none', sm: 'block' },
+                  width: { xs: 80, sm: 100 },
+                  height: { xs: 80, sm: 100 },
+                  flexShrink: 0,
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  bgcolor: '#f5f5f5',
+                  position: 'relative',
+                  border: '1px solid',
+                  borderColor: 'divider'
+                }}>
+                  {item.isCombo && item.images?.length > 1 ? (
+                    <Box sx={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gridTemplateRows: '1fr 1fr',
+                      gap: 0,
+                    }}>
+                      {item.images.slice(0, 4).map((img, index) => (
+                        <Box
+                          key={index}
+                          sx={{
+                            backgroundImage: `url(${img})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  ) : (
+                    <CardMedia
+                      component="img"
+                      image={item.images?.[0] || '/placeholder.jpg'}
+                      alt={item.name}
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                      }}
+                    />
+                  )}
+                </Box>
+
+                {/* Right: Main Content (Header, Desc, Footer) */}
+                <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 0.5, minWidth: 0 }}>
+
+                  {/* Row 1: Header (Name & Price/Action) */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+                      <Typography variant="subtitle1" sx={{
+                        fontWeight: 700,
+                        fontSize: { xs: '0.95rem', sm: '1.05rem' },
+                        lineHeight: 1.2
                       }}>
-                        +{item.images.length - 4}
-                      </Box>
-                    )}
-                  </Box>
-                ) : (
-                  <CardMedia
-                    component="img"
-                    image={item.images?.[0] || '/placeholder.jpg'}
-                    alt={item.name}
-                    sx={{
-                      width: 140,
-                      height: 200,
-                      objectFit: 'cover',
-                      flexShrink: 0
-                    }}
-                  />
-                )}
-                <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, p: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                        <Typography variant="h6" sx={{
-                          fontSize: '1.1rem',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          flex: 1
-                        }}>
-                          {item.name}
-                        </Typography>
-                        {item.isCombo && (
-                          <Box sx={{
-                            bgcolor: '#4caf50',
-                            color: 'white',
-                            px: 1,
-                            py: 0.25,
-                            borderRadius: '12px',
-                            fontSize: '0.7rem',
+                        {item.name?.split(' ').slice(0, 3).join(' ')}
+                        {item.name?.split(' ').length > 3 ? '...' : ''}
+                      </Typography>
+                      {item.isCombo && (
+                        <Chip
+                          label="COMBO"
+                          size="small"
+                          color="success"
+                          sx={{
+                            height: 20,
+                            fontSize: '0.65rem',
                             fontWeight: 'bold',
+                            borderRadius: '6px',
                             flexShrink: 0
-                          }}>
-                            🍽️ COMBO
-                          </Box>
-                        )}
-                      </Box>
-                      {item.description && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Typography variant="body2" color="text.secondary">
-                            {item.description.split(' ').slice(0, 5).join(' ')}
-                            {item.description.split(' ').length > 5 ? '...' : ''}
-                          </Typography>
-                          <Button
-                            size="small"
-                            sx={{ minWidth: 'auto', p: 0, color: 'primary.main', fontSize: '0.75rem' }}
-                            onClick={() => {
-                              setSelectedItem(item);
-                              setReadMoreDialogOpen(true);
-                            }}
-                          >
-                            Read More
-                          </Button>
-                        </Box>
+                          }}
+                        />
                       )}
                     </Box>
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      <IconButton size="small" onClick={() => handleEdit(item)} sx={{ padding: '4px' }}>
-                        <Edit sx={{ fontSize: 18 }} />
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+                      <Typography variant="h6" color="primary" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, fontWeight: 700 }}>
+                        {item.currency === 'NIS' ? '₪' : '$'}{parseFloat(item.price).toFixed(2)}
+                      </Typography>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEdit(item)}
+                        sx={{ ml: 0.5, padding: '4px' }}
+                      >
+                        <Edit sx={{ fontSize: { xs: 16, sm: 18 } }} />
                       </IconButton>
                     </Box>
                   </Box>
 
-                  {/* Shop Availability Section */}
-                  {item.shopIds && item.shopIds.length > 0 && (
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', mb: 0.5, display: 'block' }}>
-                        Available in:
-                      </Typography>
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {getShopNames(item.shopIds).slice(0, 2).map((shopName, index) => (
-                          <Chip
-                            key={index}
-                            label={shopName}
-                            size="small"
-                            variant="outlined"
-                            sx={{
-                              height: 20,
-                              fontSize: '0.65rem',
-                              bgcolor: shopName === shopData?.name ? '#e3f2fd' : 'transparent',
-                              borderColor: shopName === shopData?.name ? '#2196f3' : '#ddd',
-                              color: shopName === shopData?.name ? '#1976d2' : 'text.secondary'
-                            }}
-                          />
-                        ))}
-                        {getShopNames(item.shopIds).length > 2 && (
-                          <Chip
-                            label={`+${getShopNames(item.shopIds).length - 2} more`}
-                            size="small"
-                            variant="outlined"
-                            sx={{
-                              height: 20,
-                              fontSize: '0.65rem',
-                              color: 'text.secondary',
-                              borderColor: '#ddd'
-                            }}
-                          />
-                        )}
-                      </Box>
-                    </Box>
+                  {/* Row 2: Description */}
+                  {item.description && (
+                    <Typography variant="body2" color="text.secondary" sx={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      fontSize: '0.85rem',
+                      lineHeight: 1.4,
+                      mb: 0.5
+                    }}>
+                      {item.description}
+                    </Typography>
                   )}
 
-                  <Box sx={{ mt: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="h6" color="primary" sx={{ fontSize: '1.1rem' }}>
-                      {item.currency === 'NIS' ? '₪' : '$'}{parseFloat(item.price).toFixed(2)}
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                  {/* Row 3: Footer (Shops & Availability) */}
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 'auto', flexWrap: 'wrap', gap: 1 }}>
+
+                    {/* Shops */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {item.shopIds && item.shopIds.length > 0 && (
+                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                          {getShopNames(item.shopIds).slice(0, 3).map((shopName, index) => (
+                            <Chip
+                              key={index}
+                              label={shopName}
+                              size="small"
+                              variant="outlined"
+                              sx={{
+                                height: 20,
+                                fontSize: '0.65rem',
+                                bgcolor: shopName === shopData?.name ? '#f0f7ff' : 'transparent',
+                                borderColor: shopName === shopData?.name ? 'primary.main' : 'divider',
+                                color: shopName === shopData?.name ? 'primary.main' : 'text.secondary'
+                              }}
+                            />
+                          ))}
+                          {getShopNames(item.shopIds).length > 3 && (
+                            <Typography variant="caption" color="text.secondary">
+                              +{getShopNames(item.shopIds).length - 3} more
+                            </Typography>
+                          )}
+                        </Box>
+                      )}
+                    </Box>
+
+                    {/* Controls */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: { xs: 0, sm: 'auto' }, width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'space-between', sm: 'flex-end' } }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary', gap: 0.5 }}>
+                        <AccessTime sx={{ fontSize: 16 }} />
+                        <Typography variant="caption" sx={{ fontWeight: 500 }}>{item.preparationTime} min</Typography>
+                      </Box>
+
                       <FormControlLabel
                         control={
                           <Switch
@@ -473,6 +471,7 @@ const MenuList = ({ shopData }) => {
                             checked={item.isAvailable}
                             onChange={(e) => handleToggleAvailability(item, e.target.checked)}
                             color="success"
+                            sx={{ transform: 'scale(0.8)' }}
                           />
                         }
                         label={item.isAvailable ? "Available" : "Unavailable"}
@@ -481,24 +480,19 @@ const MenuList = ({ shopData }) => {
                           margin: 0,
                           '& .MuiTypography-root': {
                             fontSize: '0.75rem',
+                            fontWeight: 600,
                             color: item.isAvailable ? 'success.main' : 'text.secondary'
                           }
                         }}
                       />
-                      <Chip
-                        icon={<AccessTime sx={{ fontSize: 10 }} />}
-                        label={`${item.preparationTime} min`}
-                        size="small"
-                        variant="outlined"
-                        sx={{ height: 24 }}
-                      />
                     </Box>
                   </Box>
+
                 </Box>
               </Card>
-            </Grid>
+            </Box>
           ))}
-      </Grid>
+      </Stack>
 
       <AddMenuDialog
         open={editDialogOpen}
