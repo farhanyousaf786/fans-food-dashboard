@@ -277,8 +277,8 @@ const Dashboard = () => {
 
 
   return (
-    <Box sx={{ pt: 3, pl: 0, pr: 3 }}>
-      <Box sx={{ mb: 6, pl: 2 }}>
+    <Box sx={{ pt: 3, pl: 3, pr: 3 }}>
+      <Box sx={{ mb: 6 }}>
         <Box
           sx={{
             display: "flex",
@@ -368,7 +368,6 @@ const Dashboard = () => {
             color: "#2D3748",
             fontSize: { xs: "1.5rem", md: "2rem" },
             mb: 1,
-            ml: 2,
           }}
         >
           Menu List
@@ -392,7 +391,7 @@ const Dashboard = () => {
             shopData={shopData}
           />
 
-          <Box ml={2}>
+          <Box>
             <MenuList shopData={shopData} />
             <Box sx={{ mt: 4 }}>
               <OfferList shopData={shopData} />

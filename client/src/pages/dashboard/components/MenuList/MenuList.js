@@ -26,7 +26,8 @@ import {
   Edit,
   AccessTime,
   Circle,
-  Warning
+  Warning,
+  RestaurantMenu
 } from '@mui/icons-material';
 import { collection, query, onSnapshot, doc, updateDoc, where, getDocs } from 'firebase/firestore';
 import { ref, deleteObject, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -301,8 +302,15 @@ const MenuList = ({ shopData }) => {
       <Stack spacing={2} className="menu-items-list">
         {menuItems
           .sort((a, b) => {
-            if (a.isCombo && !b.isCombo) return -1;
-            if (!a.isCombo && b.isCombo) return 1;
+            // Sort by Availability (Available first)
+            if (a.isAvailable !== b.isAvailable) {
+              return a.isAvailable ? -1 : 1;
+            }
+            // Sort by Combo
+            if (a.isCombo !== b.isCombo) {
+              return a.isCombo ? -1 : 1;
+            }
+            // Sort by Name
             return (a.name || '').localeCompare(b.name || '');
           })
           .map((item) => (
@@ -332,6 +340,23 @@ const MenuList = ({ shopData }) => {
                   border: '1px solid',
                   borderColor: 'divider'
                 }}>
+                  {/* Placeholder Background */}
+                  <Box sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: 'grey.100',
+                    color: 'text.secondary',
+                    zIndex: 0
+                  }}>
+                    <RestaurantMenu />
+                  </Box>
+
                   {item.isCombo && item.images?.length > 1 ? (
                     <Box sx={{
                       width: '100%',
@@ -340,6 +365,8 @@ const MenuList = ({ shopData }) => {
                       gridTemplateColumns: '1fr 1fr',
                       gridTemplateRows: '1fr 1fr',
                       gap: 0,
+                      position: 'relative',
+                      zIndex: 1
                     }}>
                       {item.images.slice(0, 4).map((img, index) => (
                         <Box
@@ -353,16 +380,21 @@ const MenuList = ({ shopData }) => {
                       ))}
                     </Box>
                   ) : (
-                    <CardMedia
-                      component="img"
-                      image={item.images?.[0] || '/placeholder.jpg'}
-                      alt={item.name}
-                      sx={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover'
-                      }}
-                    />
+                    item.images?.[0] && (
+                      <Box
+                        component="img"
+                        src={item.images[0]}
+                        alt={item.name}
+                        onError={(e) => e.target.style.opacity = 0}
+                        sx={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          position: 'relative',
+                          zIndex: 1
+                        }}
+                      />
+                    )
                   )}
                 </Box>
 

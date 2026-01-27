@@ -85,10 +85,8 @@ const DashboardLayout = ({ children }) => {
           p: 0,
           mt: '70px',
           backgroundColor: '#f8f9fa',
-          width: { xs: '100%', md: `calc(100% - ${!hideSidebar ? '240px' : '0px'})` },
-          overflow: 'auto',
-          marginLeft: { md: !hideSidebar && !isRTL ? '240px' : 0 },
-          marginRight: { md: !hideSidebar && isRTL ? '240px' : 0 }
+          width: '100%',
+          overflow: 'auto'
         }}
       >
         {children}
