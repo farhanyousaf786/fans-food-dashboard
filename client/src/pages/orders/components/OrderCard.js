@@ -12,6 +12,7 @@ import { styled } from '@mui/material/styles';
 
 // Styled component for RTL support
 const StyledCard = styled(Card)(({ theme }) => ({
+  width: '100%',
   borderRadius: theme.shape.borderRadius * 3,
   border: '1px solid',
   borderColor: theme.palette.divider,
@@ -80,10 +81,10 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
 
   return (
     <StyledCard elevation={1} className="order-card" component={Paper}>
-      <CardContent className="order-content" sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <CardContent className="order-content" sx={{ p: { xs: 1.5, sm: 3 }, flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Box className="order-header" sx={{ mb: 2 }}>
           <Box>
-            <Typography variant="h6" className="order-customer" sx={{ color: 'primary.main', fontWeight: 600, fontSize: '1.1rem' }}>
+            <Typography variant="h6" className="order-customer" sx={{ color: 'primary.main', fontWeight: 600, fontSize: { xs: '1rem', sm: '1.1rem' } }} noWrap>
               {getName(order.userInfo?.userName, t('common.customer'))}
             </Typography>
             {order.userInfo?.userPhoneNo && (
@@ -197,14 +198,22 @@ const OrderCard = ({ order, onViewDetails, onMenuClick, restaurantName, getStatu
         </Box>
 
         {/* Order Items */}
-        <Box sx={{ mb: 2, flex: 1 }}>
+        <Box sx={{
+          mb: 2,
+          flex: 1,
+          maxHeight: 220,
+          overflowY: 'auto',
+          pr: 0.5,
+          '&::-webkit-scrollbar': { width: 4 },
+          '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(0,0,0,0.1)', borderRadius: 2 }
+        }}>
           <Typography variant="subtitle2" sx={{ color: theme.palette.primary.main, fontWeight: 600 }} gutterBottom>
             {t('common.orderItems')}
           </Typography>
           {order.cart?.map((item, index) => (
             <Box key={index} sx={{ mb: 1.5, pb: 1, borderBottom: '1px dashed #eee', '&:last-child': { borderBottom: 'none' } }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Typography variant="body2" fontWeight="500">{getName(item.name)}</Typography>
+                <Typography variant="body2" fontWeight="500" noWrap sx={{ maxWidth: { xs: 150, sm: 200 } }}>{getName(item.name)}</Typography>
                 <Typography variant="body2" color="text.secondary">×{item.quantity}</Typography>
               </Box>
 

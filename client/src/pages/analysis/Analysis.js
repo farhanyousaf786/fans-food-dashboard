@@ -12,6 +12,15 @@ import {
   Card,
   CardContent,
   TextField,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemAvatar,
+  Avatar,
+  Chip,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
   Divider,
   useTheme,
   useMediaQuery
@@ -37,6 +46,22 @@ const Analysis = () => {
 
   // Animation state
   const [fadeIn, setFadeIn] = useState(false);
+  const [chartMetric, setChartMetric] = useState('revenue'); // 'revenue' or 'orders'
+  const [topItems, setTopItems] = useState([]);
+  const [topUsers, setTopUsers] = useState([]);
+
+  // Determine currency symbol from orders
+  const currencySymbol = (() => {
+    const orderWithCurrency = orders.find(o => o.currency);
+    if (orderWithCurrency) {
+      const c = orderWithCurrency.currency;
+      if (['USD', 'usd', '$'].includes(c)) return '$';
+      if (['EUR', 'eur', '€'].includes(c)) return '€';
+      if (['GBP', 'gbp', '£'].includes(c)) return '£';
+      if (['NIS', 'nis', 'ILS', 'ils', '₪'].includes(c)) return '₪';
+    }
+    return '$';
+  })();
 
   useEffect(() => {
     // Get current shop data from localStorage (for stadium context)
@@ -61,14 +86,14 @@ const Analysis = () => {
 
       const shopsRef = collection(db, 'shops');
       let shopsQuery;
-      
+
       // If admin has stadium context, only fetch shops from that stadium
       if (user?.role === 'admin' && shopData?.stadiumId) {
         shopsQuery = query(shopsRef, where('stadiumId', '==', shopData.stadiumId));
       } else {
         shopsQuery = query(shopsRef); // Fetch all for other cases
       }
-      
+
       const snapshot = await getDocs(shopsQuery);
       let shopsList = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -141,6 +166,45 @@ const Analysis = () => {
   const totalOrders = orders.length;
   const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
+  useEffect(() => {
+    if (orders.length === 0) {
+      setTopItems([]);
+      setTopUsers([]);
+      return;
+    }
+
+    // Top Items
+    const itemMap = {};
+    orders.forEach(order => {
+      order.cart?.forEach(item => {
+        const itemName = item.name?.en || item.name || 'Unknown';
+        itemMap[itemName] = (itemMap[itemName] || 0) + (item.quantity || 1);
+      });
+    });
+    const sortedItems = Object.entries(itemMap)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([name, count]) => ({ name, count }));
+    setTopItems(sortedItems);
+
+    // Top Users
+    const userMap = {};
+    orders.forEach(order => {
+      if (order.userInfo?.userName) {
+        const name = order.userInfo.userName;
+        if (!userMap[name]) userMap[name] = { count: 0, total: 0 };
+        userMap[name].count += 1;
+        userMap[name].total += (order.total || 0);
+      }
+    });
+    const sortedUsers = Object.entries(userMap)
+      .sort(([, a], [, b]) => b.count - a.count)
+      .slice(0, 5)
+      .map(([name, data]) => ({ name, ...data }));
+    setTopUsers(sortedUsers);
+
+  }, [orders]);
+
   // Prepare data for charts
   const prepareChartData = () => {
     // Group by date for time series
@@ -204,7 +268,7 @@ const Analysis = () => {
                   onChange={(e) => setSelectedShop(e.target.value)}
                   label="Select Shop"
                 >
-                  <MenuItem value="stadium">All Shops</MenuItem>
+                  <MenuItem value="stadium">All Shops (Selected Stadium)</MenuItem>
                   {shops.map((shop) => (
                     <MenuItem key={shop.id} value={shop.id}>
                       {shop.name}
@@ -265,14 +329,14 @@ const Analysis = () => {
                       mr: 2
                     }}
                   >
-                    <Typography variant="h6" color="primary">₪</Typography>
+                    <Typography variant="h6" color="primary">{currencySymbol}</Typography>
                   </Box>
                   <Box>
                     <Typography variant="subtitle2" color="textSecondary">
                       Total Revenue
                     </Typography>
                     <Typography variant="h5" fontWeight={600}>
-                      ₪{totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {currencySymbol}{totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Typography>
                   </Box>
                 </Box>
@@ -350,7 +414,7 @@ const Analysis = () => {
                       Avg. Order Value
                     </Typography>
                     <Typography variant="h5" fontWeight={600}>
-                      ₪{avgOrderValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {currencySymbol}{avgOrderValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Typography>
                   </Box>
                 </Box>
@@ -376,19 +440,16 @@ const Analysis = () => {
                   Revenue Over Time
                 </Typography>
                 <Box>
-                  <FormControl size="small" sx={{ minWidth: 120, mr: 1 }}>
-                    <InputLabel>Time Range</InputLabel>
-                    <Select
-                      value=""
-                      label="Time Range"
-                      onChange={() => { }}
-                      size="small"
-                    >
-                      <MenuItem value="week">This Week</MenuItem>
-                      <MenuItem value="month">This Month</MenuItem>
-                      <MenuItem value="year">This Year</MenuItem>
-                    </Select>
-                  </FormControl>
+                  <ToggleButtonGroup
+                    value={chartMetric}
+                    exclusive
+                    onChange={(e, newMetric) => { if (newMetric) setChartMetric(newMetric); }}
+                    size="small"
+                    aria-label="chart metric"
+                  >
+                    <ToggleButton value="revenue">Revenue</ToggleButton>
+                    <ToggleButton value="orders">Orders</ToggleButton>
+                  </ToggleButtonGroup>
                 </Box>
               </Box>
               <div style={{ height: isMobile ? 300 : 400 }}>
@@ -411,13 +472,13 @@ const Analysis = () => {
                       tickLine={false}
                     />
                     <YAxis
-                      tickFormatter={(value) => `₪${value}`}
+                      tickFormatter={(value) => chartMetric === 'revenue' ? `${currencySymbol}${value}` : value}
                       tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
                       axisLine={false}
                       tickLine={false}
                     />
                     <Tooltip
-                      formatter={(value) => [`₪${value}`, 'Revenue']}
+                      formatter={(value) => [chartMetric === 'revenue' ? `${currencySymbol}${value}` : value, chartMetric === 'revenue' ? 'Revenue' : 'Orders']}
                       contentStyle={{
                         borderRadius: 8,
                         boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
@@ -425,8 +486,8 @@ const Analysis = () => {
                       }}
                     />
                     <Bar
-                      dataKey="revenue"
-                      name="Revenue"
+                      dataKey={chartMetric}
+                      name={chartMetric === 'revenue' ? 'Revenue' : 'Orders'}
                       fill="url(#colorRevenue)"
                       radius={[4, 4, 0, 0]}
                       animationDuration={1500}
@@ -440,7 +501,7 @@ const Analysis = () => {
 
         {/* Additional Metrics */}
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12}>
             <Paper
               elevation={2}
               sx={{
@@ -454,32 +515,26 @@ const Analysis = () => {
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: theme.palette.text.primary }}>
                 Top Selling Items
               </Typography>
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Typography variant="body2" color="textSecondary">
-                  Coming Soon
-                </Typography>
-              </Box>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Paper
-              elevation={2}
-              sx={{
-                p: 3,
-                height: '100%',
-                borderRadius: 2,
-                background: theme.palette.background.paper,
-                boxShadow: '0 4px 20px rgba(0,0,0,0.05)'
-              }}
-            >
-              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: theme.palette.text.primary }}>
-                Order Status
-              </Typography>
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Typography variant="body2" color="textSecondary">
-                  Coming Soon
-                </Typography>
-              </Box>
+              <List>
+                {topItems.map((item, index) => (
+                  <ListItem key={index} divider={index < topItems.length - 1} sx={{ py: 2 }}>
+                    <ListItemAvatar>
+                      <Avatar sx={{ bgcolor: 'primary.light', color: 'primary.main', fontWeight: 'bold' }}>
+                        {index + 1}
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={item.name}
+                      secondary={`${item.count} sold`}
+                      primaryTypographyProps={{ fontWeight: 600 }}
+                    />
+                    <Chip label="Top Seller" size="small" color="primary" variant="outlined" />
+                  </ListItem>
+                ))}
+                {topItems.length === 0 && (
+                  <Box sx={{ textAlign: 'center', py: 4 }}><Typography color="textSecondary">No sales data yet</Typography></Box>
+                )}
+              </List>
             </Paper>
           </Grid>
         </Grid>

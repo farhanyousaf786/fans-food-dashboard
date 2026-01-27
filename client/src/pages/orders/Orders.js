@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Typography, Menu, MenuItem, CircularProgress, Grid, Container, ButtonGroup, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Select, FormControl, InputLabel, FormControlLabel, Checkbox, Radio, RadioGroup, FormLabel } from '@mui/material';
+import { useTheme, useMediaQuery } from '@mui/material';
 import { AccessTime, LocalDining, LocalShipping, Delete, GetApp, DateRange } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers';
@@ -19,6 +20,8 @@ import './Orders.css';
 const Orders = () => {
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === 'he';
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -997,14 +1000,14 @@ const Orders = () => {
         <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
           {/* Shop Filter Dropdown - Only visible to ADMIN */}
           {userRole === 'admin' && (
-            <FormControl sx={{ minWidth: 250 }}>
+            <FormControl sx={{ minWidth: { xs: '100%', sm: 250 }, width: { xs: '100%', sm: 'auto' } }}>
               <InputLabel>Filter by Shop</InputLabel>
               <Select
                 value={selectedShopFilter}
                 label="Filter by Shop"
                 onChange={(e) => setSelectedShopFilter(e.target.value)}
               >
-                <MenuItem value="stadium">All Shops</MenuItem>
+                <MenuItem value="stadium">All Shops (Selected Stadium)</MenuItem>
                 {allShops.map((shop) => (
                   <MenuItem key={shop.id} value={shop.id}>
                     {shop.name}
@@ -1015,51 +1018,53 @@ const Orders = () => {
           )}
 
           {/* Date Range Quick Filters */}
-          <ButtonGroup variant="outlined" size="medium">
-            <Button
-              onClick={() => {
-                const today = new Date();
-                setSelectedDateRange({
-                  startDate: new Date(today.setHours(0, 0, 0, 0)),
-                  endDate: new Date(today.setHours(23, 59, 59, 999))
-                });
-              }}
-            >
-              Today
-            </Button>
-            <Button
-              onClick={() => {
-                const today = new Date();
-                const yesterday = new Date(today);
-                yesterday.setDate(yesterday.getDate() - 1);
-                setSelectedDateRange({
-                  startDate: new Date(yesterday.setHours(0, 0, 0, 0)),
-                  endDate: new Date(yesterday.setHours(23, 59, 59, 999))
-                });
-              }}
-            >
-              Yesterday
-            </Button>
-            <Button
-              onClick={() => {
-                const today = new Date();
-                const weekAgo = new Date(today);
-                weekAgo.setDate(weekAgo.getDate() - 7);
-                setSelectedDateRange({
-                  startDate: new Date(weekAgo.setHours(0, 0, 0, 0)),
-                  endDate: new Date(today.setHours(23, 59, 59, 999))
-                });
-              }}
-            >
-              Last 7 Days
-            </Button>
-            <Button
-              onClick={() => setDateFilterDialogOpen(true)}
-              startIcon={<DateRange />}
-            >
-              Custom Range
-            </Button>
-          </ButtonGroup>
+          <Box sx={{ overflowX: 'auto', maxWidth: '100%', pb: 1 }}>
+            <ButtonGroup variant="outlined" size={isMobile ? "small" : "medium"} sx={{ minWidth: 'fit-content' }}>
+              <Button
+                onClick={() => {
+                  const today = new Date();
+                  setSelectedDateRange({
+                    startDate: new Date(today.setHours(0, 0, 0, 0)),
+                    endDate: new Date(today.setHours(23, 59, 59, 999))
+                  });
+                }}
+              >
+                Today
+              </Button>
+              <Button
+                onClick={() => {
+                  const today = new Date();
+                  const yesterday = new Date(today);
+                  yesterday.setDate(yesterday.getDate() - 1);
+                  setSelectedDateRange({
+                    startDate: new Date(yesterday.setHours(0, 0, 0, 0)),
+                    endDate: new Date(yesterday.setHours(23, 59, 59, 999))
+                  });
+                }}
+              >
+                Yesterday
+              </Button>
+              <Button
+                onClick={() => {
+                  const today = new Date();
+                  const weekAgo = new Date(today);
+                  weekAgo.setDate(weekAgo.getDate() - 7);
+                  setSelectedDateRange({
+                    startDate: new Date(weekAgo.setHours(0, 0, 0, 0)),
+                    endDate: new Date(today.setHours(23, 59, 59, 999))
+                  });
+                }}
+              >
+                Last 7 Days
+              </Button>
+              <Button
+                onClick={() => setDateFilterDialogOpen(true)}
+                startIcon={<DateRange />}
+              >
+                Custom Range
+              </Button>
+            </ButtonGroup>
+          </Box>
 
           {/* Current Date Range Display */}
           <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
@@ -1070,87 +1075,91 @@ const Orders = () => {
         {/* Centered Filter Buttons */}
         <Box sx={{
           display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: { xs: 'stretch', md: 'center' },
+          gap: { xs: 2, md: 0 },
           mb: 4,
           '& .MuiButtonGroup-root': {
             boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
           }
         }}>
-          <ButtonGroup variant="contained" size="medium">
-            <Button
-              onClick={() => filterOrders('all')}
-              sx={{
-                bgcolor: selectedFilter === 'all' ? 'primary.main' : 'white',
-                color: selectedFilter === 'all' ? 'white' : 'primary.main',
-                '&:hover': {
-                  bgcolor: selectedFilter === 'all' ? 'primary.dark' : 'grey.100'
-                }
-              }}
-            >
-              {t('orders.filters.all')}
-            </Button>
-            <Button
-              onClick={() => filterOrders('pending')}
-              sx={{
-                bgcolor: selectedFilter === 'pending' ? 'primary.main' : 'white',
-                color: selectedFilter === 'pending' ? 'white' : 'primary.main',
-                '&:hover': {
-                  bgcolor: selectedFilter === 'pending' ? 'primary.dark' : 'grey.100'
-                }
-              }}
-            >
-              {t('orders.filters.pending')}
-            </Button>
-            <Button
-              onClick={() => filterOrders('preparing')}
-              sx={{
-                bgcolor: selectedFilter === 'preparing' ? 'primary.main' : 'white',
-                color: selectedFilter === 'preparing' ? 'white' : 'primary.main',
-                '&:hover': {
-                  bgcolor: selectedFilter === 'preparing' ? 'primary.dark' : 'grey.100'
-                }
-              }}
-            >
-              {t('orders.filters.preparing')}
-            </Button>
-            <Button
-              onClick={() => filterOrders('delivering')}
-              sx={{
-                bgcolor: selectedFilter === 'delivering' ? 'primary.main' : 'white',
-                color: selectedFilter === 'delivering' ? 'white' : 'primary.main',
-                '&:hover': {
-                  bgcolor: selectedFilter === 'delivering' ? 'primary.dark' : 'grey.100'
-                }
-              }}
-            >
-              {t('orders.filters.delivering')}
-            </Button>
-            <Button
-              onClick={() => filterOrders('delivered')}
-              sx={{
-                bgcolor: selectedFilter === '3' ? 'primary.main' : 'white',
-                color: selectedFilter === '3' ? 'white' : 'primary.main',
-                '&:hover': {
-                  bgcolor: selectedFilter === '3' ? 'primary.dark' : 'grey.100'
-                }
-              }}
-            >
-              {t('orders.filters.delivered')}
-            </Button>
-            <Button
-              onClick={() => filterOrders('cancelled')}
-              sx={{
-                bgcolor: selectedFilter === '4' ? 'primary.main' : 'white',
-                color: selectedFilter === '4' ? 'white' : 'primary.main',
-                '&:hover': {
-                  bgcolor: selectedFilter === '4' ? 'primary.dark' : 'grey.100'
-                }
-              }}
-            >
-              {t('orders.filters.cancelled')}
-            </Button>
-          </ButtonGroup>
+          <Box sx={{ overflowX: 'auto', maxWidth: '100%', pb: 1 }}>
+            <ButtonGroup variant="contained" size={isMobile ? "small" : "medium"} sx={{ minWidth: 'fit-content' }}>
+              <Button
+                onClick={() => filterOrders('all')}
+                sx={{
+                  bgcolor: selectedFilter === 'all' ? 'primary.main' : 'white',
+                  color: selectedFilter === 'all' ? 'white' : 'primary.main',
+                  '&:hover': {
+                    bgcolor: selectedFilter === 'all' ? 'primary.dark' : 'grey.100'
+                  }
+                }}
+              >
+                {t('orders.filters.all')}
+              </Button>
+              <Button
+                onClick={() => filterOrders('pending')}
+                sx={{
+                  bgcolor: selectedFilter === 'pending' ? 'primary.main' : 'white',
+                  color: selectedFilter === 'pending' ? 'white' : 'primary.main',
+                  '&:hover': {
+                    bgcolor: selectedFilter === 'pending' ? 'primary.dark' : 'grey.100'
+                  }
+                }}
+              >
+                {t('orders.filters.pending')}
+              </Button>
+              <Button
+                onClick={() => filterOrders('preparing')}
+                sx={{
+                  bgcolor: selectedFilter === 'preparing' ? 'primary.main' : 'white',
+                  color: selectedFilter === 'preparing' ? 'white' : 'primary.main',
+                  '&:hover': {
+                    bgcolor: selectedFilter === 'preparing' ? 'primary.dark' : 'grey.100'
+                  }
+                }}
+              >
+                {t('orders.filters.preparing')}
+              </Button>
+              <Button
+                onClick={() => filterOrders('delivering')}
+                sx={{
+                  bgcolor: selectedFilter === 'delivering' ? 'primary.main' : 'white',
+                  color: selectedFilter === 'delivering' ? 'white' : 'primary.main',
+                  '&:hover': {
+                    bgcolor: selectedFilter === 'delivering' ? 'primary.dark' : 'grey.100'
+                  }
+                }}
+              >
+                {t('orders.filters.delivering')}
+              </Button>
+              <Button
+                onClick={() => filterOrders('delivered')}
+                sx={{
+                  bgcolor: selectedFilter === '3' ? 'primary.main' : 'white',
+                  color: selectedFilter === '3' ? 'white' : 'primary.main',
+                  '&:hover': {
+                    bgcolor: selectedFilter === '3' ? 'primary.dark' : 'grey.100'
+                  }
+                }}
+              >
+                {t('orders.filters.delivered')}
+              </Button>
+              <Button
+                onClick={() => filterOrders('cancelled')}
+                sx={{
+                  bgcolor: selectedFilter === '4' ? 'primary.main' : 'white',
+                  color: selectedFilter === '4' ? 'white' : 'primary.main',
+                  '&:hover': {
+                    bgcolor: selectedFilter === '4' ? 'primary.dark' : 'grey.100'
+                  }
+                }}
+              >
+                {t('orders.filters.cancelled')}
+              </Button>
+            </ButtonGroup>
+          </Box>
           <Button
             variant="contained"
             color="primary"
