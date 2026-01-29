@@ -108,7 +108,9 @@
     "orders": "Orders",
     "analysis": "Analysis",
     "profile": "Profile",
-    "addCategory": "Add Category"
+    "addCategory": "Add Category",
+    "reports": "Sales Summary",
+    "detailedSales": "Detailed Sales"
   },
   "orderStatus": {
     "0": "Pending",

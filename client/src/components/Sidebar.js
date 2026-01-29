@@ -21,7 +21,8 @@ import {
   ShoppingCart as OrdersIcon,
   Logout as LogoutIcon,
   BarChart as AnalysisIcon,
-  People as PeopleIcon
+  People as PeopleIcon,
+  Summarize as ReportIcon
 } from '@mui/icons-material';
 import { Category as CategoryIcon } from '@mui/icons-material';
 import { LocalShipping as DeliveryIcon } from '@mui/icons-material';
@@ -141,6 +142,7 @@ const Sidebar = ({ mobileOpen, onClose }) => {
     { text: t('sidebar.analysis'), icon: <AnalysisIcon />, path: '/analysis' },
     { text: t('sidebar.profile'), icon: <PersonIcon />, path: '/profile' },
     { text: t('sidebar.addCategory'), icon: <CategoryIcon />, path: '/add-category' },
+    { text: t('sidebar.reports'), icon: <ReportIcon />, path: '/reports' },
   ];
 
   // Admin-only menu items

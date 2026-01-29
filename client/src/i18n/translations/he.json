@@ -102,7 +102,9 @@
     "orders": "הזמנות",
     "analysis": "ניתוח נתונים",
     "profile": "פרופיל",
-    "addCategory": "הוסף קטגוריה"
+    "addCategory": "הוסף קטגוריה",
+    "reports": "סיכומי מכירות",
+    "detailedSales": "מכירות מפורטות"
   },
   "orderStatus": {
     "0": "ממתין",

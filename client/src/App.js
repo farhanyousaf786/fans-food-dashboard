@@ -18,6 +18,7 @@ import Analysis from './pages/analysis/Analysis';
 import Sidebar from './components/Sidebar';
 import AddCategory from './pages/categories/AddCategory';
 import UserManagement from './pages/admin/components/UserManagement';
+import SalesSummary from './pages/reports/SalesSummary';
 
 // Create theme instance with RTL support
 const getTheme = (direction = 'ltr') => {
@@ -174,6 +175,7 @@ function AppContent() {
           <Route path="/stadium/:id" element={<PrivateRoute><DashboardLayout><Stadium /></DashboardLayout></PrivateRoute>} />
           <Route path="/add-category" element={<PrivateRoute><DashboardLayout><AddCategory /></DashboardLayout></PrivateRoute>} />
           <Route path="/user-management" element={<PrivateRoute requiredRole="admin"><DashboardLayout><UserManagement /></DashboardLayout></PrivateRoute>} />
+          <Route path="/reports" element={<PrivateRoute><DashboardLayout><SalesSummary /></DashboardLayout></PrivateRoute>} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Router>
