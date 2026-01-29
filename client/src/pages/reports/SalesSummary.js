@@ -138,6 +138,9 @@ const SalesSummary = () => {
             grand: 0
         };
 
+        const userOrders = {};
+        let totalOrdersCount = 0;
+
         orders.forEach(order => {
             const shopId = order.shopId || "unknown";
             const shop = allShops.find(s => s.id === shopId);
@@ -146,6 +149,13 @@ const SalesSummary = () => {
             if (!shop) {
                 return;
             }
+
+            totalOrdersCount++;
+            // Use same user identification logic as Orders.js
+            const userId = order.userInfo?.userId || order.userInfo?.userEmail || order.userInfo?.userPhoneNo || `Unknown-${order.id}`;
+
+            if (!userOrders[userId]) userOrders[userId] = 0;
+            userOrders[userId]++;
 
             const shopName = shop.name;
             const orderDate = new Date(order.createdAt).toLocaleDateString();
@@ -225,10 +235,24 @@ const SalesSummary = () => {
         // Sort dates
         const sortedDates = Object.keys(dailyBreakdown).sort((a, b) => new Date(a) - new Date(b));
 
-        return { shopStats, totals, dailyBreakdown, sortedDates };
+        // Calculate statistics
+        const uniqueUsersCount = Object.keys(userOrders).length;
+        const repeatingUsersCount = Object.values(userOrders).filter(count => count > 1).length;
+        const avgOrderValue = totalOrdersCount > 0 ? totals.grand / totalOrdersCount : 0;
+        const avgSpendingPerUser = uniqueUsersCount > 0 ? totals.grand / uniqueUsersCount : 0;
+
+        const stats = {
+            totalOrders: totalOrdersCount,
+            uniqueUsers: uniqueUsersCount,
+            repeatingUsers: repeatingUsersCount,
+            avgOrderValue,
+            avgSpendingPerUser
+        };
+
+        return { shopStats, totals, dailyBreakdown, sortedDates, stats };
     };
 
-    const { shopStats, totals, dailyBreakdown, sortedDates } = processReportData();
+    const { shopStats, totals, dailyBreakdown, sortedDates, stats } = processReportData();
     const cs = "$"; // Always use USD symbol
 
     const exportPDF = () => {
@@ -284,6 +308,15 @@ const SalesSummary = () => {
         tableRows.push(['', '']);
 
         tableRows.push([{ content: 'GRAND TOTAL', styles: { fontStyle: 'bold', fontSize: 12 } }, `${cs}${totals.grand.toFixed(2)}`]);
+        tableRows.push(['', '']);
+
+        // Stats
+        tableRows.push([{ content: 'KEY METRICS', colSpan: 2, styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } }]);
+        tableRows.push(['Total Orders', stats.totalOrders]);
+        tableRows.push(['Unique Users', stats.uniqueUsers]);
+        tableRows.push(['Repeating Users', stats.repeatingUsers]);
+        tableRows.push(['Avg Spending/User', `${cs}${stats.avgSpendingPerUser.toFixed(2)}`]);
+        tableRows.push(['Avg Order Value', `${cs}${stats.avgOrderValue.toFixed(2)}`]);
 
         autoTable(doc, {
             startY: 30,
@@ -350,6 +383,15 @@ const SalesSummary = () => {
         tableRows.push(['', '']);
 
         tableRows.push([{ content: 'GRAND TOTAL', styles: { fontStyle: 'bold', fontSize: 12 } }, `${cs}${totals.grand.toFixed(2)}`]);
+        tableRows.push(['', '']);
+
+        // Stats
+        tableRows.push([{ content: 'KEY METRICS', colSpan: 2, styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } }]);
+        tableRows.push(['Total Orders', stats.totalOrders]);
+        tableRows.push(['Unique Users', stats.uniqueUsers]);
+        tableRows.push(['Repeating Users', stats.repeatingUsers]);
+        tableRows.push(['Avg Spending/User', `${cs}${stats.avgSpendingPerUser.toFixed(2)}`]);
+        tableRows.push(['Avg Order Value', `${cs}${stats.avgOrderValue.toFixed(2)}`]);
 
         autoTable(doc, {
             startY: 30,
