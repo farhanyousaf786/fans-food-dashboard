@@ -128,8 +128,7 @@ const SalesSummary = () => {
     // 3. Process Data for UI and PDF
     const processReportData = () => {
         const shopStats = {};
-        const itemStats = {};
-        const dateStats = {};
+        const dailyBreakdown = {}; // Organize by date
         let totals = {
             gross: 0,
             discount: 0,
@@ -151,8 +150,15 @@ const SalesSummary = () => {
             const shopName = shop.name;
             const orderDate = new Date(order.createdAt).toLocaleDateString();
 
-            if (!dateStats[orderDate]) {
-                dateStats[orderDate] = {};
+            // Initialize daily breakdown for this date
+            if (!dailyBreakdown[orderDate]) {
+                dailyBreakdown[orderDate] = {
+                    shops: {},
+                    total: 0,
+                    tips: 0,
+                    delivery: 0,
+                    grandTotal: 0
+                };
             }
 
             if (!shopStats[shopId]) {
@@ -161,8 +167,7 @@ const SalesSummary = () => {
                     gross: 0,
                     discount: 0,
                     net: 0,
-                    categories: {},
-                    items: {} // Track individual items per shop
+                    items: {}
                 };
             }
 
@@ -170,7 +175,6 @@ const SalesSummary = () => {
             const discount = Number(order.discount || 0);
             const tip = Number(order.tipAmount || 0);
             const delivery = Number(order.deliveryFee || 0);
-            const total = Number(order.total || 0);
 
             shopStats[shopId].gross += subtotal;
             shopStats[shopId].discount += discount;
@@ -181,52 +185,50 @@ const SalesSummary = () => {
             totals.net += (subtotal - discount);
             totals.tips += tip;
             totals.delivery += delivery;
-            totals.grand += total;
+            totals.grand += (subtotal - discount); // Grand total = Net revenue (no tips/delivery)
+
+            // Add to daily totals
+            dailyBreakdown[orderDate].tips += tip;
+            dailyBreakdown[orderDate].delivery += delivery;
+            dailyBreakdown[orderDate].grandTotal += subtotal; // Daily total = Gross for that day
 
             (order.cart || []).forEach(item => {
-                const catId = item.category || "n_a";
-                const catName = categories[catId] ? getNameString(categories[catId].nameMap).toUpperCase() : "FOOD";
                 const itemName = getNameString(item.nameMap) || item.name || 'Unknown Item';
                 const itemPrice = Number(item.price || 0);
                 const itemQty = Number(item.quantity || 1);
                 const itemTotal = itemPrice * itemQty;
 
-                if (!shopStats[shopId].categories[catName]) {
-                    shopStats[shopId].categories[catName] = { amount: 0, count: 0 };
-                }
-                shopStats[shopId].categories[catName].amount += itemTotal;
-                shopStats[shopId].categories[catName].count += itemQty;
-
-                // Track individual items per shop
+                // Track items per shop for overall totals
                 if (!shopStats[shopId].items[itemName]) {
                     shopStats[shopId].items[itemName] = { count: 0, amount: 0 };
                 }
                 shopStats[shopId].items[itemName].count += itemQty;
                 shopStats[shopId].items[itemName].amount += itemTotal;
 
-                // Track individual items globally for the detailed breakdown table
-                if (!itemStats[itemName]) {
-                    itemStats[itemName] = {
-                        totalQty: 0,
-                        totalRevenue: 0,
-                        dailyBreakdown: {}
+                // Track items per shop per day
+                if (!dailyBreakdown[orderDate].shops[shopName]) {
+                    dailyBreakdown[orderDate].shops[shopName] = {
+                        items: {},
+                        total: 0
                     };
                 }
-                itemStats[itemName].totalQty += itemQty;
-                itemStats[itemName].totalRevenue += itemTotal;
-
-                if (!itemStats[itemName].dailyBreakdown[orderDate]) {
-                    itemStats[itemName].dailyBreakdown[orderDate] = { qty: 0, revenue: 0 };
+                if (!dailyBreakdown[orderDate].shops[shopName].items[itemName]) {
+                    dailyBreakdown[orderDate].shops[shopName].items[itemName] = { count: 0, amount: 0 };
                 }
-                itemStats[itemName].dailyBreakdown[orderDate].qty += itemQty;
-                itemStats[itemName].dailyBreakdown[orderDate].revenue += itemTotal;
+                dailyBreakdown[orderDate].shops[shopName].items[itemName].count += itemQty;
+                dailyBreakdown[orderDate].shops[shopName].items[itemName].amount += itemTotal;
+                dailyBreakdown[orderDate].shops[shopName].total += itemTotal;
+                dailyBreakdown[orderDate].total += itemTotal;
             });
         });
 
-        return { shopStats, totals, itemStats, dates: Object.keys(dateStats).sort() };
+        // Sort dates
+        const sortedDates = Object.keys(dailyBreakdown).sort((a, b) => new Date(a) - new Date(b));
+
+        return { shopStats, totals, dailyBreakdown, sortedDates };
     };
 
-    const { shopStats, totals } = processReportData();
+    const { shopStats, totals, dailyBreakdown, sortedDates } = processReportData();
     const cs = "$"; // Always use USD symbol
 
     const exportPDF = () => {
@@ -240,11 +242,34 @@ const SalesSummary = () => {
         doc.text(`Grouped by: Profit Center | ${selectedShopId === 'all' ? 'All Shops' : allShops.find(s => s.id === selectedShopId)?.name}`, 105, 24, { align: "center" });
 
         const tableRows = [];
-        tableRows.push([{ content: 'GROSS REVENUE', colSpan: 2, styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } }]);
+
+        // Daily Breakdown
+        tableRows.push([{ content: 'GROSS REVENUE - DAILY BREAKDOWN', colSpan: 2, styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } }]);
+        sortedDates.forEach(date => {
+            const formattedDate = new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+            tableRows.push([{ content: formattedDate, colSpan: 2, styles: { fontStyle: 'bold', fillColor: [227, 242, 253] } }]);
+
+            Object.entries(dailyBreakdown[date].shops).forEach(([shopName, shopData]) => {
+                tableRows.push([{ content: `  ${shopName}`, styles: { fontStyle: 'bold' } }, { content: `${cs}${shopData.total.toFixed(2)}`, styles: { fontStyle: 'bold' } }]);
+                Object.entries(shopData.items).sort((a, b) => b[1].amount - a[1].amount).forEach(([itemName, itemData]) => {
+                    tableRows.push([`    ${itemName} (${itemData.count})`, `${cs}${itemData.amount.toFixed(2)}`]);
+                });
+            });
+
+            // Day total
+            tableRows.push([{ content: 'Day Total', styles: { fontStyle: 'bold' } }, { content: `${cs}${dailyBreakdown[date].total.toFixed(2)}`, styles: { fontStyle: 'bold' } }]);
+            tableRows.push(['', '']);
+        });
+        tableRows.push(['', '']);
+
+        // Overall Totals
+        tableRows.push([{ content: 'OVERALL TOTALS', colSpan: 2, styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } }]);
         Object.values(shopStats).forEach(shop => {
             tableRows.push([{ content: shop.name, styles: { fontStyle: 'bold' } }, '']);
-            Object.entries(shop.categories).forEach(([name, d]) => tableRows.push([`    ${name} (${d.count})`, `${cs}${d.amount.toFixed(2)}`]));
-            tableRows.push([{ content: '    Subtotal', styles: { fontStyle: 'italic' } }, `${cs}${shop.gross.toFixed(2)}`]);
+            Object.entries(shop.items).sort((a, b) => b[1].amount - a[1].amount).forEach(([itemName, data]) => {
+                tableRows.push([`    ${itemName} (${data.count})`, `${cs}${data.amount.toFixed(2)}`]);
+            });
+            tableRows.push([{ content: '    Subtotal', styles: { fontStyle: 'bold' } }, { content: `${cs}${shop.gross.toFixed(2)}`, styles: { fontStyle: 'bold' } }]);
         });
         tableRows.push([{ content: 'Total GROSS REVENUE', styles: { fontStyle: 'bold' } }, `${cs}${totals.gross.toFixed(2)}`]);
         tableRows.push(['', '']);
@@ -256,11 +281,6 @@ const SalesSummary = () => {
 
         tableRows.push([{ content: 'NET REVENUE', colSpan: 2, styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } }]);
         tableRows.push([{ content: 'Total NET REVENUE', styles: { fontStyle: 'bold' } }, `${cs}${totals.net.toFixed(2)}`]);
-        tableRows.push(['', '']);
-
-        tableRows.push([{ content: 'FEES & TIPS', colSpan: 2, styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } }]);
-        tableRows.push(['    Total Tips', `${cs}${totals.tips.toFixed(2)}`]);
-        tableRows.push(['    Total Delivery Fees', `${cs}${totals.delivery.toFixed(2)}`]);
         tableRows.push(['', '']);
 
         tableRows.push([{ content: 'GRAND TOTAL', styles: { fontStyle: 'bold', fontSize: 12 } }, `${cs}${totals.grand.toFixed(2)}`]);
@@ -288,11 +308,34 @@ const SalesSummary = () => {
         doc.text(`Grouped by: Profit Center | ${selectedShopId === 'all' ? 'All Shops' : allShops.find(s => s.id === selectedShopId)?.name}`, 105, 24, { align: "center" });
 
         const tableRows = [];
-        tableRows.push([{ content: 'GROSS REVENUE', colSpan: 2, styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } }]);
+
+        // Daily Breakdown
+        tableRows.push([{ content: 'GROSS REVENUE - DAILY BREAKDOWN', colSpan: 2, styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } }]);
+        sortedDates.forEach(date => {
+            const formattedDate = new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+            tableRows.push([{ content: formattedDate, colSpan: 2, styles: { fontStyle: 'bold', fillColor: [227, 242, 253] } }]);
+
+            Object.entries(dailyBreakdown[date].shops).forEach(([shopName, shopData]) => {
+                tableRows.push([{ content: `  ${shopName}`, styles: { fontStyle: 'bold' } }, { content: `${cs}${shopData.total.toFixed(2)}`, styles: { fontStyle: 'bold' } }]);
+                Object.entries(shopData.items).sort((a, b) => b[1].amount - a[1].amount).forEach(([itemName, itemData]) => {
+                    tableRows.push([`    ${itemName} (${itemData.count})`, `${cs}${itemData.amount.toFixed(2)}`]);
+                });
+            });
+
+            // Day total
+            tableRows.push([{ content: 'Day Total', styles: { fontStyle: 'bold' } }, { content: `${cs}${dailyBreakdown[date].total.toFixed(2)}`, styles: { fontStyle: 'bold' } }]);
+            tableRows.push(['', '']);
+        });
+        tableRows.push(['', '']);
+
+        // Overall Totals
+        tableRows.push([{ content: 'OVERALL TOTALS', colSpan: 2, styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } }]);
         Object.values(shopStats).forEach(shop => {
             tableRows.push([{ content: shop.name, styles: { fontStyle: 'bold' } }, '']);
-            Object.entries(shop.categories).forEach(([name, d]) => tableRows.push([`    ${name} (${d.count})`, `${cs}${d.amount.toFixed(2)}`]));
-            tableRows.push([{ content: '    Subtotal', styles: { fontStyle: 'italic' } }, `${cs}${shop.gross.toFixed(2)}`]);
+            Object.entries(shop.items).sort((a, b) => b[1].amount - a[1].amount).forEach(([itemName, data]) => {
+                tableRows.push([`    ${itemName} (${data.count})`, `${cs}${data.amount.toFixed(2)}`]);
+            });
+            tableRows.push([{ content: '    Subtotal', styles: { fontStyle: 'bold' } }, { content: `${cs}${shop.gross.toFixed(2)}`, styles: { fontStyle: 'bold' } }]);
         });
         tableRows.push([{ content: 'Total GROSS REVENUE', styles: { fontStyle: 'bold' } }, `${cs}${totals.gross.toFixed(2)}`]);
         tableRows.push(['', '']);
@@ -306,11 +349,6 @@ const SalesSummary = () => {
         tableRows.push([{ content: 'Total NET REVENUE', styles: { fontStyle: 'bold' } }, `${cs}${totals.net.toFixed(2)}`]);
         tableRows.push(['', '']);
 
-        tableRows.push([{ content: 'FEES & TIPS', colSpan: 2, styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } }]);
-        tableRows.push(['    Total Tips', `${cs}${totals.tips.toFixed(2)}`]);
-        tableRows.push(['    Total Delivery Fees', `${cs}${totals.delivery.toFixed(2)}`]);
-        tableRows.push(['', '']);
-
         tableRows.push([{ content: 'GRAND TOTAL', styles: { fontStyle: 'bold', fontSize: 12 } }, `${cs}${totals.grand.toFixed(2)}`]);
 
         autoTable(doc, {
@@ -322,11 +360,9 @@ const SalesSummary = () => {
             margin: { left: 15, right: 15 }
         });
 
-        // Generate PDF as base64
-        const pdfBase64 = doc.output('datauristring');
         const fileName = `Sales_Summary_${new Date().toISOString().split('T')[0]}.pdf`;
 
-        // Create mailto link with PDF attachment
+        // Create mailto link
         const subject = encodeURIComponent(`Sales Summary Report - ${new Date().toLocaleDateString()}`);
         const body = encodeURIComponent(`Please find attached the Sales Summary Report for the period ${formatDateTime(dateRange.startDate)} to ${formatDateTime(dateRange.endDate)}.\n\nTotal Revenue: ${cs}${totals.grand.toFixed(2)}\n\nBest regards`);
 
@@ -424,9 +460,46 @@ const SalesSummary = () => {
                         <Box sx={{ mt: 3 }}>
                             <Table size="small">
                                 <TableBody>
-                                    {/* GROSS */}
+                                    {/* GROSS REVENUE - DAILY BREAKDOWN */}
                                     <TableRow sx={{ bgcolor: '#f5f5f5' }}>
-                                        <TableCell sx={{ fontWeight: 'bold' }}>GROSS REVENUE</TableCell>
+                                        <TableCell sx={{ fontWeight: 'bold' }}>GROSS REVENUE - DAILY BREAKDOWN</TableCell>
+                                        <TableCell align="right"></TableCell>
+                                    </TableRow>
+
+                                    {sortedDates.map(date => (
+                                        <React.Fragment key={date}>
+                                            <TableRow sx={{ bgcolor: '#e3f2fd' }}>
+                                                <TableCell sx={{ pl: 2, fontWeight: 'bold', fontSize: '1.05rem' }}>
+                                                    {new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                                                </TableCell>
+                                                <TableCell align="right" sx={{ fontWeight: 'bold' }}>
+                                                    {cs}{dailyBreakdown[date].total.toFixed(2)}
+                                                </TableCell>
+                                            </TableRow>
+                                            {Object.entries(dailyBreakdown[date].shops).map(([shopName, shopData]) => (
+                                                <React.Fragment key={shopName}>
+                                                    <TableRow>
+                                                        <TableCell sx={{ pl: 4, fontWeight: 'bold', color: '#555' }}>{shopName}</TableCell>
+                                                        <TableCell align="right" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
+                                                            {cs}{shopData.total.toFixed(2)}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                    {Object.entries(shopData.items).sort((a, b) => b[1].amount - a[1].amount).map(([itemName, itemData]) => (
+                                                        <TableRow key={itemName}>
+                                                            <TableCell sx={{ pl: 8 }}>{itemName} ({itemData.count})</TableCell>
+                                                            <TableCell align="right">{cs}{itemData.amount.toFixed(2)}</TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </React.Fragment>
+                                            ))}
+                                            <TableRow sx={{ height: 10 }}><TableCell colSpan={2} border={0} /></TableRow>
+                                        </React.Fragment>
+                                    ))}
+
+                                    {/* OVERALL TOTALS */}
+                                    <TableRow sx={{ height: 20 }}><TableCell colSpan={2} border={0} /></TableRow>
+                                    <TableRow sx={{ bgcolor: '#f5f5f5' }}>
+                                        <TableCell sx={{ fontWeight: 'bold' }}>OVERALL TOTALS</TableCell>
                                         <TableCell align="right"></TableCell>
                                     </TableRow>
                                     {Object.values(shopStats).map(shop => (
@@ -493,21 +566,6 @@ const SalesSummary = () => {
                                     <TableRow>
                                         <TableCell sx={{ fontWeight: 'bold' }}>Total Taxes</TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 'bold' }}>{cs}0.00</TableCell>
-                                    </TableRow>
-
-                                    {/* FEES */}
-                                    <TableRow sx={{ height: 20 }}><TableCell colSpan={2} border={0} /></TableRow>
-                                    <TableRow sx={{ bgcolor: '#f5f5f5' }}>
-                                        <TableCell sx={{ fontWeight: 'bold' }}>FEES & TIPS</TableCell>
-                                        <TableCell align="right"></TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                        <TableCell sx={{ pl: 4 }}>Total Tips</TableCell>
-                                        <TableCell align="right">{cs}{totals.tips.toFixed(2)}</TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                        <TableCell sx={{ pl: 4 }}>Total Delivery Fees</TableCell>
-                                        <TableCell align="right">{cs}{totals.delivery.toFixed(2)}</TableCell>
                                     </TableRow>
 
                                     {/* GRAND TOTAL */}
