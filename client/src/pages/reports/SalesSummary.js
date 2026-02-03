@@ -135,7 +135,8 @@ const SalesSummary = () => {
             net: 0,
             tips: 0,
             delivery: 0,
-            grand: 0
+            grand: 0,
+            costOfGoods: 0  // Track total cost of goods
         };
 
         const userOrders = {};
@@ -207,6 +208,11 @@ const SalesSummary = () => {
                 const itemPrice = Number(item.price || 0);
                 const itemQty = Number(item.quantity || 1);
                 const itemTotal = itemPrice * itemQty;
+
+                // Track cost of goods
+                const itemCostOfGoods = Number(item.costOfGoods || 0);
+                const totalCostOfGoods = itemCostOfGoods * itemQty;
+                totals.costOfGoods += totalCostOfGoods;
 
                 // Track items per shop for overall totals
                 if (!shopStats[shopId].items[itemName]) {
@@ -310,6 +316,11 @@ const SalesSummary = () => {
         tableRows.push([{ content: 'GRAND TOTAL', styles: { fontStyle: 'bold', fontSize: 12 } }, `${cs}${totals.grand.toFixed(2)}`]);
         tableRows.push(['', '']);
 
+        // Cost of Goods and Net Profit
+        tableRows.push([{ content: 'COST OF GOODS', styles: { fontStyle: 'bold' } }, `-${cs}${totals.costOfGoods.toFixed(2)}`]);
+        tableRows.push([{ content: 'NET PROFIT', styles: { fontStyle: 'bold', fontSize: 12, fillColor: [200, 230, 201] } }, `${cs}${(totals.grand - totals.costOfGoods).toFixed(2)}`]);
+        tableRows.push(['', '']);
+
         // Stats
         tableRows.push([{ content: 'KEY METRICS', colSpan: 2, styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } }]);
         tableRows.push(['Total Orders', stats.totalOrders]);
@@ -383,6 +394,11 @@ const SalesSummary = () => {
         tableRows.push(['', '']);
 
         tableRows.push([{ content: 'GRAND TOTAL', styles: { fontStyle: 'bold', fontSize: 12 } }, `${cs}${totals.grand.toFixed(2)}`]);
+        tableRows.push(['', '']);
+
+        // Cost of Goods and Net Profit
+        tableRows.push([{ content: 'COST OF GOODS', styles: { fontStyle: 'bold' } }, `-${cs}${totals.costOfGoods.toFixed(2)}`]);
+        tableRows.push([{ content: 'NET PROFIT', styles: { fontStyle: 'bold', fontSize: 12, fillColor: [200, 230, 201] } }, `${cs}${(totals.grand - totals.costOfGoods).toFixed(2)}`]);
         tableRows.push(['', '']);
 
         // Stats
@@ -612,6 +628,21 @@ const SalesSummary = () => {
 
                                     {/* GRAND TOTAL */}
                                     <TableRow sx={{ height: 40 }}><TableCell colSpan={2} border={0} /></TableRow>
+
+                                    {/* NET PROFIT */}
+                                    <TableRow sx={{ height: 20 }}><TableCell colSpan={2} border={0} /></TableRow>
+                                    <TableRow sx={{ bgcolor: '#e8f5e9' }}>
+                                        <TableCell sx={{ fontWeight: 'bold', fontSize: '1.1rem', py: 2 }}>COST OF GOODS</TableCell>
+                                        <TableCell align="right" sx={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#d32f2f', py: 2 }}>
+                                            -{cs}{totals.costOfGoods.toFixed(2)}
+                                        </TableCell>
+                                    </TableRow>
+                                    <TableRow sx={{ bgcolor: '#c8e6c9' }}>
+                                        <TableCell sx={{ fontWeight: 'bold', fontSize: '1.3rem', py: 2 }}>NET PROFIT</TableCell>
+                                        <TableCell align="right" sx={{ fontWeight: 'bold', fontSize: '1.3rem', color: '#2e7d32', py: 2 }}>
+                                            {cs}{(totals.grand - totals.costOfGoods).toFixed(2)}
+                                        </TableCell>
+                                    </TableRow>
                                     <TableRow sx={{ bgcolor: '#e8eaf6' }}>
                                         <TableCell sx={{ fontWeight: 'bold', fontSize: '1.2rem', py: 2 }}>GRAND TOTAL</TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 'bold', fontSize: '1.2rem', color: '#1a237e', py: 2 }}>
