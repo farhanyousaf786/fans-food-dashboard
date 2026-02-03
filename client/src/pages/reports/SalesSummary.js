@@ -433,17 +433,39 @@ const SalesSummary = () => {
 
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
-            <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#1a237e' }}>
+            <Box sx={{
+                mb: 4,
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                justifyContent: 'space-between',
+                alignItems: { xs: 'stretch', sm: 'center' },
+                gap: 2
+            }}>
+                <Typography variant="h4" sx={{
+                    fontWeight: 700,
+                    color: '#1a237e',
+                    fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' }
+                }}>
                     Sales Summary Report
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 2 }}>
+                <Box sx={{
+                    display: 'flex',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: 1.5,
+                    width: { xs: '100%', sm: 'auto' }
+                }}>
                     <Button
                         variant="outlined"
                         startIcon={<Email />}
                         onClick={emailToAdmin}
                         disabled={orders.length === 0}
-                        sx={{ borderRadius: 2, px: 3 }}
+                        sx={{
+                            borderRadius: 2,
+                            px: { xs: 2, sm: 3 },
+                            py: { xs: 1, sm: 1.5 },
+                            fontSize: { xs: '0.875rem', sm: '1rem' },
+                            width: { xs: '100%', sm: 'auto' }
+                        }}
                     >
                         Email to Admin
                     </Button>
@@ -452,7 +474,13 @@ const SalesSummary = () => {
                         startIcon={<GetApp />}
                         onClick={exportPDF}
                         disabled={orders.length === 0}
-                        sx={{ borderRadius: 2, px: 3 }}
+                        sx={{
+                            borderRadius: 2,
+                            px: { xs: 2, sm: 3 },
+                            py: { xs: 1, sm: 1.5 },
+                            fontSize: { xs: '0.875rem', sm: '1rem' },
+                            width: { xs: '100%', sm: 'auto' }
+                        }}
                     >
                         Export PDF
                     </Button>
