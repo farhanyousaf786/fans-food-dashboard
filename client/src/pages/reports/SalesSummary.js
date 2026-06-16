@@ -53,6 +53,29 @@ const SalesSummary = () => {
         return val[i18n.language] || val['en'] || val['he'] || Object.values(val)[0] || 'N/A';
     };
 
+    const getPdfNameString = (val, fallback = 'N/A') => {
+        const isAscii = (text) => /^[\x20-\x7E]*$/.test(text);
+        if (!val) return fallback;
+        if (typeof val === 'string') return isAscii(val) ? val : fallback;
+        const candidates = [val.en, val['en-US'], val.name, ...Object.values(val)];
+        return candidates.find(candidate => typeof candidate === 'string' && candidate.trim() && isAscii(candidate)) || fallback;
+    };
+
+    const setupPdfFont = async (doc) => {
+        const response = await fetch('https://cdn.jsdelivr.net/gh/googlefonts/noto-fonts@main/hinted/ttf/NotoSans/NotoSans-Regular.ttf');
+        const buffer = await response.arrayBuffer();
+        let binary = '';
+        const bytes = new Uint8Array(buffer);
+        bytes.forEach(byte => {
+            binary += String.fromCharCode(byte);
+        });
+        doc.addFileToVFS('NotoSans-Regular.ttf', btoa(binary));
+        doc.addFont('NotoSans-Regular.ttf', 'NotoSans', 'normal');
+        doc.addFont('NotoSans-Regular.ttf', 'NotoSans', 'bold');
+        doc.setFont('NotoSans', 'normal');
+        return 'NotoSans';
+    };
+
     // 1. Initial Setup: Auth & Shops
     useEffect(() => {
         const userString = localStorage.getItem('user');
@@ -158,7 +181,8 @@ const SalesSummary = () => {
             if (!userOrders[userId]) userOrders[userId] = 0;
             userOrders[userId]++;
 
-            const shopName = shop.name;
+            const shopName = getNameString(shop.name);
+            const shopPdfName = getPdfNameString(shop.name, 'Shop');
             const orderDate = new Date(order.createdAt).toLocaleDateString();
 
             // Initialize daily breakdown for this date
@@ -175,6 +199,7 @@ const SalesSummary = () => {
             if (!shopStats[shopId]) {
                 shopStats[shopId] = {
                     name: shopName,
+                    pdfName: shopPdfName,
                     gross: 0,
                     discount: 0,
                     net: 0,
@@ -205,6 +230,7 @@ const SalesSummary = () => {
 
             (order.cart || []).forEach(item => {
                 const itemName = getNameString(item.nameMap) || item.name || 'Unknown Item';
+                const itemPdfName = getPdfNameString(item.nameMap || item.name, 'Unknown Item');
                 const itemPrice = Number(item.price || 0);
                 const itemQty = Number(item.quantity || 1);
                 const itemTotal = itemPrice * itemQty;
@@ -216,7 +242,7 @@ const SalesSummary = () => {
 
                 // Track items per shop for overall totals
                 if (!shopStats[shopId].items[itemName]) {
-                    shopStats[shopId].items[itemName] = { count: 0, amount: 0 };
+                    shopStats[shopId].items[itemName] = { count: 0, amount: 0, pdfName: itemPdfName };
                 }
                 shopStats[shopId].items[itemName].count += itemQty;
                 shopStats[shopId].items[itemName].amount += itemTotal;
@@ -224,12 +250,13 @@ const SalesSummary = () => {
                 // Track items per shop per day
                 if (!dailyBreakdown[orderDate].shops[shopName]) {
                     dailyBreakdown[orderDate].shops[shopName] = {
+                        pdfName: shopPdfName,
                         items: {},
                         total: 0
                     };
                 }
                 if (!dailyBreakdown[orderDate].shops[shopName].items[itemName]) {
-                    dailyBreakdown[orderDate].shops[shopName].items[itemName] = { count: 0, amount: 0 };
+                    dailyBreakdown[orderDate].shops[shopName].items[itemName] = { count: 0, amount: 0, pdfName: itemPdfName };
                 }
                 dailyBreakdown[orderDate].shops[shopName].items[itemName].count += itemQty;
                 dailyBreakdown[orderDate].shops[shopName].items[itemName].amount += itemTotal;
@@ -259,15 +286,25 @@ const SalesSummary = () => {
     };
 
     const { shopStats, totals, dailyBreakdown, sortedDates, stats } = processReportData();
-    const cs = "$"; // Always use USD symbol
 
-    const exportPDF = () => {
+    const getCurrencySymbol = (code) => {
+        const map = { ILS: '₪', NIS: '₪', USD: '$', EUR: '€', GBP: '£' };
+        return map[code] || code || '$';
+    };
+
+    // Determine currency from the first order (all orders in a stadium typically share one currency)
+    const detectedCurrency = orders.length > 0 ? orders[0].currency : 'ILS';
+    const cs = getCurrencySymbol(detectedCurrency);
+
+    const exportPDF = async () => {
         const doc = new jsPDF();
         const formatDateTime = (date) => date.toLocaleString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
 
-        doc.setFontSize(16); doc.setFont("helvetica", "bold");
+        const pdfFont = await setupPdfFont(doc);
+
+        doc.setFontSize(16); doc.setFont(pdfFont, "bold");
         doc.text("Sales Summary with Revenue Detail", 105, 15, { align: "center" });
-        doc.setFontSize(9); doc.setFont("helvetica", "normal");
+        doc.setFontSize(9); doc.setFont(pdfFont, "normal");
         doc.text(`Processed Business Period Starting ${formatDateTime(dateRange.startDate)} and Ending ${formatDateTime(dateRange.endDate)}`, 105, 20, { align: "center" });
         doc.text(`Grouped by: Profit Center | ${selectedShopId === 'all' ? 'All Shops' : allShops.find(s => s.id === selectedShopId)?.name}`, 105, 24, { align: "center" });
 
@@ -280,9 +317,9 @@ const SalesSummary = () => {
             tableRows.push([{ content: formattedDate, colSpan: 2, styles: { fontStyle: 'bold', fillColor: [227, 242, 253] } }]);
 
             Object.entries(dailyBreakdown[date].shops).forEach(([shopName, shopData]) => {
-                tableRows.push([{ content: `  ${shopName}`, styles: { fontStyle: 'bold' } }, { content: `${cs}${shopData.total.toFixed(2)}`, styles: { fontStyle: 'bold' } }]);
+                tableRows.push([{ content: `  ${shopData.pdfName || shopName}`, styles: { fontStyle: 'bold' } }, { content: `${cs}${shopData.total.toFixed(2)}`, styles: { fontStyle: 'bold' } }]);
                 Object.entries(shopData.items).sort((a, b) => b[1].amount - a[1].amount).forEach(([itemName, itemData]) => {
-                    tableRows.push([`    ${itemName} (${itemData.count})`, `${cs}${itemData.amount.toFixed(2)}`]);
+                    tableRows.push([`    ${itemData.pdfName || itemName} (${itemData.count})`, `${cs}${itemData.amount.toFixed(2)}`]);
                 });
             });
 
@@ -295,9 +332,9 @@ const SalesSummary = () => {
         // Overall Totals
         tableRows.push([{ content: 'OVERALL TOTALS', colSpan: 2, styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } }]);
         Object.values(shopStats).forEach(shop => {
-            tableRows.push([{ content: shop.name, styles: { fontStyle: 'bold' } }, '']);
+            tableRows.push([{ content: shop.pdfName || shop.name, styles: { fontStyle: 'bold' } }, '']);
             Object.entries(shop.items).sort((a, b) => b[1].amount - a[1].amount).forEach(([itemName, data]) => {
-                tableRows.push([`    ${itemName} (${data.count})`, `${cs}${data.amount.toFixed(2)}`]);
+                tableRows.push([`    ${data.pdfName || itemName} (${data.count})`, `${cs}${data.amount.toFixed(2)}`]);
             });
             tableRows.push([{ content: '    Subtotal', styles: { fontStyle: 'bold' } }, { content: `${cs}${shop.gross.toFixed(2)}`, styles: { fontStyle: 'bold' } }]);
         });
@@ -305,7 +342,7 @@ const SalesSummary = () => {
         tableRows.push(['', '']);
 
         tableRows.push([{ content: 'DISCOUNTS', colSpan: 2, styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } }]);
-        Object.values(shopStats).forEach(shop => shop.discount > 0 && tableRows.push([`    ${shop.name}`, `-${cs}${shop.discount.toFixed(2)}`]));
+        Object.values(shopStats).forEach(shop => shop.discount > 0 && tableRows.push([`    ${shop.pdfName || shop.name}`, `-${cs}${shop.discount.toFixed(2)}`]));
         tableRows.push([{ content: 'Total DISCOUNTS', styles: { fontStyle: 'bold' } }, `-${cs}${totals.discount.toFixed(2)}`]);
         tableRows.push(['', '']);
 
@@ -333,7 +370,7 @@ const SalesSummary = () => {
             startY: 30,
             body: tableRows,
             theme: 'plain',
-            styles: { fontSize: 9 },
+            styles: { fontSize: 9, font: pdfFont },
             columnStyles: { 1: { halign: 'right' } },
             margin: { left: 15, right: 15 }
         });
@@ -341,13 +378,15 @@ const SalesSummary = () => {
         doc.save(`Sales_Summary_${new Date().toISOString().split('T')[0]}.pdf`);
     };
 
-    const emailToAdmin = () => {
+    const emailToAdmin = async () => {
         const doc = new jsPDF();
         const formatDateTime = (date) => date.toLocaleString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
 
-        doc.setFontSize(16); doc.setFont("helvetica", "bold");
+        const pdfFont = await setupPdfFont(doc);
+
+        doc.setFontSize(16); doc.setFont(pdfFont, "bold");
         doc.text("Sales Summary with Revenue Detail", 105, 15, { align: "center" });
-        doc.setFontSize(9); doc.setFont("helvetica", "normal");
+        doc.setFontSize(9); doc.setFont(pdfFont, "normal");
         doc.text(`Processed Business Period Starting ${formatDateTime(dateRange.startDate)} and Ending ${formatDateTime(dateRange.endDate)}`, 105, 20, { align: "center" });
         doc.text(`Grouped by: Profit Center | ${selectedShopId === 'all' ? 'All Shops' : allShops.find(s => s.id === selectedShopId)?.name}`, 105, 24, { align: "center" });
 
@@ -360,9 +399,9 @@ const SalesSummary = () => {
             tableRows.push([{ content: formattedDate, colSpan: 2, styles: { fontStyle: 'bold', fillColor: [227, 242, 253] } }]);
 
             Object.entries(dailyBreakdown[date].shops).forEach(([shopName, shopData]) => {
-                tableRows.push([{ content: `  ${shopName}`, styles: { fontStyle: 'bold' } }, { content: `${cs}${shopData.total.toFixed(2)}`, styles: { fontStyle: 'bold' } }]);
+                tableRows.push([{ content: `  ${shopData.pdfName || shopName}`, styles: { fontStyle: 'bold' } }, { content: `${cs}${shopData.total.toFixed(2)}`, styles: { fontStyle: 'bold' } }]);
                 Object.entries(shopData.items).sort((a, b) => b[1].amount - a[1].amount).forEach(([itemName, itemData]) => {
-                    tableRows.push([`    ${itemName} (${itemData.count})`, `${cs}${itemData.amount.toFixed(2)}`]);
+                    tableRows.push([`    ${itemData.pdfName || itemName} (${itemData.count})`, `${cs}${itemData.amount.toFixed(2)}`]);
                 });
             });
 
@@ -375,9 +414,9 @@ const SalesSummary = () => {
         // Overall Totals
         tableRows.push([{ content: 'OVERALL TOTALS', colSpan: 2, styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } }]);
         Object.values(shopStats).forEach(shop => {
-            tableRows.push([{ content: shop.name, styles: { fontStyle: 'bold' } }, '']);
+            tableRows.push([{ content: shop.pdfName || shop.name, styles: { fontStyle: 'bold' } }, '']);
             Object.entries(shop.items).sort((a, b) => b[1].amount - a[1].amount).forEach(([itemName, data]) => {
-                tableRows.push([`    ${itemName} (${data.count})`, `${cs}${data.amount.toFixed(2)}`]);
+                tableRows.push([`    ${data.pdfName || itemName} (${data.count})`, `${cs}${data.amount.toFixed(2)}`]);
             });
             tableRows.push([{ content: '    Subtotal', styles: { fontStyle: 'bold' } }, { content: `${cs}${shop.gross.toFixed(2)}`, styles: { fontStyle: 'bold' } }]);
         });
@@ -385,7 +424,7 @@ const SalesSummary = () => {
         tableRows.push(['', '']);
 
         tableRows.push([{ content: 'DISCOUNTS', colSpan: 2, styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } }]);
-        Object.values(shopStats).forEach(shop => shop.discount > 0 && tableRows.push([`    ${shop.name}`, `-${cs}${shop.discount.toFixed(2)}`]));
+        Object.values(shopStats).forEach(shop => shop.discount > 0 && tableRows.push([`    ${shop.pdfName || shop.name}`, `-${cs}${shop.discount.toFixed(2)}`]));
         tableRows.push([{ content: 'Total DISCOUNTS', styles: { fontStyle: 'bold' } }, `-${cs}${totals.discount.toFixed(2)}`]);
         tableRows.push(['', '']);
 
@@ -413,7 +452,7 @@ const SalesSummary = () => {
             startY: 30,
             body: tableRows,
             theme: 'plain',
-            styles: { fontSize: 9 },
+            styles: { fontSize: 9, font: pdfFont },
             columnStyles: { 1: { halign: 'right' } },
             margin: { left: 15, right: 15 }
         });
@@ -429,6 +468,114 @@ const SalesSummary = () => {
 
         // Also download the PDF for the user to manually attach if needed
         doc.save(fileName);
+    };
+
+    const exportOrderListPDF = async () => {
+        const doc = new jsPDF();
+        const formatDateTime = (date) => date.toLocaleString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+        const formatTime = (date) => new Date(date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        const formatDate = (date) => new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+
+        const pdfFont = await setupPdfFont(doc);
+
+        doc.setFontSize(14); doc.setFont(pdfFont, 'bold');
+        doc.text('Order Detail Report', 105, 15, { align: 'center' });
+        doc.setFontSize(9); doc.setFont(pdfFont, 'normal');
+        doc.text(`Period: ${formatDateTime(dateRange.startDate)} - ${formatDateTime(dateRange.endDate)}`, 105, 22, { align: 'center' });
+
+        // Group orders by date
+        const byDate = {};
+        const userOrderCounts = {};
+        let grandTotal = 0;
+        let grandOrders = 0;
+        let grandEstMins = 0;
+        let grandEstCount = 0;
+
+        orders.forEach(order => {
+            const shop = allShops.find(s => s.id === order.shopId);
+            if (!shop) return;
+
+            const dateKey = new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            if (!byDate[dateKey]) byDate[dateKey] = { orders: [], totalValue: 0, totalEstMins: 0, estMinsCount: 0 };
+
+            const estMins = (order.cart || []).reduce((acc, item) => acc + Number(item.preparationTime || 0), 0)
+                || Number(order.estimatedTime || order.preparationTime || 0);
+
+            byDate[dateKey].orders.push({ order, estMins });
+            byDate[dateKey].totalValue += parseFloat(order.total || order.subtotal || 0);
+            if (estMins > 0) { byDate[dateKey].totalEstMins += estMins; byDate[dateKey].estMinsCount++; }
+
+            grandTotal += parseFloat(order.total || order.subtotal || 0);
+            grandOrders++;
+            if (estMins > 0) { grandEstMins += estMins; grandEstCount++; }
+
+            const userId = order.userInfo?.userId || order.userInfo?.userEmail || order.userInfo?.userPhoneNo || order.id;
+            userOrderCounts[userId] = (userOrderCounts[userId] || 0) + 1;
+        });
+
+        const sortedDates = Object.keys(byDate).sort((a, b) => new Date(a) - new Date(b));
+        const tableRows = [];
+
+        sortedDates.forEach(date => {
+            const day = byDate[date];
+
+            // Day header
+            tableRows.push([{ content: formatDate(date), colSpan: 4, styles: { fillColor: [26, 35, 126], textColor: 255, fontStyle: 'bold', fontSize: 9 } }]);
+
+            // Sort orders by time
+            day.orders.sort((a, b) => new Date(a.order.createdAt) - new Date(b.order.createdAt));
+
+            // Per-order rows
+            day.orders.forEach(({ order, estMins }) => {
+                const rawId = order.orderCode || order.orderId || order.id || '';
+                const shortId = rawId.slice(-6).toUpperCase() || 'N/A';
+                const orderTime = formatTime(order.createdAt);
+                const value = parseFloat(order.total || order.subtotal || 0);
+                tableRows.push([shortId, orderTime, estMins > 0 ? `${estMins} min` : 'N/A', `${cs}${value.toFixed(2)}`]);
+            });
+
+            // Day summary
+            const avgValue = day.orders.length > 0 ? (day.totalValue / day.orders.length) : 0;
+            const avgEst = day.estMinsCount > 0 ? Math.round(day.totalEstMins / day.estMinsCount) : null;
+            tableRows.push([{ content: `Day Total: ${day.orders.length} orders   |   Avg Est. Time: ${avgEst ? `~${avgEst} min` : 'N/A'}   |   Avg Value: ${cs}${avgValue.toFixed(2)}   |   Total: ${cs}${day.totalValue.toFixed(2)}`, colSpan: 4, styles: { fillColor: [232, 234, 246], fontStyle: 'bold', fontSize: 8 } }]);
+            tableRows.push([{ content: '', colSpan: 4, styles: { cellPadding: 1 } }]);
+        });
+
+        // Report totals
+        const grandAvgValue = grandOrders > 0 ? grandTotal / grandOrders : 0;
+        const grandAvgEst = grandEstCount > 0 ? Math.round(grandEstMins / grandEstCount) : null;
+        tableRows.push([{ content: 'REPORT TOTALS', colSpan: 4, styles: { fillColor: [245, 245, 245], fontStyle: 'bold', fontSize: 9 } }]);
+        tableRows.push([{ content: `Total Orders: ${grandOrders}`, colSpan: 2 }, { content: `Total Revenue: ${cs}${grandTotal.toFixed(2)}`, colSpan: 2, styles: { halign: 'right' } }]);
+        tableRows.push([{ content: `Avg Order Value: ${cs}${grandAvgValue.toFixed(2)}`, colSpan: 2 }, { content: `Avg Est. Time: ${grandAvgEst ? `~${grandAvgEst} min` : 'N/A'}`, colSpan: 2, styles: { halign: 'right' } }]);
+        tableRows.push([{ content: '', colSpan: 4, styles: { cellPadding: 2 } }]);
+
+        // User stats
+        const uniqueUsers = Object.keys(userOrderCounts).length;
+        const returningUsers = Object.values(userOrderCounts).filter(c => c > 1).length;
+        const returningPct = uniqueUsers > 0 ? ((returningUsers / uniqueUsers) * 100).toFixed(1) : '0.0';
+        const newUsers = uniqueUsers - returningUsers;
+        const avgOrdersPerUser = uniqueUsers > 0 ? (grandOrders / uniqueUsers).toFixed(1) : '0';
+        tableRows.push([{ content: 'USER STATISTICS', colSpan: 4, styles: { fillColor: [232, 245, 233], fontStyle: 'bold', fontSize: 9 } }]);
+        tableRows.push([{ content: `Unique Users: ${uniqueUsers}`, colSpan: 2 }, { content: `New Users: ${newUsers}`, colSpan: 2, styles: { halign: 'right' } }]);
+        tableRows.push([{ content: `Returning Users: ${returningUsers}  (${returningPct}%)`, colSpan: 2 }, { content: `Avg Orders / User: ${avgOrdersPerUser}`, colSpan: 2, styles: { halign: 'right' } }]);
+
+        autoTable(doc, {
+            startY: 28,
+            head: [['Order #', 'Time', 'Est. Delivery', 'Value']],
+            body: tableRows,
+            theme: 'plain',
+            headStyles: { fillColor: [26, 35, 126], textColor: 255, fontStyle: 'bold', fontSize: 9 },
+            styles: { fontSize: 8, cellPadding: 2, font: pdfFont },
+            columnStyles: {
+                0: { cellWidth: 28 },
+                1: { cellWidth: 32 },
+                2: { cellWidth: 40, halign: 'center' },
+                3: { cellWidth: 30, halign: 'right' }
+            },
+            margin: { left: 15, right: 15 }
+        });
+
+        doc.save(`Order_Detail_Report_${new Date().toISOString().split('T')[0]}.pdf`);
     };
 
     return (
@@ -483,6 +630,24 @@ const SalesSummary = () => {
                         }}
                     >
                         Export PDF
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        startIcon={<GetApp />}
+                        onClick={exportOrderListPDF}
+                        disabled={orders.length === 0}
+                        sx={{
+                            borderRadius: 2,
+                            px: { xs: 2, sm: 3 },
+                            py: { xs: 1, sm: 1.5 },
+                            fontSize: { xs: '0.875rem', sm: '1rem' },
+                            width: { xs: '100%', sm: 'auto' },
+                            borderColor: '#2e7d32',
+                            color: '#2e7d32',
+                            '&:hover': { borderColor: '#1b5e20', backgroundColor: 'rgba(46,125,50,0.05)' }
+                        }}
+                    >
+                        Order List PDF
                     </Button>
                 </Box>
             </Box>
