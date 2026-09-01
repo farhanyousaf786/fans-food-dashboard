@@ -130,6 +130,7 @@ const Auth = () => {
             
             const userData = userDoc.data();
             const user = User.fromFirestore(userData, userCredential.user.uid);
+            user.role = userRole;
             console.log('🔍 SIGN IN: Current FCM tokens before update:', user.fcmTokens);
             
             // Update FCM token for this device
@@ -149,7 +150,15 @@ const Auth = () => {
                 console.log('⚠️ SIGN IN: No FCM token available');
             }
             
-            localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('user', JSON.stringify({
+              name: user.name,
+              email: user.email,
+              role: userRole,
+              code: user.code,
+              userId: user.userId,
+              fcmTokens: user.fcmTokens,
+              shopsId: user.shopsId || [],
+            }));
 
             // Show success animation and navigate
             const container = document.querySelector('.auth-container');
@@ -164,21 +173,18 @@ const Auth = () => {
                 // Check user role and navigate accordingly
                 const userData = JSON.parse(localStorage.getItem('user'));
                 if (userData) {
-                    switch (userData.role) {
+                    switch (userRole) {
                         case 'admin':
                             navigate('/admin');
                             break;
                         case 'shopowner':
                             navigate('/shop');
                             break;
-                        case 'delivery':
-                            navigate('/dashboard');
-                            break;
                         default:
                             navigate('/dashboard');
                     }
                 } else {
-                    navigate('/dashboard');
+                    navigate('/auth');
                 }
                 console.log('🔄 AUTH: Navigation completed (no reload to preserve console logs)');
             }, 500);

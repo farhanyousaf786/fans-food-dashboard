@@ -128,16 +128,23 @@ const PrivateRoute = ({ children, requiredRole }) => {
 };
 
 const HomeRedirect = () => {
-  const userData = JSON.parse(localStorage.getItem('user'));
-  if (!userData) return <Navigate to="/dashboard" />;
+  try {
+    const raw = localStorage.getItem('user');
+    if (!raw) return <Navigate to="/auth" replace />;
 
-  switch (userData.role) {
-    case 'admin':
-      return <Navigate to="/admin" />;
-    case 'shopowner':
-      return <Navigate to="/shop" />;
-    default:
-      return <Navigate to="/dashboard" />;
+    const userData = JSON.parse(raw);
+    if (!userData?.role) return <Navigate to="/auth" replace />;
+
+    switch (userData.role) {
+      case 'admin':
+        return <Navigate to="/admin" replace />;
+      case 'shopowner':
+        return <Navigate to="/shop" replace />;
+      default:
+        return <Navigate to="/dashboard" replace />;
+    }
+  } catch {
+    return <Navigate to="/auth" replace />;
   }
 };
 
@@ -171,7 +178,7 @@ function AppContent() {
           <Route path="/admin" element={<PrivateRoute requiredRole="admin"><DashboardLayout><AdminPanel /></DashboardLayout></PrivateRoute>} />
           <Route path="/shop" element={<PrivateRoute requiredRole="shopowner"><DashboardLayout><ShopPanel /></DashboardLayout></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><DashboardLayout><Profile /></DashboardLayout></PrivateRoute>} />
-          <Route path="/manage" element={<PrivateRoute><DashboardLayout><Manage /></DashboardLayout></PrivateRoute>} />
+          <Route path="/manage" element={<PrivateRoute requiredRole="admin"><DashboardLayout><Manage /></DashboardLayout></PrivateRoute>} />
           <Route path="/stadium/:id" element={<PrivateRoute><DashboardLayout><Stadium /></DashboardLayout></PrivateRoute>} />
           <Route path="/add-category" element={<PrivateRoute><DashboardLayout><AddCategory /></DashboardLayout></PrivateRoute>} />
           <Route path="/user-management" element={<PrivateRoute requiredRole="admin"><DashboardLayout><UserManagement /></DashboardLayout></PrivateRoute>} />

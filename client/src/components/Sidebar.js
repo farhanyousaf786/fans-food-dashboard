@@ -154,6 +154,7 @@ const Sidebar = ({ mobileOpen, onClose }) => {
       disabled: !userStadiumId
     },
     { text: 'User Management', icon: <PeopleIcon />, path: '/user-management' },
+    { text: 'App Settings', icon: <SettingsIcon />, path: '/manage' },
   ];
 
   // Combine menu items based on user role
