@@ -15,11 +15,15 @@ class Stadium {
         this.availableFloors = availableFloors;
         this.availableSeats = availableSeats;
         this.availableTickets = availableTickets;
+        this.color = '#3D70FF';
+        this.secondaryColor = '';
+        this.logoUrl = '';
+        this.bannerUrl = '';
+        this.brandName = '';
         this.createdAt = new Date().toISOString();
         this.updatedAt = new Date().toISOString();
     }
 
-    // Convert Firestore document to Stadium object
     static fromFirestore(doc, id) {
         const data = doc.data();
         const stadium = new Stadium(
@@ -40,12 +44,16 @@ class Stadium {
             data.availableTickets
         );
         stadium.id = id;
+        stadium.color = data.color || '#3D70FF';
+        stadium.secondaryColor = data.secondaryColor || '';
+        stadium.logoUrl = data.logoUrl || '';
+        stadium.bannerUrl = data.bannerUrl || '';
+        stadium.brandName = data.brandName || '';
         stadium.createdAt = data.createdAt;
         stadium.updatedAt = data.updatedAt;
         return stadium;
     }
 
-    // Convert Stadium object to Firestore document
     toFirestore() {
         return {
             name: this.name,
@@ -63,6 +71,11 @@ class Stadium {
             availableFloors: this.availableFloors,
             availableSeats: this.availableSeats,
             availableTickets: this.availableTickets,
+            color: this.color || '#3D70FF',
+            secondaryColor: this.secondaryColor || '',
+            logoUrl: this.logoUrl || '',
+            bannerUrl: this.bannerUrl || '',
+            brandName: this.brandName || '',
             createdAt: this.createdAt,
             updatedAt: new Date().toISOString()
         };

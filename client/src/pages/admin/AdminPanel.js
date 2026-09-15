@@ -11,6 +11,18 @@ import StadiumForm from '../../components/StadiumForm';
 import DeliveryUsers from './components/DeliveryUsers';
 import './AdminPanel.css';
 
+const uploadStadiumAsset = async (file, folder) => {
+    const storageRef = ref(storage, `stadiums/${folder}/${Date.now()}_${file.name}`);
+    await uploadBytes(storageRef, file);
+    return getDownloadURL(storageRef);
+};
+
+const buildBrandingFields = (formData, existing = {}) => ({
+    color: formData.color || existing.color || '#3D70FF',
+    secondaryColor: formData.secondaryColor || existing.secondaryColor || '',
+    brandName: formData.brandName || existing.brandName || '',
+});
+
 const AdminPanel = () => {
     const navigate = useNavigate();
 
@@ -66,12 +78,17 @@ const AdminPanel = () => {
         try {
             setUploading(true);
             let imageUrl = editingStadium.imageUrl;
+            let logoUrl = editingStadium.logoUrl || '';
+            let bannerUrl = editingStadium.bannerUrl || '';
             
             if (formData.selectedImage) {
-                // Upload new image to Firebase Storage
-                const storageRef = ref(storage, `stadiums/${Date.now()}_${formData.selectedImage.name}`);
-                await uploadBytes(storageRef, formData.selectedImage);
-                imageUrl = await getDownloadURL(storageRef);
+                imageUrl = await uploadStadiumAsset(formData.selectedImage, 'profile');
+            }
+            if (formData.selectedLogo) {
+                logoUrl = await uploadStadiumAsset(formData.selectedLogo, 'logos');
+            }
+            if (formData.selectedBanner) {
+                bannerUrl = await uploadStadiumAsset(formData.selectedBanner, 'banners');
             }
 
             const stadiumRef = doc(db, 'stadiums', editingStadium.id);
@@ -90,7 +107,10 @@ const AdminPanel = () => {
                 availableStands: formData.availableStands,
                 availableFloors: formData.availableFloors,
                 availableSeats: formData.availableSeats,
-                availableTickets: formData.availableTickets
+                availableTickets: formData.availableTickets,
+                logoUrl,
+                bannerUrl,
+                ...buildBrandingFields(formData, editingStadium),
             };
             
             await updateDoc(stadiumRef, updatedStadium);
@@ -116,6 +136,11 @@ const AdminPanel = () => {
                         updatedStadium.availableTickets
                     );
                     updatedStadiumObj.id = editingStadium.id;
+                    updatedStadiumObj.color = updatedStadium.color;
+                    updatedStadiumObj.secondaryColor = updatedStadium.secondaryColor;
+                    updatedStadiumObj.logoUrl = updatedStadium.logoUrl;
+                    updatedStadiumObj.bannerUrl = updatedStadium.bannerUrl;
+                    updatedStadiumObj.brandName = updatedStadium.brandName;
                     updatedStadiumObj.createdAt = stadium.createdAt;
                     updatedStadiumObj.updatedAt = new Date().toISOString();
                     return updatedStadiumObj;
@@ -168,12 +193,17 @@ const AdminPanel = () => {
         try {
             setUploading(true);
             let imageUrl = '';
+            let logoUrl = '';
+            let bannerUrl = '';
             
             if (formData.selectedImage) {
-                // Upload image to Firebase Storage
-                const storageRef = ref(storage, `stadiums/${Date.now()}_${formData.selectedImage.name}`);
-                await uploadBytes(storageRef, formData.selectedImage);
-                imageUrl = await getDownloadURL(storageRef);
+                imageUrl = await uploadStadiumAsset(formData.selectedImage, 'profile');
+            }
+            if (formData.selectedLogo) {
+                logoUrl = await uploadStadiumAsset(formData.selectedLogo, 'logos');
+            }
+            if (formData.selectedBanner) {
+                bannerUrl = await uploadStadiumAsset(formData.selectedBanner, 'banners');
             }
 
             const stadiumsRef = collection(db, 'stadiums');
@@ -194,6 +224,11 @@ const AdminPanel = () => {
                 formData.availableSeats,
                 formData.availableTickets
             );
+            newStadiumObj.color = formData.color || '#3D70FF';
+            newStadiumObj.secondaryColor = formData.secondaryColor || '';
+            newStadiumObj.logoUrl = logoUrl;
+            newStadiumObj.bannerUrl = bannerUrl;
+            newStadiumObj.brandName = formData.brandName || '';
             
             const docRef = await addDoc(stadiumsRef, newStadiumObj.toFirestore());
             

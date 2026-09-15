@@ -18,7 +18,50 @@ import { Edit as EditIcon, CameraAlt as CameraIcon } from '@mui/icons-material';
 import AddressInput from './AddressInput';
 import './StadiumForm.css';
 
-const StadiumForm = ({ 
+const emptyFormData = () => ({
+  name: '',
+  location: '',
+  capacity: '',
+  about: '',
+  latitude: null,
+  longitude: null,
+  availableRooms: false,
+  availableSections: false,
+  availablePickupPoints: false,
+  availableShops: false,
+  availableStands: false,
+  availableFloors: false,
+  availableSeats: false,
+  availableTickets: false,
+  color: '#3D70FF',
+  secondaryColor: '',
+  brandName: '',
+});
+
+const formDataFromInitial = (initialData) => {
+  if (!initialData) return emptyFormData();
+  return {
+    name: initialData.name || '',
+    location: initialData.location || '',
+    capacity: initialData.capacity?.toString() || '',
+    about: initialData.about || '',
+    latitude: initialData.latitude || null,
+    longitude: initialData.longitude || null,
+    availableRooms: initialData.availableRooms || false,
+    availableSections: initialData.availableSections || false,
+    availablePickupPoints: initialData.availablePickupPoints || false,
+    availableShops: initialData.availableShops || false,
+    availableStands: initialData.availableStands || false,
+    availableFloors: initialData.availableFloors || false,
+    availableSeats: initialData.availableSeats || false,
+    availableTickets: initialData.availableTickets || false,
+    color: initialData.color || '#3D70FF',
+    secondaryColor: initialData.secondaryColor || '',
+    brandName: initialData.brandName || '',
+  };
+};
+
+const StadiumForm = ({
   open, 
   onClose, 
   onSubmit, 
@@ -27,66 +70,20 @@ const StadiumForm = ({
   initialData = null,
   uploading = false 
 }) => {
-  const [formData, setFormData] = useState({
-    name: initialData?.name || '',
-    location: initialData?.location || '',
-    capacity: initialData?.capacity?.toString() || '',
-    about: initialData?.about || '',
-    latitude: initialData?.latitude || null,
-    longitude: initialData?.longitude || null,
-    availableRooms: initialData?.availableRooms || false,
-    availableSections: initialData?.availableSections || false,
-    availablePickupPoints: initialData?.availablePickupPoints || false,
-    availableShops: initialData?.availableShops || false,
-    availableStands: initialData?.availableStands || false,
-    availableFloors: initialData?.availableFloors || false,
-    availableSeats: initialData?.availableSeats || false,
-    availableTickets: initialData?.availableTickets || false
-  });
+  const [formData, setFormData] = useState(() => formDataFromInitial(initialData));
   
   const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedLogo, setSelectedLogo] = useState(null);
+  const [selectedBanner, setSelectedBanner] = useState(null);
   const [locationSelected, setLocationSelected] = useState(false);
 
   // Update form data when initialData changes
   useEffect(() => {
-    if (initialData) {
-      setFormData({
-        name: initialData.name || '',
-        location: initialData.location || '',
-        capacity: initialData.capacity?.toString() || '',
-        about: initialData.about || '',
-        latitude: initialData.latitude || null,
-        longitude: initialData.longitude || null,
-        availableRooms: initialData.availableRooms || false,
-        availableSections: initialData.availableSections || false,
-        availablePickupPoints: initialData.availablePickupPoints || false,
-        availableShops: initialData.availableShops || false,
-        availableStands: initialData.availableStands || false,
-        availableFloors: initialData.availableFloors || false,
-        availableSeats: initialData.availableSeats || false,
-        availableTickets: initialData.availableTickets || false
-      });
-      setLocationSelected(!!(initialData.latitude && initialData.longitude));
-    } else {
-      // Reset form when no initialData
-      setFormData({
-        name: '',
-        location: '',
-        capacity: '',
-        about: '',
-        latitude: null,
-        longitude: null,
-        availableRooms: false,
-        availableSections: false,
-        availablePickupPoints: false,
-        availableShops: false,
-        availableStands: false,
-        availableFloors: false,
-        availableSeats: false,
-        availableTickets: false
-      });
-      setLocationSelected(false);
-    }
+    setFormData(formDataFromInitial(initialData));
+    setSelectedImage(null);
+    setSelectedLogo(null);
+    setSelectedBanner(null);
+    setLocationSelected(!!(initialData?.latitude && initialData?.longitude));
   }, [initialData]);
 
   // Handle form field changes
@@ -115,12 +112,24 @@ const StadiumForm = ({
     setSelectedImage(file);
   };
 
+  const handleLogoChange = (event) => {
+    const file = event.target.files[0];
+    setSelectedLogo(file);
+  };
+
+  const handleBannerChange = (event) => {
+    const file = event.target.files[0];
+    setSelectedBanner(file);
+  };
+
   // Handle form submission
   const handleSubmit = () => {
     const submissionData = {
       ...formData,
-      capacity: parseInt(formData.capacity),
-      selectedImage
+      capacity: parseInt(formData.capacity, 10),
+      selectedImage,
+      selectedLogo,
+      selectedBanner,
     };
     
     console.log('🏟️ Submitting stadium data:', submissionData);
@@ -129,24 +138,10 @@ const StadiumForm = ({
 
   // Handle dialog close
   const handleClose = () => {
-    // Reset form
-    setFormData({
-      name: '',
-      location: '',
-      capacity: '',
-      about: '',
-      latitude: null,
-      longitude: null,
-      availableRooms: false,
-      availableSections: false,
-      availablePickupPoints: false,
-      availableShops: false,
-      availableStands: false,
-      availableFloors: false,
-      availableSeats: false,
-      availableTickets: false
-    });
+    setFormData(emptyFormData());
     setSelectedImage(null);
+    setSelectedLogo(null);
+    setSelectedBanner(null);
     setLocationSelected(false);
     onClose();
   };
@@ -389,6 +384,80 @@ const StadiumForm = ({
                 sx: { borderRadius: 2 }
               }}
             />
+          </Box>
+
+          {/* Venue Branding Section */}
+          <Box sx={{ 
+            bgcolor: 'white', 
+            p: 3, 
+            borderRadius: 2,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+          }}>
+            <Typography variant="h6" sx={{ mb: 2, color: 'primary.main', fontWeight: 600 }}>
+              Venue Branding
+            </Typography>
+
+            <TextField
+              label="Brand display name (optional)"
+              fullWidth
+              value={formData.brandName}
+              onChange={(e) => handleChange('brandName', e.target.value)}
+              placeholder="Shown in the app header instead of stadium name"
+              sx={{ mb: 2 }}
+              InputProps={{ sx: { borderRadius: 2 } }}
+            />
+
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mb: 2 }}>
+              <TextField
+                label="Primary color"
+                type="color"
+                fullWidth
+                value={formData.color}
+                onChange={(e) => handleChange('color', e.target.value)}
+                InputProps={{ sx: { borderRadius: 2, height: 56 } }}
+              />
+              <TextField
+                label="Secondary color (optional)"
+                type="color"
+                fullWidth
+                value={formData.secondaryColor || '#3161EA'}
+                onChange={(e) => handleChange('secondaryColor', e.target.value)}
+                InputProps={{ sx: { borderRadius: 2, height: 56 } }}
+              />
+            </Box>
+
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+              <Box>
+                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>Venue logo</Typography>
+                {(selectedLogo || initialData?.logoUrl) && (
+                  <Box
+                    component="img"
+                    src={selectedLogo ? URL.createObjectURL(selectedLogo) : initialData.logoUrl}
+                    alt="Venue logo preview"
+                    sx={{ width: 64, height: 64, objectFit: 'contain', mb: 1, borderRadius: 1, border: '1px solid', borderColor: 'grey.300' }}
+                  />
+                )}
+                <Button variant="outlined" component="label" size="small">
+                  Upload logo
+                  <input type="file" accept="image/*" hidden onChange={handleLogoChange} />
+                </Button>
+              </Box>
+              <Box>
+                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>Home banner</Typography>
+                {(selectedBanner || initialData?.bannerUrl) && (
+                  <Box
+                    component="img"
+                    src={selectedBanner ? URL.createObjectURL(selectedBanner) : initialData.bannerUrl}
+                    alt="Banner preview"
+                    sx={{ width: '100%', maxHeight: 80, objectFit: 'cover', mb: 1, borderRadius: 1, border: '1px solid', borderColor: 'grey.300' }}
+                  />
+                )}
+                <Button variant="outlined" component="label" size="small">
+                  Upload banner
+                  <input type="file" accept="image/*" hidden onChange={handleBannerChange} />
+                </Button>
+              </Box>
+            </Box>
           </Box>
 
           {/* Features Section */}
