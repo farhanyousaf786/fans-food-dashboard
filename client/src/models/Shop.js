@@ -1,10 +1,18 @@
 class Shop {
-    constructor(name, location, floor, gate, description, admins, stadiumId, stadiumName, latitude = null, longitude = null, docId = null, imageUrl = null, deliveryFee = 0, deliveryFeeCurrency = 'ILS', insideDelivery = {}, outsideDelivery = {}, paymentOptions = {}) {
+    constructor(name, location, floor, gate, description, admins, stadiumId, stadiumName, latitude = null, longitude = null, docId = null, imageUrl = null, deliveryFee = 0, deliveryFeeCurrency = 'ILS', insideDelivery = {}, outsideDelivery = {}, paymentOptions = {}, nameMap = {}, descriptionMap = {}) {
         this.name = name;
+        this.nameMap = {
+            en: nameMap?.en || name || '',
+            he: nameMap?.he || ''
+        };
         this.location = location;
         this.floor = floor;
         this.gate = gate;
         this.description = description;
+        this.descriptionMap = {
+            en: descriptionMap?.en || description || '',
+            he: descriptionMap?.he || ''
+        };
         this.admins = admins || []; // Array of admin user IDs
         this.stadiumId = stadiumId;
         this.stadiumName = stadiumName;
@@ -53,10 +61,12 @@ class Shop {
     toFirestore() {
         return {
             name: this.name,
+            nameMap: this.nameMap,
             location: this.location,
             floor: this.floor,
             gate: this.gate,
             description: this.description,
+            descriptionMap: this.descriptionMap,
             admins: this.admins,
             stadiumId: this.stadiumId,
             latitude: this.latitude,
@@ -122,7 +132,9 @@ class Shop {
             data.deliveryFeeCurrency || 'ILS',
             data.insideDelivery,
             data.outsideDelivery,
-            paymentOptions
+            paymentOptions,
+            data.nameMap || {},
+            data.descriptionMap || {}
         );
         shop.id = id;
         shop.createdAt = data.createdAt?.toDate() || new Date();

@@ -41,10 +41,12 @@ const MyShopsSection = () => {
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [newShop, setNewShop] = useState({
     name: '',
+    nameHe: '',
     location: '',
     floor: '',
     gate: '',
     description: '',
+    descriptionHe: '',
     deliveryFee: '',
     deliveryFeeCurrency: 'ILS',
     imageFile: null,
@@ -120,10 +122,12 @@ const MyShopsSection = () => {
     setOpenAddDialog(false);
     setNewShop({
       name: '',
+      nameHe: '',
       location: '',
       floor: '',
       gate: '',
       description: '',
+      descriptionHe: '',
       deliveryFee: '',
       deliveryFeeCurrency: 'ILS',
       imageFile: null,
@@ -133,14 +137,16 @@ const MyShopsSection = () => {
         fee: '',
         currency: 'ILS',
         openTime: '09:00',
-        closeTime: '22:00'
+        closeTime: '22:00',
+        locations: []
       },
       outsideDelivery: {
         enabled: false,
         fee: '',
         currency: 'ILS',
         openTime: '09:00',
-        closeTime: '22:00'
+        closeTime: '22:00',
+        locations: []
       },
       paymentOptions: {
         model: '2-way',
@@ -196,7 +202,9 @@ const MyShopsSection = () => {
         newShop.deliveryFeeCurrency || 'ILS', // deliveryFeeCurrency
         newShop.insideDelivery, // insideDelivery
         newShop.outsideDelivery, // outsideDelivery
-        newShop.paymentOptions // paymentOptions
+        newShop.paymentOptions, // paymentOptions
+        { en: newShop.name || '', he: newShop.nameHe || '' },
+        { en: newShop.description || '', he: newShop.descriptionHe || '' }
       );
 
       // Add to Firestore
@@ -231,7 +239,11 @@ const MyShopsSection = () => {
 
   const handleEditShop = (shop, e) => {
     e.stopPropagation();
-    setEditingShop(shop);
+    setEditingShop({
+      ...shop,
+      nameHe: shop.nameMap?.he || '',
+      descriptionHe: shop.descriptionMap?.he || '',
+    });
     setOpenEditDialog(true);
   };
 
@@ -247,10 +259,18 @@ const MyShopsSection = () => {
       const shopRef = doc(db, 'shops', editingShop.id);
       await updateDoc(shopRef, {
         name: editingShop.name,
+        nameMap: {
+          en: editingShop.name || '',
+          he: editingShop.nameHe || editingShop.nameMap?.he || ''
+        },
         location: editingShop.location,
         floor: editingShop.floor,
         gate: editingShop.gate,
         description: editingShop.description,
+        descriptionMap: {
+          en: editingShop.description || '',
+          he: editingShop.descriptionHe || editingShop.descriptionMap?.he || ''
+        },
         deliveryFee: editingShop.deliveryFee ? parseFloat(editingShop.deliveryFee) : 0,
         deliveryFeeCurrency: editingShop.deliveryFeeCurrency || 'ILS',
         insideDelivery: {
@@ -468,11 +488,20 @@ const MyShopsSection = () => {
           <TextField
             autoFocus
             margin="dense"
-            label="Shop Name"
+            label="Shop Name (English)"
             fullWidth
             value={editingShop?.name || ''}
             onChange={(e) => setEditingShop(prev => ({ ...prev, name: e.target.value }))}
             sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            label="Shop Name (Hebrew)"
+            fullWidth
+            value={editingShop?.nameHe || ''}
+            onChange={(e) => setEditingShop(prev => ({ ...prev, nameHe: e.target.value }))}
+            sx={{ mb: 2 }}
+            inputProps={{ dir: 'rtl' }}
           />
           <TextField
             margin="dense"
@@ -500,13 +529,24 @@ const MyShopsSection = () => {
           />
           <TextField
             margin="dense"
-            label="Description"
+            label="Description (English)"
             fullWidth
             multiline
-            rows={4}
+            rows={3}
             value={editingShop?.description || ''}
             onChange={(e) => setEditingShop(prev => ({ ...prev, description: e.target.value }))}
             sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            label="Description (Hebrew)"
+            fullWidth
+            multiline
+            rows={3}
+            value={editingShop?.descriptionHe || ''}
+            onChange={(e) => setEditingShop(prev => ({ ...prev, descriptionHe: e.target.value }))}
+            sx={{ mb: 2 }}
+            inputProps={{ dir: 'rtl' }}
           />
           <TextField
             margin="dense"
@@ -881,11 +921,20 @@ const MyShopsSection = () => {
           <TextField
             autoFocus
             margin="dense"
-            label="Shop Name"
+            label="Shop Name (English)"
             fullWidth
             value={newShop.name}
             onChange={(e) => setNewShop({ ...newShop, name: e.target.value })}
             sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            label="Shop Name (Hebrew)"
+            fullWidth
+            value={newShop.nameHe || ''}
+            onChange={(e) => setNewShop({ ...newShop, nameHe: e.target.value })}
+            sx={{ mb: 2 }}
+            inputProps={{ dir: 'rtl' }}
           />
           <TextField
             margin="dense"
@@ -913,13 +962,24 @@ const MyShopsSection = () => {
           />
           <TextField
             margin="dense"
-            label="Description"
+            label="Description (English)"
             fullWidth
             multiline
             rows={3}
             value={newShop.description}
             onChange={(e) => setNewShop({ ...newShop, description: e.target.value })}
             sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            label="Description (Hebrew)"
+            fullWidth
+            multiline
+            rows={3}
+            value={newShop.descriptionHe || ''}
+            onChange={(e) => setNewShop({ ...newShop, descriptionHe: e.target.value })}
+            sx={{ mb: 2 }}
+            inputProps={{ dir: 'rtl' }}
           />
           <TextField
             margin="dense"
